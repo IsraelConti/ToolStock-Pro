@@ -1,10 +1,10 @@
 {
-  "name": "FoodStock Control — Hostelería",
-  "short_name": "FoodStock",
-  "start_url": "./index.html",
+  "name": "Moments Planner — Bodas y Eventos",
+  "short_name": "Moments",
+  "description": "Planificador profesional de bodas y eventos",
+  "start_url": ".",
   "display": "standalone",
-  "background_color": "#071018",
-  "theme_color": "#00683f",
-  "lang": "es",
-  "icons": []
+  "background_color": "#21142f",
+  "theme_color": "#21142f",
+  "icons": [{"src":"app-icon.png","sizes":"1024x1024","type":"image/png","purpose":"any maskable"}]
 }
