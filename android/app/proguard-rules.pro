@@ -1,0 +1,1 @@
+-keepclassmembers class com.toolstock.pro.MainActivity$AndroidBridge { *; }
