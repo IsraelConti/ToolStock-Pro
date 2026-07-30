@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#071018">
-  <title>ToolStock Pro — Taller</title>
+  <title>FoodStock Control — Caducidades e inventario</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,7 +13,7 @@
     <button id="backBtn" class="icon-btn hidden" aria-label="Volver">←</button>
     <div class="brand">
       <img class="brand-mark" src="app-icon.png" alt="">
-      <div><strong id="appName">ToolStock Pro</strong><small id="screenTitle">Panel del taller</small></div>
+      <div><strong id="appName">FoodStock Control</strong><small id="screenTitle">Panel alimentario</small></div>
     </div>
     <button class="icon-btn" data-go="settings" aria-label="Configuración">⚙</button>
   </header>
@@ -21,15 +21,15 @@
   <main id="app">
     <section class="screen active" data-screen="home">
       <div class="hero">
-        <p class="eyebrow">CONTROL PROFESIONAL</p>
-        <h1>Tu taller, ordenado y bajo control.</h1>
-        <p>Inventario, movimientos, alertas, QR e informes en un único lugar.</p>
+        <p class="eyebrow">SEGURIDAD ALIMENTARIA</p>
+        <h1>Controla existencias, lotes y caducidades.</h1>
+        <p>Almacén, cámaras, congeladores, movimientos, alertas y trazabilidad en un único lugar.</p>
         <div class="sync"><span></span><strong>Datos locales disponibles</strong></div>
       </div>
       <div class="metrics">
         <article><small>Productos</small><strong id="metricProducts">0</strong></article>
-        <article><small>Stock bajo</small><strong id="metricLow">0</strong></article>
-        <article><small>Valor estimado</small><strong id="metricValue">0 €</strong></article>
+        <article><small>Caducan pronto</small><strong id="metricExpiring">0</strong></article>
+        <article><small>Caducados</small><strong id="metricExpired">0</strong></article>
       </div>
       <div class="action-grid">
         <button class="action primary" data-go="productForm"><span>＋</span><b>Nuevo producto</b><small>Alta detallada</small></button>
@@ -43,7 +43,7 @@
 
     <section class="screen" data-screen="products">
       <div class="section-head"><div><p class="eyebrow">INVENTARIO</p><h2>Productos</h2></div><button class="btn primary" data-go="productForm">＋ Añadir</button></div>
-      <label class="search">⌕ <input id="searchProducts" type="search" placeholder="Buscar por nombre, referencia, equipo o ubicación"></label>
+      <label class="search">⌕ <input id="searchProducts" type="search" placeholder="Buscar por producto, lote, categoría o ubicación"></label>
       <div id="productList" class="list"></div>
     </section>
 
@@ -51,18 +51,24 @@
       <div class="section-head"><div><p class="eyebrow">FICHA COMPLETA</p><h2>Nuevo producto</h2></div></div>
       <form id="productForm" class="form">
         <div class="form-section"><h3>Identificación</h3>
-          <label>Nombre del producto *<input name="name" required placeholder="Ej.: Rodamiento 6204 2RS"></label>
-          <div class="two"><label>Referencia interna *<input name="reference" required placeholder="Ej.: ROD-6204"></label><label>Categoría<input name="category" placeholder="Ej.: Rodamientos"></label></div>
-          <div class="two"><label>Código de barras<input name="barcode" inputmode="numeric" placeholder="EAN, UPC o código interno"></label><label>Número de serie<input name="serial" placeholder="Si corresponde"></label></div>
+          <label>Nombre del alimento o producto *<input name="name" required placeholder="Ej.: Leche entera 1 L"></label>
+          <div class="two"><label>Referencia interna *<input name="reference" required placeholder="Ej.: LEC-001"></label><label>Categoría<input name="category" placeholder="Ej.: Lácteos"></label></div>
+          <div class="two"><label>Código de barras<input name="barcode" inputmode="numeric" placeholder="EAN o código interno"></label><label>Número de lote *<input name="lot" required placeholder="Ej.: L240730-A"></label></div>
+        </div>
+        <div class="form-section"><h3>Fechas y caducidad</h3>
+          <div class="two"><label>Fecha de recepción<input name="receivedDate" type="date"></label><label>Fecha de elaboración<input name="productionDate" type="date"></label></div>
+          <div class="two"><label>Fecha de apertura<input name="openedDate" type="date"><span class="hint">Déjala vacía mientras esté cerrado</span></label><label>Fecha de caducidad / consumo preferente *<input name="expiryDate" type="date" required></label></div>
+          <div class="two"><label>Tipo de fecha<select name="expiryType"><option value="expiry">Fecha de caducidad</option><option value="bestBefore">Consumo preferente</option></select></label><label>Días de vida útil una vez abierto<input name="openShelfLifeDays" type="number" min="0" step="1" placeholder="Ej.: 3"></label></div>
         </div>
         <div class="form-section"><h3>Existencias e importe</h3>
           <div class="two"><label>Stock actual <span class="hint">Cantidad disponible</span><input name="stock" type="number" min="0" step="0.001" value="0"></label><label>Stock mínimo <span class="hint">Activa la alerta</span><input name="minimumStock" type="number" min="0" step="0.001" value="0"></label></div>
-          <div class="two"><label>Unidad de medida<select name="unit"><option>unidades</option><option>cajas</option><option>pares</option><option>kg</option><option>litros</option><option>metros</option></select></label><label>Precio unitario <span class="hint">Sin impuestos</span><div class="money"><input name="unitPrice" type="number" min="0" step="0.01" value="0"><span class="currencySymbol">€</span></div></label></div>
+          <div class="two"><label>Unidad de medida<select name="unit"><option>unidades</option><option>cajas</option><option>paquetes</option><option>kg</option><option>gramos</option><option>litros</option></select></label><label>Precio unitario <span class="hint">Sin impuestos</span><div class="money"><input name="unitPrice" type="number" min="0" step="0.01" value="0"><span class="currencySymbol">€</span></div></label></div>
         </div>
-        <div class="form-section"><h3>Ubicación y uso</h3>
-          <div class="two"><label>Centro o taller<input name="site" placeholder="Ej.: Taller principal"></label><label>Almacén<input name="warehouse" placeholder="Ej.: Almacén A"></label></div>
-          <div class="two"><label>Estantería / ubicación<input name="location" placeholder="Ej.: A-03-B"></label><label>Equipo o máquina<input name="equipment" placeholder="Ej.: Reactor 500 L"></label></div>
-          <div class="two"><label>Línea o área<input name="line" placeholder="Ej.: Línea de gominolas"></label><label>Proveedor<input name="supplier" placeholder="Empresa suministradora"></label></div>
+        <div class="form-section"><h3>Conservación y ubicación</h3>
+          <div class="two"><label>Centro o establecimiento<input name="site" placeholder="Ej.: Restaurante principal"></label><label>Zona de almacenamiento<select name="storageType"><option>Almacén seco</option><option>Cámara frigorífica</option><option>Congelador</option><option>Expositor</option><option>Producto abierto</option></select></label></div>
+          <div class="two"><label>Almacén / cámara<input name="warehouse" placeholder="Ej.: Cámara 1"></label><label>Estantería / ubicación<input name="location" placeholder="Ej.: C1-A-03"></label></div>
+          <div class="two"><label>Temperatura recomendada<input name="temperature" placeholder="Ej.: 0–4 °C"></label><label>Proveedor<input name="supplier" placeholder="Empresa suministradora"></label></div>
+          <div class="two"><label>Alérgenos<input name="allergens" placeholder="Ej.: Leche, gluten"></label><label>Formato / envase<input name="packaging" placeholder="Ej.: Botella 1 L"></label></div>
         </div>
         <div class="form-section"><h3>Información adicional</h3><label>Notas<textarea name="notes" rows="3" placeholder="Características, compatibilidades o indicaciones"></textarea></label></div>
         <div class="sticky-actions"><button type="button" class="btn" data-back>Cancelar y volver</button><button class="btn primary" type="submit">Guardar producto</button></div>
@@ -70,7 +76,7 @@
     </section>
 
     <section class="screen" data-screen="import">
-      <p class="eyebrow">CARGA MASIVA</p><h2>Importar materiales</h2>
+      <p class="eyebrow">CARGA MASIVA</p><h2>Importar alimentos</h2>
       <div class="upload-card">
         <span class="upload-icon">⇧</span><h3>Adjunta un Excel o CSV</h3>
         <p>Las filas se convertirán en productos. Podrás revisarlas antes de guardar.</p>
@@ -80,7 +86,7 @@
       </div>
       <div id="importPreview" class="hidden">
         <div class="section-head"><div><h3>Vista previa</h3><small id="importCount"></small></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Referencia</th><th>Producto</th><th>Stock</th><th>Mínimo</th><th>Ubicación</th><th>Estado</th></tr></thead><tbody id="importRows"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Referencia</th><th>Producto</th><th>Lote</th><th>Caducidad</th><th>Stock</th><th>Ubicación</th><th>Estado</th></tr></thead><tbody id="importRows"></tbody></table></div>
         <div class="sticky-actions"><button class="btn" data-back>Cancelar y volver</button><button id="confirmImport" class="btn primary">Importar productos</button></div>
       </div>
     </section>
@@ -93,21 +99,22 @@
           <div id="movementStockInfo" class="stock-info hidden"></div>
           <div class="two">
             <label>Tipo de movimiento *<select name="type" required>
-              <option value="consumption">Salida / consumo</option>
-              <option value="output">Préstamo o entrega</option>
-              <option value="entry">Entrada de material</option>
-              <option value="return">Devolución</option>
+              <option value="consumption">Consumo / uso en cocina</option>
+              <option value="waste">Merma / desperdicio</option>
+              <option value="output">Traslado o entrega</option>
+              <option value="entry">Entrada de mercancía</option>
+              <option value="return">Devolución al almacén</option>
               <option value="adjustment">Ajuste de inventario</option>
             </select></label>
             <label>Cantidad *<input name="quantity" type="number" min="0.001" step="0.001" required placeholder="Ej.: 2"></label>
           </div>
           <div class="two">
-            <label>Quién lo retira o entrega *<input name="responsible" required placeholder="Nombre del mecánico u operario"></label>
-            <label>Destino / para qué es *<input name="destination" required placeholder="Ej.: Reparación Reactor 500 L"></label>
+            <label>Responsable *<input name="responsible" required placeholder="Nombre del cocinero o empleado"></label>
+            <label>Destino / para qué es *<input name="destination" required placeholder="Ej.: Cocina caliente / menú del día"></label>
           </div>
           <div class="two">
-            <label>Equipo, máquina u orden de trabajo<input name="equipment" placeholder="Ej.: Bomba B-04 / OT-1025"></label>
-            <label>Almacén o zona de destino<input name="destinationArea" placeholder="Ej.: Taller mecánico"></label>
+            <label>Servicio, elaboración o pedido<input name="equipment" placeholder="Ej.: Servicio de cenas / pedido 105"></label>
+            <label>Zona de destino<input name="destinationArea" placeholder="Ej.: Cocina, barra o catering"></label>
           </div>
           <label>Observaciones<textarea name="notes" rows="2" placeholder="Motivo, avería, trabajo realizado o cualquier detalle"></textarea></label>
           <button class="btn primary wide" type="submit">Guardar y actualizar stock</button>
@@ -124,6 +131,8 @@
       <div class="list">
         <article class="list-item"><div><b>Inventario completo</b><small>Tabla con filtros, importes y alertas</small></div><button id="exportInventory" class="btn primary">Excel</button></article>
         <article class="list-item"><div><b>Productos bajo mínimo</b><small>Reposición prioritaria</small></div><button id="exportLow" class="btn">Excel</button></article>
+        <article class="list-item"><div><b>Próximos a caducar</b><small>Lotes dentro del periodo de aviso</small></div><button id="exportExpiring" class="btn">Excel</button></article>
+        <article class="list-item"><div><b>Productos caducados</b><small>Retirada prioritaria</small></div><button id="exportExpired" class="btn">Excel</button></article>
       </div>
       <button class="btn wide" data-back>← Volver al panel anterior</button>
     </section>
@@ -139,7 +148,7 @@
     <section class="screen" data-screen="settings">
       <p class="eyebrow">PERSONALIZACIÓN</p><h2>Configuración</h2>
       <form id="settingsForm" class="form">
-        <div class="form-section"><h3>Empresa</h3><label>Nombre comercial<input name="companyName" placeholder="Nombre del taller"></label><label>Nombre de la aplicación<input name="appName" value="ToolStock Pro"></label></div>
+        <div class="form-section"><h3>Empresa</h3><label>Nombre comercial<input name="companyName" placeholder="Nombre del taller"></label><label>Nombre de la aplicación<input name="appName" value="FoodStock Control"></label></div>
         <div class="form-section"><h3>Nube privada</h3>
           <p class="lead">Selecciona o crea la carpeta de esta empresa en Google Drive. La aplicación conservará el permiso concedido por Android.</p>
           <button id="chooseDriveFolder" class="btn primary" type="button">Vincular carpeta de Google Drive</button>
@@ -153,6 +162,11 @@
         <div class="form-section"><h3>Idioma y región</h3>
           <div class="two"><label>Idioma<select name="language"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option><option value="BRL">BRL — R$</option></select></label></div>
           <div class="two"><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step="0.01" value="21"></label><label>Tema<select name="theme"><option value="dark">Oscuro</option><option value="light">Claro</option><option value="system">Sistema</option></select></label></div>
+        </div>
+        <div class="form-section"><h3>Alarmas de caducidad</h3>
+          <div class="two"><label>Avisar con antelación (días)<input name="expiryAlertDays" type="number" min="1" max="365" step="1" value="7"></label><label>Segundo aviso (días)<input name="urgentAlertDays" type="number" min="0" max="90" step="1" value="2"></label></div>
+          <label class="toggle"><input name="expiryNotifications" type="checkbox" checked><span></span>Activar notificaciones de caducidad</label>
+          <label class="toggle"><input name="openedProductAlerts" type="checkbox" checked><span></span>Avisar de productos abiertos</label>
         </div>
         <div class="form-section"><h3>Seguridad y operación</h3><label class="toggle"><input name="negativeStock" type="checkbox"><span></span>Permitir stock negativo</label><label class="toggle"><input name="hidePrices" type="checkbox"><span></span>Ocultar importes a operarios</label><label class="toggle"><input name="confirmDelete" type="checkbox" checked><span></span>Confirmar antes de eliminar</label></div>
         <div class="sticky-actions"><button type="button" class="btn" data-back>Cancelar y volver</button><button class="btn primary" type="submit">Guardar configuración</button></div>

@@ -4,14 +4,14 @@ plugins {
 }
 
 android {
-    namespace = "com.toolstock.pro"
+    namespace = "com.foodstock.pro"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.toolstock.pro"
+        applicationId = "com.foodstock.pro"
         minSdk = 29
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 1
+        versionName = "1.0.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
