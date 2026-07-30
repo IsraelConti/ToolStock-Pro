@@ -53,8 +53,13 @@ class MainActivity : AppCompatActivity() {
                 ): Boolean {
                     fileCallback?.onReceiveValue(null)
                     fileCallback = callback
+                    val intent = params?.createIntent()
+                    if (intent == null) {
+                        fileCallback = null
+                        return false
+                    }
                     return try {
-                        filePicker.launch(params?.createIntent())
+                        filePicker.launch(intent)
                         true
                     } catch (_: Exception) {
                         fileCallback = null
