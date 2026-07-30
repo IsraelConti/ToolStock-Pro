@@ -3,15 +3,17 @@ import * as XLSX from "xlsx";
 
 const STORE_PRODUCTS = "toolstock.products.v1";
 const STORE_SETTINGS = "toolstock.settings.v1";
+const STORE_EMPLOYEES = "toolstock.employees.v1";
 const defaultSettings = { appName:"ToolStock Pro", companyName:"", language:"es", currency:"EUR", tax:21, theme:"dark", negativeStock:false, hidePrices:false, confirmDelete:true };
 let products = JSON.parse(localStorage.getItem(STORE_PRODUCTS) || "[]");
 let settings = { ...defaultSettings, ...JSON.parse(localStorage.getItem(STORE_SETTINGS) || "{}") };
+let employees = JSON.parse(localStorage.getItem(STORE_EMPLOYEES) || "[]");
 let history = ["home"];
 let pendingImport = [];
 
 const $ = (s, root=document) => root.querySelector(s);
 const $$ = (s, root=document) => [...root.querySelectorAll(s)];
-const titles = {home:"Panel del taller",products:"Productos",productForm:"Nuevo producto",import:"Importar materiales",movements:"Movimientos",reports:"Informes",qr:"Etiquetas QR",settings:"Configuración"};
+const titles = {home:"Panel del taller",products:"Productos",productForm:"Nuevo producto",import:"Importar materiales",movements:"Movimientos",reports:"Informes",qr:"Etiquetas QR",settings:"Configuración",employees:"Empleados"};
 
 function go(screen, push=true) {
   if (!titles[screen]) return;
@@ -23,6 +25,8 @@ function go(screen, push=true) {
   if (screen === "home") renderMetrics();
   if (screen === "products") renderProducts();
   if (screen === "qr") renderQrChoices();
+  if (screen === "settings") renderEmployeeSummary();
+  if (screen === "employees") renderEmployees();
   window.scrollTo({top:0,behavior:"instant"});
 }
 function back() {
@@ -130,5 +134,50 @@ window.onToolStockDriveFolderSelected=(name)=>{
   $("#driveFolderStatus").textContent=`Carpeta vinculada: ${name||"Google Drive"}`;
   toast("Carpeta privada vinculada correctamente");
 };
+const roleNames={manager:"Encargado",operator:"Operario",viewer:"Consulta"};
+function saveEmployees(){
+  localStorage.setItem(STORE_EMPLOYEES,JSON.stringify(employees));
+  renderEmployees();
+  renderEmployeeSummary();
+}
+function renderEmployeeSummary(){
+  const el=$("#employeeSummary");
+  if(!el)return;
+  el.innerHTML=`<b>${employees.length} de 3 empleados añadidos</b><small>${employees.length ? employees.map(e=>esc(e.name)).join(" · ") : "Todavía no hay empleados invitados"}</small>`;
+}
+function renderEmployees(){
+  $("#employeeCapacity").textContent=`${employees.length} de 3 empleados`;
+  $("#capacityDots").innerHTML=[0,1,2].map(i=>`<i class="${i<employees.length?"used":""}"></i>`).join("");
+  $("#employeeForm").classList.toggle("hidden",employees.length>=3);
+  $("#employeeList").innerHTML=employees.length?employees.map(e=>`<article class="employee-card">
+    <span class="avatar">${esc(e.name.trim().charAt(0).toUpperCase())}</span>
+    <div><b>${esc(e.name)}</b><small>${esc(e.email)}</small><span class="role">${roleNames[e.role]||"Operario"}</span></div>
+    <div class="employee-actions"><button class="mini-btn" type="button" data-invite="${e.id}">Invitar</button><button class="mini-btn danger" type="button" data-remove-employee="${e.id}">Eliminar</button></div>
+  </article>`).join(""):`<div class="empty compact"><span>♙</span><h3>Sin empleados</h3><p>Puedes añadir hasta tres personas.</p></div>`;
+  $$("[data-invite]").forEach(b=>b.addEventListener("click",()=>shareEmployeeInvite(b.dataset.invite)));
+  $$("[data-remove-employee]").forEach(b=>b.addEventListener("click",()=>{
+    const employee=employees.find(e=>e.id===b.dataset.removeEmployee);
+    if(!employee||!confirm(`¿Retirar a ${employee.name} del equipo?`))return;
+    employees=employees.filter(e=>e.id!==employee.id);saveEmployees();toast("Empleado retirado");
+  }));
+}
+$("#employeeForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  if(employees.length>=3)return toast("Ya están ocupadas las 3 plazas");
+  const data=Object.fromEntries(new FormData(e.currentTarget));
+  const email=data.email.trim().toLowerCase();
+  if(employees.some(x=>x.email.toLowerCase()===email))return toast("Ese correo ya está añadido");
+  const employee={...data,email,id:crypto.randomUUID(),status:"pending",createdAt:new Date().toISOString()};
+  employees.push(employee);saveEmployees();e.currentTarget.reset();toast("Empleado añadido");shareEmployeeInvite(employee.id);
+});
+async function shareEmployeeInvite(id){
+  const employee=employees.find(e=>e.id===id);if(!employee)return;
+  const company=settings.companyName||settings.appName||"ToolStock Pro";
+  const text=`${company} te invita a colaborar en ToolStock Pro como ${roleNames[employee.role]||"Operario"}. Abre la aplicación y selecciona la carpeta de empresa que el propietario comparta contigo en Google Drive.`;
+  try{
+    if(navigator.share)await navigator.share({title:"Invitación a ToolStock Pro",text});
+    else location.href=`mailto:${encodeURIComponent(employee.email)}?subject=${encodeURIComponent("Invitación a ToolStock Pro")}&body=${encodeURIComponent(text)}`;
+  }catch(err){if(err?.name!=="AbortError")toast("No se pudo abrir la invitación");}
+}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
-applySettings();renderMetrics();go("home",false);
+applySettings();renderEmployeeSummary();renderMetrics();go("home",false);
