@@ -12,7 +12,7 @@
   <header class="topbar">
     <button id="backBtn" class="icon-btn hidden" aria-label="Volver">←</button>
     <div class="brand">
-      <span class="brand-mark">TS</span>
+      <img class="brand-mark" src="app-icon.png" alt="">
       <div><strong id="appName">ToolStock Pro</strong><small id="screenTitle">Panel del taller</small></div>
     </div>
     <button class="icon-btn" data-go="settings" aria-label="Configuración">⚙</button>
@@ -116,6 +116,11 @@
           <button id="chooseDriveFolder" class="btn primary" type="button">Vincular carpeta de Google Drive</button>
           <small id="driveFolderStatus" class="hint">Todavía no hay una carpeta vinculada.</small>
         </div>
+        <div class="form-section"><h3>Equipo de trabajo</h3>
+          <p class="lead">El propietario puede añadir hasta 3 empleados y decidir qué puede hacer cada uno.</p>
+          <div id="employeeSummary" class="employee-summary"></div>
+          <button class="btn primary wide" type="button" data-go="employees">Gestionar empleados</button>
+        </div>
         <div class="form-section"><h3>Idioma y región</h3>
           <div class="two"><label>Idioma<select name="language"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option><option value="BRL">BRL — R$</option></select></label></div>
           <div class="two"><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step="0.01" value="21"></label><label>Tema<select name="theme"><option value="dark">Oscuro</option><option value="light">Claro</option><option value="system">Sistema</option></select></label></div>
@@ -123,6 +128,30 @@
         <div class="form-section"><h3>Seguridad y operación</h3><label class="toggle"><input name="negativeStock" type="checkbox"><span></span>Permitir stock negativo</label><label class="toggle"><input name="hidePrices" type="checkbox"><span></span>Ocultar importes a operarios</label><label class="toggle"><input name="confirmDelete" type="checkbox" checked><span></span>Confirmar antes de eliminar</label></div>
         <div class="sticky-actions"><button type="button" class="btn" data-back>Cancelar y volver</button><button class="btn primary" type="submit">Guardar configuración</button></div>
       </form>
+    </section>
+
+    <section class="screen" data-screen="employees">
+      <p class="eyebrow">USUARIOS Y PERMISOS</p><h2>Empleados</h2>
+      <div class="owner-card">
+        <span class="avatar owner">P</span>
+        <div><b>Propietario</b><small>Control total de la empresa y de los invitados</small></div>
+        <span class="badge">Administrador</span>
+      </div>
+      <div class="capacity"><div><b id="employeeCapacity">0 de 3 empleados</b><small>Plazas utilizadas</small></div><span id="capacityDots"></span></div>
+      <form id="employeeForm" class="form">
+        <div class="form-section"><h3>Añadir empleado</h3>
+          <label>Nombre completo *<input name="name" required placeholder="Ej.: Alberto García"></label>
+          <label>Correo de Google *<input name="email" type="email" required placeholder="empleado@gmail.com"></label>
+          <label>Rol y permisos<select name="role">
+            <option value="manager">Encargado — gestiona productos y movimientos</option>
+            <option value="operator">Operario — consulta y registra movimientos</option>
+            <option value="viewer">Consulta — solo puede ver información</option>
+          </select></label>
+          <button class="btn primary wide" type="submit">＋ Añadir y preparar invitación</button>
+        </div>
+      </form>
+      <div id="employeeList" class="list employee-list"></div>
+      <button class="btn wide" data-back>← Guardar y volver a configuración</button>
     </section>
   </main>
 
