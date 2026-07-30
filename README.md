@@ -1,53 +1,23 @@
-# ToolStock Pro — Taller
+# MaintenPro
 
-Proyecto comercial Android/PWA para gestión de inventario de talleres.
+Aplicación Android profesional para gestionar mantenimiento preventivo y
+correctivo de máquinas, instalaciones y equipos.
 
-## Incluido en esta entrega de construcción
+## Funciones principales
 
-- Panel e inventario local.
-- Alta de productos con todos los campos etiquetados.
-- Importación masiva Excel/CSV, vista previa y actualización de duplicados.
-- Plantilla Excel descargable.
-- Informes Excel de inventario y stock bajo.
-- QR reales y hojas imprimibles.
-- Configuración de idioma, moneda, impuestos, empresa, tema y permisos básicos.
-- Navegación de retorno visible, botón cancelar y compatibilidad con Atrás de Android.
-- Base de variantes para futuras ediciones.
+- Fichas de equipos con fotografía, ubicación, horas de uso y código QR.
+- Órdenes correctivas con prioridad, técnico y trazabilidad.
+- Planes preventivos por fecha o intervalo de horas.
+- Calendario de mantenimientos y avisos próximos.
+- Cierre con diagnóstico, solución, repuestos, horas y costes.
+- Historial completo por equipo y estado de cada orden.
+- Informes Excel, copias JSON y personalización de empresa.
+- Propietario y hasta tres técnicos.
+- Funcionamiento local sin conexión.
 
-## Construir recursos web
+## Compilación
 
-```bash
-npm install
-npm run build
-```
+La acción `Build Android` de la rama `maintenpro` genera:
 
-Copiar el contenido de `dist/` en:
-
-```text
-android/app/src/main/assets/
-```
-
-Abrir la carpeta `android` con Android Studio, sincronizar Gradle y generar el APK/AAB.
-
-## Trabajo pendiente antes de publicar
-
-- Integración completa con Android Storage Access Framework para Drive.
-- Cámara y lector QR/código de barras nativos.
-- Usuarios invitados y sincronización/conflictos.
-- Firma comercial, iconos definitivos, política de privacidad y pruebas en dispositivos.
-- Traducción completa de todos los textos (los idiomas ya están configurados).
-
-## Compilación automática
-
-Cada cambio en `main` ejecuta `.github/workflows/android.yml`.
-
-La ejecución genera:
-
-- `ToolStock-Pro-APK`: APK de depuración instalable para pruebas.
-- `ToolStock-Pro-AAB-unsigned`: paquete de publicación aún sin firma comercial.
-
-El AAB definitivo de Google Play deberá firmarse con una clave permanente
-guardada como secreto del repositorio.
-
-
-[Ver compilaciones Android](https://github.com/IsraelConti/ToolStock-Pro/actions/workflows/android.yml)
+- `MaintenPro-APK`: APK instalable para pruebas.
+- `MaintenPro-AAB-unsigned`: paquete que deberá firmarse para Google Play.
