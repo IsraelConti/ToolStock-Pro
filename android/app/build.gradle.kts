@@ -4,10 +4,10 @@ plugins {
 }
 
 android {
-    namespace = "com.foodstock.pro"
+    namespace = "com.momentsplanner.events"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.foodstock.pro"
+        applicationId = "com.momentsplanner.events"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
