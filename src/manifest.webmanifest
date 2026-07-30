@@ -1,0 +1,10 @@
+{
+  "name": "ToolStock Pro — Taller",
+  "short_name": "ToolStock",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#071018",
+  "theme_color": "#ffb000",
+  "lang": "es",
+  "icons": []
+}
