@@ -3,223 +3,179 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#071018">
-  <title>FoodStock Control — Caducidades e inventario</title>
+  <meta name="theme-color" content="#21142f">
+  <title>Moments Planner — Bodas y Eventos</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <svg class="icon-sprite" aria-hidden="true">
-    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/><path d="M8 12h11"/></symbol>
-    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5L12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M9.5 20v-6h5v6"/></symbol>
-    <symbol id="i-food" viewBox="0 0 24 24"><path d="M4 10h16l-1 10H5L4 10z"/><path d="M7 10c.5-3 2.2-5 5-6 2.8 1 4.5 3 5 6"/><path d="M9 14h6"/></symbol>
-    <symbol id="i-add" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></symbol>
-    <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 18v3h16v-3"/></symbol>
-    <symbol id="i-move" viewBox="0 0 24 24"><path d="M4 8h14"/><path d="M15 5l3 3-3 3"/><path d="M20 16H6"/><path d="M9 13l-3 3 3 3"/></symbol>
-    <symbol id="i-report" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h4"/><path d="M9 17v-4M12 17V9M15 17v-6"/></symbol>
-    <symbol id="i-qr" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h3v3h-3zM18 14h2v6h-6v-2"/></symbol>
-    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/><circle cx="12" cy="12" r="7"/></symbol>
-    <symbol id="i-expiry" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v5l3 2M9 3h6"/><path d="M18.5 5.5l1.5 1.5"/></symbol>
-    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M5 17h14l-2-3V10a5 5 0 00-10 0v4l-2 3z"/><path d="M10 20h4"/></symbol>
-    <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6M15 15c3 0 5 1.5 5 5"/></symbol>
+  <svg class="sprite" aria-hidden="true">
+    <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7M8 12h11"/></symbol>
+    <symbol id="home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 10v10h14V10M9 20v-6h6v6"/></symbol>
+    <symbol id="rings" viewBox="0 0 24 24"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/><path d="M12 3l1.2 2L15 6l-2 .8L12 9l-.9-2.2L9 6l2.1-1z"/></symbol>
+    <symbol id="party" viewBox="0 0 24 24"><path d="M5 20l4-14 9 9zM13 4l1-2M18 8l3-1M17 3l2 2M8 3L7 1"/><circle cx="18" cy="12" r="1"/></symbol>
+    <symbol id="guests" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6M15 15c3 0 5 2 5 5"/></symbol>
+    <symbol id="tasks" viewBox="0 0 24 24"><path d="M8 4h12v16H8M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2M11 7h6M11 13h6M11 19h6"/></symbol>
+    <symbol id="money" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M7 9H5v2M17 15h2v-2"/></symbol>
+    <symbol id="vendors" viewBox="0 0 24 24"><path d="M4 9h16l-1-5H5zM5 9v11h14V9M9 20v-6h6v6"/></symbol>
+    <symbol id="calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M8 14h3M13 14h3M8 17h3"/></symbol>
+    <symbol id="tables" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="3" r="1.5"/><circle cx="12" cy="21" r="1.5"/><circle cx="3" cy="12" r="1.5"/><circle cx="21" cy="12" r="1.5"/></symbol>
+    <symbol id="settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
   </svg>
+
   <header class="topbar">
-    <button id="backBtn" class="icon-btn hidden" aria-label="Volver"><svg><use href="#i-back"/></svg></button>
-    <div class="brand">
-      <img class="brand-mark" src="app-icon.png" alt="">
-      <div><strong id="appName">FoodStock Control</strong><small id="screenTitle">Panel alimentario</small></div>
-    </div>
-    <button class="icon-btn" data-go="settings" aria-label="Configuración"><svg><use href="#i-settings"/></svg></button>
+    <button id="backBtn" class="icon-btn hidden" aria-label="Volver"><svg><use href="#back"/></svg></button>
+    <div class="brand"><img src="app-icon.png" alt=""><div><strong id="appName">Moments Planner</strong><small id="screenTitle">Bodas y eventos</small></div></div>
+    <button class="icon-btn" data-go="settings" aria-label="Configuración"><svg><use href="#settings"/></svg></button>
   </header>
 
-  <main id="app">
+  <main>
     <section class="screen active" data-screen="home">
-      <div class="hero">
-        <p class="eyebrow">SEGURIDAD ALIMENTARIA</p>
-        <h1>Controla existencias, lotes y caducidades.</h1>
-        <p>Almacén, cámaras, congeladores, movimientos, alertas y trazabilidad en un único lugar.</p>
-        <div class="sync"><span></span><strong>Datos locales disponibles</strong></div>
+      <div class="welcome">
+        <p class="eyebrow">TU ORGANIZACIÓN, SIN ESTRÉS</p>
+        <h1>¿Qué quieres planificar?</h1>
+        <p>Elige una modalidad. Cada proyecto conserva sus invitados, presupuesto, agenda, proveedores y tareas.</p>
       </div>
+      <div class="mode-grid">
+        <button class="mode wedding" data-new-project="wedding"><svg><use href="#rings"/></svg><b>Planificar una boda</b><small>Planificador completo de principio a fin</small></button>
+        <button class="mode event" data-new-project="event"><svg><use href="#party"/></svg><b>Organizar un evento</b><small>Empresa, cumpleaños, comunión, feria y más</small></button>
+      </div>
+      <div class="section-head"><div><p class="eyebrow">EN CURSO</p><h2>Mis proyectos</h2></div></div>
+      <div id="projectList" class="list"></div>
+    </section>
+
+    <section class="screen" data-screen="projectForm">
+      <p class="eyebrow" id="projectEyebrow">NUEVO PROYECTO</p><h2 id="projectFormTitle">Crear proyecto</h2>
+      <form id="projectForm" class="form">
+        <input type="hidden" name="type" value="wedding">
+        <div class="card">
+          <h3>Datos principales</h3>
+          <label>Nombre del proyecto *<input name="name" required placeholder="Ej.: Boda Laura y Daniel"></label>
+          <div class="two"><label>Fecha *<input name="date" type="date" required></label><label>Hora<input name="time" type="time"></label></div>
+          <label id="weddingCoupleField">Nombres de la pareja<input name="couple" placeholder="Ej.: Laura & Daniel"></label>
+          <label id="eventTypeField" class="hidden">Tipo de evento<select name="eventType"><option>Evento corporativo</option><option>Cumpleaños</option><option>Comunión</option><option>Bautizo</option><option>Feria / congreso</option><option>Fiesta privada</option><option>Otro</option></select></label>
+          <div class="two"><label>Cliente o contacto<input name="client" placeholder="Nombre completo"></label><label>Teléfono<input name="phone" type="tel" placeholder="+34..."></label></div>
+          <label>Lugar principal<input name="venue" placeholder="Finca, hotel, salón o dirección"></label>
+          <div class="two"><label>Invitados previstos<input name="guestTarget" type="number" min="0" value="0"></label><label>Presupuesto máximo<div class="money"><input name="budget" type="number" min="0" step=".01" value="0"><span class="currency">€</span></div></label></div>
+          <label>Notas<textarea name="notes" rows="3" placeholder="Estilo, necesidades, ideas y observaciones"></textarea></label>
+        </div>
+        <div class="sticky"><button type="button" class="btn" data-back>Cancelar y volver</button><button class="btn primary">Crear proyecto</button></div>
+      </form>
+    </section>
+
+    <section class="screen" data-screen="dashboard">
+      <div id="projectHero" class="project-hero"></div>
       <div class="metrics">
-        <article><small>Productos</small><strong id="metricProducts">0</strong></article>
-        <article><small>Caducan pronto</small><strong id="metricExpiring">0</strong></article>
-        <article><small>Caducados</small><strong id="metricExpired">0</strong></article>
+        <article><small>Invitados</small><b id="mGuests">0</b></article>
+        <article><small>Pendientes</small><b id="mTasks">0</b></article>
+        <article><small>Gastado</small><b id="mSpent">0 €</b></article>
       </div>
-      <div class="action-grid">
-        <button class="action primary" data-go="productForm"><span><svg><use href="#i-add"/></svg></span><b>Nuevo producto</b><small>Alta detallada</small></button>
-        <button class="action" data-go="products"><span><svg><use href="#i-food"/></svg></span><b>Alimentos</b><small>Lotes y caducidades</small></button>
-        <button class="action" data-go="import"><span><svg><use href="#i-import"/></svg></span><b>Importar</b><small>Excel o CSV</small></button>
-        <button class="action" data-go="movements"><span><svg><use href="#i-move"/></svg></span><b>Movimientos</b><small>Entradas y consumos</small></button>
-        <button class="action" data-go="reports"><span><svg><use href="#i-report"/></svg></span><b>Informes</b><small>Excel profesional</small></button>
-        <button class="action" data-go="qr"><span><svg><use href="#i-qr"/></svg></span><b>Etiquetas QR</b><small>Crear e imprimir</small></button>
-      </div>
+      <div id="dashboardActions" class="action-grid"></div>
+      <button class="btn wide" data-go="home">← Volver a mis proyectos</button>
     </section>
 
-    <section class="screen" data-screen="products">
-      <div class="section-head"><div><p class="eyebrow">INVENTARIO</p><h2>Productos</h2></div><button class="btn primary" data-go="productForm">＋ Añadir</button></div>
-      <label class="search">⌕ <input id="searchProducts" type="search" placeholder="Buscar por producto, lote, categoría o ubicación"></label>
-      <div id="productList" class="list"></div>
-    </section>
-
-    <section class="screen" data-screen="productForm">
-      <div class="section-head"><div><p class="eyebrow">FICHA COMPLETA</p><h2>Nuevo producto</h2></div></div>
-      <form id="productForm" class="form">
-        <div class="form-section"><h3>Identificación</h3>
-          <label>Nombre del alimento o producto *<input name="name" required placeholder="Ej.: Leche entera 1 L"></label>
-          <div class="two"><label>Referencia interna *<input name="reference" required placeholder="Ej.: LEC-001"></label><label>Categoría<input name="category" placeholder="Ej.: Lácteos"></label></div>
-          <div class="two"><label>Código de barras<input name="barcode" inputmode="numeric" placeholder="EAN o código interno"></label><label>Número de lote *<input name="lot" required placeholder="Ej.: L240730-A"></label></div>
-        </div>
-        <div class="form-section"><h3>Fechas y caducidad</h3>
-          <div class="two"><label>Fecha de recepción<input name="receivedDate" type="date"></label><label>Fecha de elaboración<input name="productionDate" type="date"></label></div>
-          <div class="two"><label>Fecha de apertura<input name="openedDate" type="date"><span class="hint">Déjala vacía mientras esté cerrado</span></label><label>Fecha de caducidad / consumo preferente *<input name="expiryDate" type="date" required></label></div>
-          <div class="two"><label>Tipo de fecha<select name="expiryType"><option value="expiry">Fecha de caducidad</option><option value="bestBefore">Consumo preferente</option></select></label><label>Días de vida útil una vez abierto<input name="openShelfLifeDays" type="number" min="0" step="1" placeholder="Ej.: 3"></label></div>
-        </div>
-        <div class="form-section"><h3>Existencias e importe</h3>
-          <div class="two"><label>Stock actual <span class="hint">Cantidad disponible</span><input name="stock" type="number" min="0" step="0.001" value="0"></label><label>Stock mínimo <span class="hint">Activa la alerta</span><input name="minimumStock" type="number" min="0" step="0.001" value="0"></label></div>
-          <div class="two"><label>Unidad de medida<select name="unit"><option>unidades</option><option>cajas</option><option>paquetes</option><option>kg</option><option>gramos</option><option>litros</option></select></label><label>Precio unitario <span class="hint">Sin impuestos</span><div class="money"><input name="unitPrice" type="number" min="0" step="0.01" value="0"><span class="currencySymbol">€</span></div></label></div>
-        </div>
-        <div class="form-section"><h3>Conservación y ubicación</h3>
-          <div class="two"><label>Centro o establecimiento<input name="site" placeholder="Ej.: Restaurante principal"></label><label>Zona de almacenamiento<select name="storageType"><option>Almacén seco</option><option>Cámara frigorífica</option><option>Congelador</option><option>Expositor</option><option>Producto abierto</option></select></label></div>
-          <div class="two"><label>Almacén / cámara<input name="warehouse" placeholder="Ej.: Cámara 1"></label><label>Estantería / ubicación<input name="location" placeholder="Ej.: C1-A-03"></label></div>
-          <div class="two"><label>Temperatura recomendada<input name="temperature" placeholder="Ej.: 0–4 °C"></label><label>Proveedor<input name="supplier" placeholder="Empresa suministradora"></label></div>
-          <div class="two"><label>Alérgenos<input name="allergens" placeholder="Ej.: Leche, gluten"></label><label>Formato / envase<input name="packaging" placeholder="Ej.: Botella 1 L"></label></div>
-        </div>
-        <div class="form-section"><h3>Información adicional</h3><label>Notas<textarea name="notes" rows="3" placeholder="Características, compatibilidades o indicaciones"></textarea></label></div>
-        <div class="sticky-actions"><button type="button" class="btn" data-back>Cancelar y volver</button><button class="btn primary" type="submit">Guardar producto</button></div>
+    <section class="screen" data-screen="guests">
+      <p class="eyebrow">LISTA Y CONFIRMACIONES</p><h2>Invitados</h2>
+      <form id="guestForm" class="quick-form">
+        <input name="name" required placeholder="Nombre y apellidos">
+        <select name="status"><option value="pending">Pendiente</option><option value="confirmed">Confirmado</option><option value="declined">No asistirá</option></select>
+        <input name="group" placeholder="Familia / grupo">
+        <input name="menu" placeholder="Menú, alergias o necesidades">
+        <button class="btn primary">Añadir invitado</button>
       </form>
+      <div id="guestList" class="list"></div><button class="btn wide" data-back>← Volver al proyecto</button>
     </section>
 
-    <section class="screen" data-screen="import">
-      <p class="eyebrow">CARGA MASIVA</p><h2>Importar alimentos</h2>
-      <div class="upload-card">
-        <span class="upload-icon">⇧</span><h3>Adjunta un Excel o CSV</h3>
-        <p>Las filas se convertirán en productos. Podrás revisarlas antes de guardar.</p>
-        <input id="importFile" type="file" accept=".xlsx,.xls,.csv">
-        <label class="btn primary" for="importFile">Seleccionar archivo</label>
-        <button id="downloadTemplate" class="btn" type="button">Descargar plantilla Excel</button>
-      </div>
-      <div id="importPreview" class="hidden">
-        <div class="section-head"><div><h3>Vista previa</h3><small id="importCount"></small></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Referencia</th><th>Producto</th><th>Lote</th><th>Caducidad</th><th>Stock</th><th>Ubicación</th><th>Estado</th></tr></thead><tbody id="importRows"></tbody></table></div>
-        <div class="sticky-actions"><button class="btn" data-back>Cancelar y volver</button><button id="confirmImport" class="btn primary">Importar productos</button></div>
-      </div>
-    </section>
-
-    <section class="screen" data-screen="movements">
-      <p class="eyebrow">TRAZABILIDAD</p><h2>Movimientos</h2>
-      <form id="movementForm" class="form">
-        <div class="form-section"><h3>Registrar movimiento</h3>
-          <label>Producto o material *<select id="movementProduct" name="productId" required><option value="">Seleccionar producto</option></select></label>
-          <div id="movementStockInfo" class="stock-info hidden"></div>
-          <div class="two">
-            <label>Tipo de movimiento *<select name="type" required>
-              <option value="consumption">Consumo / uso en cocina</option>
-              <option value="waste">Merma / desperdicio</option>
-              <option value="output">Traslado o entrega</option>
-              <option value="entry">Entrada de mercancía</option>
-              <option value="return">Devolución al almacén</option>
-              <option value="adjustment">Ajuste de inventario</option>
-            </select></label>
-            <label>Cantidad *<input name="quantity" type="number" min="0.001" step="0.001" required placeholder="Ej.: 2"></label>
-          </div>
-          <div class="two">
-            <label>Responsable *<input name="responsible" required placeholder="Nombre del cocinero o empleado"></label>
-            <label>Destino / para qué es *<input name="destination" required placeholder="Ej.: Cocina caliente / menú del día"></label>
-          </div>
-          <div class="two">
-            <label>Servicio, elaboración o pedido<input name="equipment" placeholder="Ej.: Servicio de cenas / pedido 105"></label>
-            <label>Zona de destino<input name="destinationArea" placeholder="Ej.: Cocina, barra o catering"></label>
-          </div>
-          <label>Observaciones<textarea name="notes" rows="2" placeholder="Motivo, avería, trabajo realizado o cualquier detalle"></textarea></label>
-          <button class="btn primary wide" type="submit">Guardar y actualizar stock</button>
-        </div>
+    <section class="screen" data-screen="tasks">
+      <p class="eyebrow">PLAN DE TRABAJO</p><h2>Tareas y fechas</h2>
+      <form id="taskForm" class="quick-form">
+        <input name="title" required placeholder="Tarea">
+        <input name="dueDate" type="date" required>
+        <select name="priority"><option value="normal">Normal</option><option value="high">Prioritaria</option><option value="urgent">Urgente</option></select>
+        <input name="responsible" placeholder="Responsable">
+        <button class="btn primary">Añadir tarea</button>
       </form>
-      <div class="section-head movement-head"><div><h3>Historial de movimientos</h3><small id="movementCount">0 registros</small></div><button id="exportMovements" class="btn" type="button">Excel</button></div>
-      <label class="search">⌕ <input id="searchMovements" type="search" placeholder="Buscar por producto, persona, destino o equipo"></label>
-      <div id="movementList" class="list"></div>
-      <button class="btn wide" data-back>← Volver a la pantalla anterior</button>
+      <div id="taskList" class="list"></div><button class="btn wide" data-back>← Volver al proyecto</button>
+    </section>
+
+    <section class="screen" data-screen="budget">
+      <p class="eyebrow">CONTROL ECONÓMICO</p><h2>Presupuesto y pagos</h2>
+      <form id="expenseForm" class="quick-form">
+        <input name="concept" required placeholder="Concepto o proveedor">
+        <input name="amount" type="number" min="0" step=".01" required placeholder="Importe">
+        <input name="paid" type="number" min="0" step=".01" value="0" placeholder="Pagado">
+        <input name="dueDate" type="date">
+        <button class="btn primary">Añadir gasto</button>
+      </form>
+      <div id="budgetSummary" class="summary-card"></div><div id="expenseList" class="list"></div>
+      <button class="btn wide" data-back>← Volver al proyecto</button>
+    </section>
+
+    <section class="screen" data-screen="vendors">
+      <p class="eyebrow">PROVEEDORES Y SERVICIOS</p><h2>Proveedores</h2>
+      <form id="vendorForm" class="quick-form">
+        <input name="name" required placeholder="Empresa o profesional">
+        <input name="service" required placeholder="Servicio: finca, música, flores...">
+        <input name="contact" placeholder="Teléfono o correo">
+        <input name="notes" placeholder="Condiciones / notas">
+        <button class="btn primary">Añadir proveedor</button>
+      </form>
+      <div id="vendorList" class="list"></div><button class="btn wide" data-back>← Volver al proyecto</button>
+    </section>
+
+    <section class="screen" data-screen="schedule">
+      <p class="eyebrow">CRONOGRAMA</p><h2>Agenda del día</h2>
+      <form id="scheduleForm" class="quick-form">
+        <input name="time" type="time" required>
+        <input name="title" required placeholder="Momento o actividad">
+        <input name="place" placeholder="Lugar">
+        <input name="responsible" placeholder="Responsable">
+        <button class="btn primary">Añadir a agenda</button>
+      </form>
+      <div id="scheduleList" class="timeline"></div><button class="btn wide" data-back>← Volver al proyecto</button>
+    </section>
+
+    <section class="screen" data-screen="tables">
+      <p class="eyebrow">BANQUETE</p><h2>Mesas y distribución</h2>
+      <form id="tableForm" class="quick-form">
+        <input name="name" required placeholder="Nombre o número de mesa">
+        <input name="capacity" type="number" min="1" required placeholder="Capacidad">
+        <input name="zone" placeholder="Zona / salón">
+        <button class="btn primary">Crear mesa</button>
+      </form>
+      <p class="lead">Asigna cada invitado desde su ficha. El control avisa si superas la capacidad.</p>
+      <div id="tableList" class="list"></div><button class="btn wide" data-back>← Volver al proyecto</button>
     </section>
 
     <section class="screen" data-screen="reports">
-      <p class="eyebrow">DOCUMENTOS</p><h2>Informes profesionales</h2>
+      <p class="eyebrow">INFORMES</p><h2>Exportar y compartir</h2>
       <div class="list">
-        <article class="list-item"><div><b>Inventario completo</b><small>Tabla con filtros, importes y alertas</small></div><button id="exportInventory" class="btn primary">Excel</button></article>
-        <article class="list-item"><div><b>Productos bajo mínimo</b><small>Reposición prioritaria</small></div><button id="exportLow" class="btn">Excel</button></article>
-        <article class="list-item"><div><b>Próximos a caducar</b><small>Lotes dentro del periodo de aviso</small></div><button id="exportExpiring" class="btn">Excel</button></article>
-        <article class="list-item"><div><b>Productos caducados</b><small>Retirada prioritaria</small></div><button id="exportExpired" class="btn">Excel</button></article>
-      </div>
-      <button class="btn wide" data-back>← Volver al panel anterior</button>
-    </section>
-
-    <section class="screen" data-screen="qr">
-      <p class="eyebrow">IDENTIFICACIÓN</p><h2>Etiquetas QR</h2>
-      <p class="lead">Selecciona productos y genera una hoja lista para imprimir.</p>
-      <div id="qrProductList" class="check-list"></div>
-      <button id="printQr" class="btn primary wide">Generar e imprimir QR seleccionados</button>
-      <button class="btn wide" data-back>← Finalizar y volver</button>
+        <article class="row"><div><b>Plan completo</b><small>Resumen, tareas, agenda y presupuesto</small></div><button id="exportFull" class="btn primary">Excel</button></article>
+        <article class="row"><div><b>Lista de invitados</b><small>Confirmación, menú y mesa</small></div><button id="exportGuests" class="btn">Excel</button></article>
+        <article class="row"><div><b>Presupuesto y pagos</b><small>Pendientes y vencimientos</small></div><button id="exportBudget" class="btn">Excel</button></article>
+      </div><button class="btn wide" data-back>← Volver al proyecto</button>
     </section>
 
     <section class="screen" data-screen="settings">
       <p class="eyebrow">PERSONALIZACIÓN</p><h2>Configuración</h2>
       <form id="settingsForm" class="form">
-        <div class="form-section"><h3>Empresa</h3><label>Nombre comercial<input name="companyName" placeholder="Nombre del taller"></label><label>Nombre de la aplicación<input name="appName" value="FoodStock Control"></label></div>
-        <div class="form-section"><h3>Nube privada</h3>
-          <p class="lead">Selecciona o crea la carpeta de esta empresa en Google Drive. La aplicación conservará el permiso concedido por Android.</p>
-          <button id="chooseDriveFolder" class="btn primary" type="button">Vincular carpeta de Google Drive</button>
-          <small id="driveFolderStatus" class="hint">Todavía no hay una carpeta vinculada.</small>
-        </div>
-        <div class="form-section"><h3>Equipo de trabajo</h3>
-          <p class="lead">El propietario puede añadir hasta 3 empleados y decidir qué puede hacer cada uno.</p>
-          <div id="employeeSummary" class="employee-summary"></div>
-          <button class="btn primary wide" type="button" data-go="employees">Gestionar empleados</button>
-        </div>
-        <div class="form-section"><h3>Idioma y región</h3>
-          <div class="two"><label>Idioma<select name="language"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option><option value="BRL">BRL — R$</option></select></label></div>
-          <div class="two"><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step="0.01" value="21"></label><label>Tema<select name="theme"><option value="dark">Oscuro</option><option value="light">Claro</option><option value="system">Sistema</option></select></label></div>
-        </div>
-        <div class="form-section"><h3>Alarmas de caducidad</h3>
-          <div class="two"><label>Avisar con antelación (días)<input name="expiryAlertDays" type="number" min="1" max="365" step="1" value="7"></label><label>Segundo aviso (días)<input name="urgentAlertDays" type="number" min="0" max="90" step="1" value="2"></label></div>
-          <label class="toggle"><input name="expiryNotifications" type="checkbox" checked><span></span>Activar notificaciones de caducidad</label>
-          <label class="toggle"><input name="openedProductAlerts" type="checkbox" checked><span></span>Avisar de productos abiertos</label>
-        </div>
-        <div class="form-section"><h3>Seguridad y operación</h3><label class="toggle"><input name="negativeStock" type="checkbox"><span></span>Permitir stock negativo</label><label class="toggle"><input name="hidePrices" type="checkbox"><span></span>Ocultar importes a operarios</label><label class="toggle"><input name="confirmDelete" type="checkbox" checked><span></span>Confirmar antes de eliminar</label></div>
-        <div class="sticky-actions"><button type="button" class="btn" data-back>Cancelar y volver</button><button class="btn primary" type="submit">Guardar configuración</button></div>
+        <div class="card"><h3>Negocio</h3><label>Nombre comercial<input name="companyName" placeholder="Tu empresa o estudio"></label><label>Nombre de la aplicación<input name="appName" value="Moments Planner"></label></div>
+        <div class="card"><h3>Idioma e importes</h3><div class="two"><label>Idioma<select name="language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option></select></label></div><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step=".01" value="21"></label></div>
+        <div class="card"><h3>Avisos</h3><div class="two"><label>Avisar tareas con (días)<input name="alertDays" type="number" min="1" value="7"></label><label>Segundo aviso (días)<input name="urgentDays" type="number" min="0" value="2"></label></div><label class="toggle"><input name="notifications" type="checkbox" checked> Activar recordatorios</label></div>
+        <div class="card"><h3>Copias y privacidad</h3><p class="lead">Los datos permanecen en este dispositivo. Puedes exportar informes y copias para conservarlos.</p><button id="backupData" class="btn" type="button">Descargar copia de seguridad</button></div>
+        <div class="sticky"><button class="btn" type="button" data-back>Cancelar y volver</button><button class="btn primary">Guardar configuración</button></div>
       </form>
-    </section>
-
-    <section class="screen" data-screen="employees">
-      <p class="eyebrow">USUARIOS Y PERMISOS</p><h2>Empleados</h2>
-      <div class="owner-card">
-        <span class="avatar owner">P</span>
-        <div><b>Propietario</b><small>Control total de la empresa y de los invitados</small></div>
-        <span class="badge">Administrador</span>
-      </div>
-      <div class="capacity"><div><b id="employeeCapacity">0 de 3 empleados</b><small>Plazas utilizadas</small></div><span id="capacityDots"></span></div>
-      <form id="employeeForm" class="form">
-        <div class="form-section"><h3>Añadir empleado</h3>
-          <label>Nombre completo *<input name="name" required placeholder="Ej.: Alberto García"></label>
-          <label>Correo de Google *<input name="email" type="email" required placeholder="empleado@gmail.com"></label>
-          <label>Rol y permisos<select name="role">
-            <option value="manager">Encargado — gestiona productos y movimientos</option>
-            <option value="operator">Operario — consulta y registra movimientos</option>
-            <option value="viewer">Consulta — solo puede ver información</option>
-          </select></label>
-          <button class="btn primary wide" type="submit">＋ Añadir y preparar invitación</button>
-        </div>
-      </form>
-      <div id="employeeList" class="list employee-list"></div>
-      <button class="btn wide" data-back>← Guardar y volver a configuración</button>
     </section>
   </main>
 
   <nav class="bottom-nav">
-    <button data-go="home" class="active"><span><svg><use href="#i-home"/></svg></span>Inicio</button>
-    <button data-go="products"><span><svg><use href="#i-food"/></svg></span>Alimentos</button>
-    <button data-go="productForm" class="scan"><span><svg><use href="#i-add"/></svg></span>Nuevo</button>
-    <button data-go="movements"><span><svg><use href="#i-move"/></svg></span>Movimientos</button>
-    <button data-go="settings"><span><svg><use href="#i-settings"/></svg></span>Ajustes</button>
+    <button data-go="home" class="active"><svg><use href="#home"/></svg>Inicio</button>
+    <button data-go="guests"><svg><use href="#guests"/></svg>Invitados</button>
+    <button data-go="tasks"><svg><use href="#tasks"/></svg>Tareas</button>
+    <button data-go="budget"><svg><use href="#money"/></svg>Importes</button>
+    <button data-go="settings"><svg><use href="#settings"/></svg>Ajustes</button>
   </nav>
-  <div id="toast" role="status"></div>
+  <div id="toast"></div>
   <script src="app.js"></script>
 </body>
 </html>
