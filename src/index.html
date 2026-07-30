@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#071018">
+  <title>ToolStock Pro — Taller</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button id="backBtn" class="icon-btn hidden" aria-label="Volver">←</button>
+    <div class="brand">
+      <span class="brand-mark">TS</span>
+      <div><strong id="appName">ToolStock Pro</strong><small id="screenTitle">Panel del taller</small></div>
+    </div>
+    <button class="icon-btn" data-go="settings" aria-label="Configuración">⚙</button>
+  </header>
+
+  <main id="app">
+    <section class="screen active" data-screen="home">
+      <div class="hero">
+        <p class="eyebrow">CONTROL PROFESIONAL</p>
+        <h1>Tu taller, ordenado y bajo control.</h1>
+        <p>Inventario, movimientos, alertas, QR e informes en un único lugar.</p>
+        <div class="sync"><span></span><strong>Datos locales disponibles</strong></div>
+      </div>
+      <div class="metrics">
+        <article><small>Productos</small><strong id="metricProducts">0</strong></article>
+        <article><small>Stock bajo</small><strong id="metricLow">0</strong></article>
+        <article><small>Valor estimado</small><strong id="metricValue">0 €</strong></article>
+      </div>
+      <div class="action-grid">
+        <button class="action primary" data-go="productForm"><span>＋</span><b>Nuevo producto</b><small>Alta detallada</small></button>
+        <button class="action" data-go="products"><span>▤</span><b>Productos</b><small>Buscar y gestionar</small></button>
+        <button class="action" data-go="import"><span>⇧</span><b>Importar</b><small>Excel o CSV</small></button>
+        <button class="action" data-go="movements"><span>⇄</span><b>Movimientos</b><small>Entradas y salidas</small></button>
+        <button class="action" data-go="reports"><span>▥</span><b>Informes</b><small>Excel profesional</small></button>
+        <button class="action" data-go="qr"><span>▦</span><b>Etiquetas QR</b><small>Crear e imprimir</small></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="products">
+      <div class="section-head"><div><p class="eyebrow">INVENTARIO</p><h2>Productos</h2></div><button class="btn primary" data-go="productForm">＋ Añadir</button></div>
+      <label class="search">⌕ <input id="searchProducts" type="search" placeholder="Buscar por nombre, referencia, equipo o ubicación"></label>
+      <div id="productList" class="list"></div>
+    </section>
+
+    <section class="screen" data-screen="productForm">
+      <div class="section-head"><div><p class="eyebrow">FICHA COMPLETA</p><h2>Nuevo producto</h2></div></div>
+      <form id="productForm" class="form">
+        <div class="form-section"><h3>Identificación</h3>
+          <label>Nombre del producto *<input name="name" required placeholder="Ej.: Rodamiento 6204 2RS"></label>
+          <div class="two"><label>Referencia interna *<input name="reference" required placeholder="Ej.: ROD-6204"></label><label>Categoría<input name="category" placeholder="Ej.: Rodamientos"></label></div>
+          <div class="two"><label>Código de barras<input name="barcode" inputmode="numeric" placeholder="EAN, UPC o código interno"></label><label>Número de serie<input name="serial" placeholder="Si corresponde"></label></div>
+        </div>
+        <div class="form-section"><h3>Existencias e importe</h3>
+          <div class="two"><label>Stock actual <span class="hint">Cantidad disponible</span><input name="stock" type="number" min="0" step="0.001" value="0"></label><label>Stock mínimo <span class="hint">Activa la alerta</span><input name="minimumStock" type="number" min="0" step="0.001" value="0"></label></div>
+          <div class="two"><label>Unidad de medida<select name="unit"><option>unidades</option><option>cajas</option><option>pares</option><option>kg</option><option>litros</option><option>metros</option></select></label><label>Precio unitario <span class="hint">Sin impuestos</span><div class="money"><input name="unitPrice" type="number" min="0" step="0.01" value="0"><span class="currencySymbol">€</span></div></label></div>
+        </div>
+        <div class="form-section"><h3>Ubicación y uso</h3>
+          <div class="two"><label>Centro o taller<input name="site" placeholder="Ej.: Taller principal"></label><label>Almacén<input name="warehouse" placeholder="Ej.: Almacén A"></label></div>
+          <div class="two"><label>Estantería / ubicación<input name="location" placeholder="Ej.: A-03-B"></label><label>Equipo o máquina<input name="equipment" placeholder="Ej.: Reactor 500 L"></label></div>
+          <div class="two"><label>Línea o área<input name="line" placeholder="Ej.: Línea de gominolas"></label><label>Proveedor<input name="supplier" placeholder="Empresa suministradora"></label></div>
+        </div>
+        <div class="form-section"><h3>Información adicional</h3><label>Notas<textarea name="notes" rows="3" placeholder="Características, compatibilidades o indicaciones"></textarea></label></div>
+        <div class="sticky-actions"><button type="button" class="btn" data-back>Cancelar y volver</button><button class="btn primary" type="submit">Guardar producto</button></div>
+      </form>
+    </section>
+
+    <section class="screen" data-screen="import">
+      <p class="eyebrow">CARGA MASIVA</p><h2>Importar materiales</h2>
+      <div class="upload-card">
+        <span class="upload-icon">⇧</span><h3>Adjunta un Excel o CSV</h3>
+        <p>Las filas se convertirán en productos. Podrás revisarlas antes de guardar.</p>
+        <input id="importFile" type="file" accept=".xlsx,.xls,.csv">
+        <label class="btn primary" for="importFile">Seleccionar archivo</label>
+        <button id="downloadTemplate" class="btn" type="button">Descargar plantilla Excel</button>
+      </div>
+      <div id="importPreview" class="hidden">
+        <div class="section-head"><div><h3>Vista previa</h3><small id="importCount"></small></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Referencia</th><th>Producto</th><th>Stock</th><th>Mínimo</th><th>Ubicación</th><th>Estado</th></tr></thead><tbody id="importRows"></tbody></table></div>
+        <div class="sticky-actions"><button class="btn" data-back>Cancelar y volver</button><button id="confirmImport" class="btn primary">Importar productos</button></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="movements">
+      <p class="eyebrow">TRAZABILIDAD</p><h2>Movimientos</h2>
+      <div class="empty"><span>⇄</span><h3>Registro preparado</h3><p>Las entradas, salidas, consumos, devoluciones y ajustes aparecerán aquí con fecha y responsable.</p></div>
+    </section>
+
+    <section class="screen" data-screen="reports">
+      <p class="eyebrow">DOCUMENTOS</p><h2>Informes profesionales</h2>
+      <div class="list">
+        <article class="list-item"><div><b>Inventario completo</b><small>Tabla con filtros, importes y alertas</small></div><button id="exportInventory" class="btn primary">Excel</button></article>
+        <article class="list-item"><div><b>Productos bajo mínimo</b><small>Reposición prioritaria</small></div><button id="exportLow" class="btn">Excel</button></article>
+      </div>
+      <button class="btn wide" data-back>← Volver al panel anterior</button>
+    </section>
+
+    <section class="screen" data-screen="qr">
+      <p class="eyebrow">IDENTIFICACIÓN</p><h2>Etiquetas QR</h2>
+      <p class="lead">Selecciona productos y genera una hoja lista para imprimir.</p>
+      <div id="qrProductList" class="check-list"></div>
+      <button id="printQr" class="btn primary wide">Generar e imprimir QR seleccionados</button>
+      <button class="btn wide" data-back>← Finalizar y volver</button>
+    </section>
+
+    <section class="screen" data-screen="settings">
+      <p class="eyebrow">PERSONALIZACIÓN</p><h2>Configuración</h2>
+      <form id="settingsForm" class="form">
+        <div class="form-section"><h3>Empresa</h3><label>Nombre comercial<input name="companyName" placeholder="Nombre del taller"></label><label>Nombre de la aplicación<input name="appName" value="ToolStock Pro"></label></div>
+        <div class="form-section"><h3>Nube privada</h3>
+          <p class="lead">Selecciona o crea la carpeta de esta empresa en Google Drive. La aplicación conservará el permiso concedido por Android.</p>
+          <button id="chooseDriveFolder" class="btn primary" type="button">Vincular carpeta de Google Drive</button>
+          <small id="driveFolderStatus" class="hint">Todavía no hay una carpeta vinculada.</small>
+        </div>
+        <div class="form-section"><h3>Idioma y región</h3>
+          <div class="two"><label>Idioma<select name="language"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option><option value="BRL">BRL — R$</option></select></label></div>
+          <div class="two"><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step="0.01" value="21"></label><label>Tema<select name="theme"><option value="dark">Oscuro</option><option value="light">Claro</option><option value="system">Sistema</option></select></label></div>
+        </div>
+        <div class="form-section"><h3>Seguridad y operación</h3><label class="toggle"><input name="negativeStock" type="checkbox"><span></span>Permitir stock negativo</label><label class="toggle"><input name="hidePrices" type="checkbox"><span></span>Ocultar importes a operarios</label><label class="toggle"><input name="confirmDelete" type="checkbox" checked><span></span>Confirmar antes de eliminar</label></div>
+        <div class="sticky-actions"><button type="button" class="btn" data-back>Cancelar y volver</button><button class="btn primary" type="submit">Guardar configuración</button></div>
+      </form>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button data-go="home" class="active"><span>⌂</span>Inicio</button>
+    <button data-go="products"><span>▤</span>Productos</button>
+    <button data-go="productForm" class="scan"><span>＋</span>Nuevo</button>
+    <button data-go="movements"><span>⇄</span>Movimientos</button>
+    <button data-go="settings"><span>⚙</span>Ajustes</button>
+  </nav>
+  <div id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
