@@ -87,7 +87,36 @@
 
     <section class="screen" data-screen="movements">
       <p class="eyebrow">TRAZABILIDAD</p><h2>Movimientos</h2>
-      <div class="empty"><span>⇄</span><h3>Registro preparado</h3><p>Las entradas, salidas, consumos, devoluciones y ajustes aparecerán aquí con fecha y responsable.</p></div>
+      <form id="movementForm" class="form">
+        <div class="form-section"><h3>Registrar movimiento</h3>
+          <label>Producto o material *<select id="movementProduct" name="productId" required><option value="">Seleccionar producto</option></select></label>
+          <div id="movementStockInfo" class="stock-info hidden"></div>
+          <div class="two">
+            <label>Tipo de movimiento *<select name="type" required>
+              <option value="consumption">Salida / consumo</option>
+              <option value="output">Préstamo o entrega</option>
+              <option value="entry">Entrada de material</option>
+              <option value="return">Devolución</option>
+              <option value="adjustment">Ajuste de inventario</option>
+            </select></label>
+            <label>Cantidad *<input name="quantity" type="number" min="0.001" step="0.001" required placeholder="Ej.: 2"></label>
+          </div>
+          <div class="two">
+            <label>Quién lo retira o entrega *<input name="responsible" required placeholder="Nombre del mecánico u operario"></label>
+            <label>Destino / para qué es *<input name="destination" required placeholder="Ej.: Reparación Reactor 500 L"></label>
+          </div>
+          <div class="two">
+            <label>Equipo, máquina u orden de trabajo<input name="equipment" placeholder="Ej.: Bomba B-04 / OT-1025"></label>
+            <label>Almacén o zona de destino<input name="destinationArea" placeholder="Ej.: Taller mecánico"></label>
+          </div>
+          <label>Observaciones<textarea name="notes" rows="2" placeholder="Motivo, avería, trabajo realizado o cualquier detalle"></textarea></label>
+          <button class="btn primary wide" type="submit">Guardar y actualizar stock</button>
+        </div>
+      </form>
+      <div class="section-head movement-head"><div><h3>Historial de movimientos</h3><small id="movementCount">0 registros</small></div><button id="exportMovements" class="btn" type="button">Excel</button></div>
+      <label class="search">⌕ <input id="searchMovements" type="search" placeholder="Buscar por producto, persona, destino o equipo"></label>
+      <div id="movementList" class="list"></div>
+      <button class="btn wide" data-back>← Volver a la pantalla anterior</button>
     </section>
 
     <section class="screen" data-screen="reports">
