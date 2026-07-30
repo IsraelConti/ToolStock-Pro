@@ -34,7 +34,9 @@ jobs:
           npm run build
           mkdir -p android/app/src/main/assets
           cp -f dist/* android/app/src/main/assets/
-          for dir in android/app/src/main/res/mipmap-*; do
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            dir="android/app/src/main/res/mipmap-$density"
+            mkdir -p "$dir"
             cp -f src/app-icon.png "$dir/ic_launcher.png"
             cp -f src/app-icon.png "$dir/ic_launcher_round.png"
           done
