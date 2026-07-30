@@ -4,10 +4,12 @@ import * as XLSX from "xlsx";
 const STORE_PRODUCTS = "toolstock.products.v1";
 const STORE_SETTINGS = "toolstock.settings.v1";
 const STORE_EMPLOYEES = "toolstock.employees.v1";
+const STORE_MOVEMENTS = "toolstock.movements.v1";
 const defaultSettings = { appName:"ToolStock Pro", companyName:"", language:"es", currency:"EUR", tax:21, theme:"dark", negativeStock:false, hidePrices:false, confirmDelete:true };
 let products = JSON.parse(localStorage.getItem(STORE_PRODUCTS) || "[]");
 let settings = { ...defaultSettings, ...JSON.parse(localStorage.getItem(STORE_SETTINGS) || "{}") };
 let employees = JSON.parse(localStorage.getItem(STORE_EMPLOYEES) || "[]");
+let movements = JSON.parse(localStorage.getItem(STORE_MOVEMENTS) || "[]");
 let history = ["home"];
 let pendingImport = [];
 
@@ -25,6 +27,7 @@ function go(screen, push=true) {
   if (screen === "home") renderMetrics();
   if (screen === "products") renderProducts();
   if (screen === "qr") renderQrChoices();
+  if (screen === "movements") renderMovements();
   if (screen === "settings") renderEmployeeSummary();
   if (screen === "employees") renderEmployees();
   window.scrollTo({top:0,behavior:"instant"});
@@ -54,6 +57,76 @@ function renderProducts(filter="") {
   const rows=products.filter(p=>[p.name,p.reference,p.equipment,p.location].join(" ").toLowerCase().includes(q));
   $("#productList").innerHTML=rows.length ? rows.map(p=>`<article class="list-item"><div><b>${esc(p.name)}</b><small>${esc(p.reference)} · ${esc(p.location||"Sin ubicación")} · ${Number(p.stock)} ${esc(p.unit||"unidades")}</small></div><span class="badge ${Number(p.stock)<=Number(p.minimumStock)?"low":""}">${Number(p.stock)<=Number(p.minimumStock)?"Stock bajo":"Disponible"}</span></article>`).join("") : `<div class="empty"><span>▤</span><h3>Sin productos</h3><p>Añade uno manualmente o importa un archivo Excel.</p></div>`;
 }
+const movementTypeNames={consumption:"Salida / consumo",output:"Préstamo o entrega",entry:"Entrada",return:"Devolución",adjustment:"Ajuste"};
+function movementSign(type){return ["entry","return"].includes(type)?1:-1;}
+function populateMovementProducts(){
+  const select=$("#movementProduct");
+  const selected=select.value;
+  select.innerHTML=`<option value="">Seleccionar producto</option>${products.map(p=>`<option value="${p.id}">${esc(p.name)} · ${esc(p.reference)} · Stock: ${Number(p.stock)} ${esc(p.unit||"unidades")}</option>`).join("")}`;
+  if(products.some(p=>p.id===selected))select.value=selected;
+  updateMovementStockInfo();
+}
+function updateMovementStockInfo(){
+  const product=products.find(p=>p.id===$("#movementProduct").value);
+  const info=$("#movementStockInfo");
+  if(!product){info.classList.add("hidden");return;}
+  info.classList.remove("hidden");
+  info.innerHTML=`<span>Stock disponible</span><b>${Number(product.stock)} ${esc(product.unit||"unidades")}</b><small>${esc(product.warehouse||"Sin almacén")} · ${esc(product.location||"Sin ubicación")}</small>`;
+}
+$("#movementProduct").addEventListener("change",updateMovementStockInfo);
+$("#movementForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const data=Object.fromEntries(new FormData(e.currentTarget));
+  const product=products.find(p=>p.id===data.productId);
+  const quantity=Number(data.quantity);
+  if(!product)return toast("Selecciona un producto");
+  if(!Number.isFinite(quantity)||quantity<=0)return toast("Indica una cantidad válida");
+  const delta=movementSign(data.type)*quantity;
+  const newStock=Number(product.stock||0)+delta;
+  if(newStock<0&&!settings.negativeStock)return toast(`No hay stock suficiente. Disponible: ${Number(product.stock)} ${product.unit||"unidades"}`);
+  product.stock=Number(newStock.toFixed(3));
+  movements.unshift({
+    ...data,id:crypto.randomUUID(),quantity,delta,
+    productName:product.name,reference:product.reference,unit:product.unit||"unidades",
+    stockBefore:Number((newStock-delta).toFixed(3)),stockAfter:product.stock,
+    createdAt:new Date().toISOString()
+  });
+  localStorage.setItem(STORE_MOVEMENTS,JSON.stringify(movements));
+  saveProducts();
+  e.currentTarget.reset();
+  renderMovements();
+  toast(`Movimiento guardado · Stock actual: ${product.stock} ${product.unit||"unidades"}`);
+});
+function renderMovements(filter=""){
+  populateMovementProducts();
+  const q=filter.toLowerCase().trim();
+  const rows=movements.filter(m=>[m.productName,m.reference,m.responsible,m.destination,m.equipment,m.destinationArea].join(" ").toLowerCase().includes(q));
+  $("#movementCount").textContent=`${movements.length} ${movements.length===1?"registro":"registros"}`;
+  $("#movementList").innerHTML=rows.length?rows.map(m=>{
+    const incoming=m.delta>0;
+    const when=new Intl.DateTimeFormat(settings.language,{dateStyle:"short",timeStyle:"short"}).format(new Date(m.createdAt));
+    return `<article class="movement-card">
+      <div class="movement-icon ${incoming?"in":"out"}">${incoming?"+":"−"}</div>
+      <div class="movement-main"><div><b>${esc(m.productName)}</b><span class="movement-qty ${incoming?"in":"out"}">${incoming?"+":""}${Number(m.delta)} ${esc(m.unit)}</span></div>
+      <small>${esc(movementTypeNames[m.type]||m.type)} · ${when}</small>
+      <p><strong>Responsable:</strong> ${esc(m.responsible)}<br><strong>Destino:</strong> ${esc(m.destination)}${m.equipment?` · ${esc(m.equipment)}`:""}</p>
+      <small>Stock: ${Number(m.stockBefore)} → ${Number(m.stockAfter)} ${esc(m.unit)}</small></div>
+    </article>`;
+  }).join(""):`<div class="empty compact"><span>⇄</span><h3>Sin movimientos</h3><p>Registra una entrada, salida, consumo o devolución.</p></div>`;
+}
+$("#searchMovements").addEventListener("input",e=>renderMovements(e.target.value));
+$("#exportMovements").addEventListener("click",()=>{
+  if(!movements.length)return toast("No hay movimientos para exportar");
+  const rows=movements.map(m=>({
+    "Fecha":new Date(m.createdAt).toLocaleString(settings.language),
+    "Tipo":movementTypeNames[m.type]||m.type,
+    "Referencia":m.reference,"Producto":m.productName,"Cantidad":m.quantity,
+    "Variación de stock":m.delta,"Stock anterior":m.stockBefore,"Stock posterior":m.stockAfter,
+    "Unidad":m.unit,"Responsable":m.responsible,"Destino / uso":m.destination,
+    "Equipo / OT":m.equipment,"Zona destino":m.destinationArea,"Observaciones":m.notes
+  }));
+  exportBook(rows,"Movimientos_ToolStock.xlsx","Movimientos");toast("Historial Excel generado");
+});
 $("#searchProducts").addEventListener("input",e=>renderProducts(e.target.value));
 $("#productForm").addEventListener("submit", e => {
   e.preventDefault();
