@@ -25,13 +25,13 @@ Funciones principales:
 - Centro de ayuda integrado.
 - Navegación hacia atrás desde todas las pantallas.
 
-MaintenPro ofrece 3 días de prueba gratuita a clientes nuevos. Después requiere una suscripción mensual de 4,99 €, gestionada por Google Play. La renovación es automática y puede cancelarse durante la prueba o posteriormente desde la cuenta de Google Play.
+MaintenPro requiere una suscripción mensual de 4,99 € desde el momento de confirmar la compra, sin prueba gratuita. Google Play gestiona el cobro y la renovación automática. La suscripción puede cancelarse desde la cuenta de Google Play.
 
 ## Categoría
 Empresa
 
 ## Precio
-Descarga gratuita con 3 días de prueba para clientes nuevos y suscripción mensual `maintenpro_premium_monthly` de 4,99 € después de la prueba.
+Descarga gratuita. Para usar la aplicación se requiere la suscripción mensual `maintenpro_premium_monthly` de 4,99 €, sin prueba gratuita.
 
 ## Etiquetas sugeridas
 Mantenimiento, GMAO, equipos, preventivo, averías, órdenes de trabajo.
