@@ -14,7 +14,7 @@ correctivo de máquinas, instalaciones y equipos.
 - Informes Excel, copias JSON y personalización de empresa.
 - Propietario y hasta tres técnicos.
 - Funcionamiento local sin conexión.
-- Suscripción mensual de 4,99 € sin prueba gratuita mediante Google Play Billing 9.1.0 (`maintenpro_premium_monthly`).
+- 3 días gratuitos para clientes nuevos elegibles y después 4,99 € al mes mediante Google Play Billing 9.1.0 (`maintenpro_premium_monthly`).
 - Configuración inicial con correo del propietario y carpetas de Drive.
 - Centro de ayuda y política de privacidad.
 
@@ -25,6 +25,6 @@ La acción `Build Android` de la rama `maintenpro` genera:
 - `MaintenPro-APK`: APK instalable para pruebas.
 - `MaintenPro-AAB-unsigned`: paquete que deberá firmarse para Google Play.
 
-La APK debug permite probar la aplicación sin compra y no representa una prueba comercial. La variante release exige una suscripción activa de Google Play desde el primer uso.
+La APK debug permite revisar la aplicación sin compra y no consume la oferta comercial. La variante release consulta Google Play: ofrece 3 días gratis a las cuentas elegibles y el plan mensual normal a las demás.
 
-La versión 1.2.0 compila con Android 16 (API 36), preparada para los requisitos de Google Play del 31 de agosto de 2026.
+La versión 1.2.1 compila con Android 16 (API 36), preparada para los requisitos de Google Play del 31 de agosto de 2026.
