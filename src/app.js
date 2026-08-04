@@ -6,7 +6,7 @@ const load=(k,d)=>JSON.parse(localStorage.getItem(k)||JSON.stringify(d));
 let equipment=load("maintenpro.equipment",[]),orders=load("maintenpro.orders",[]),plans=load("maintenpro.plans",[]),team=load("maintenpro.team",[]);
 let settings=load("maintenpro.settings",{appName:"MaintenPro",companyName:"",ownerEmail:"",driveName:"",language:"es",currency:"EUR",tax:21,alertDays:7,urgentDays:2,notifications:true});
 let currentScreen="home",historyStack=[],detailId="",orderFilter="all";
-const titles={home:"Mantenimiento profesional",equipment:"Equipos",equipmentForm:"Nuevo equipo",workForm:"Nueva avería",orders:"Órdenes de trabajo",plans:"Preventivos",calendar:"Calendario",orderDetail:"Detalle de orden",assistant:"Asistente técnico",reports:"Informes",settings:"Configuración",team:"Equipo técnico",help:"Ayuda"};
+const titles={home:"Mantenimiento profesional",equipment:"Equipos",equipmentForm:"Nuevo equipo",workForm:"Nueva avería",orders:"Órdenes de trabajo",plans:"Preventivos",calendar:"Calendario",orderDetail:"Detalle de orden",assistant:"Asistente técnico",reports:"Informes",settings:"Configuración",team:"Equipo técnico",help:"Ayuda",privacy:"Privacidad"};
 const uid=()=>crypto.randomUUID(),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const save=()=>{localStorage.setItem("maintenpro.equipment",JSON.stringify(equipment));localStorage.setItem("maintenpro.orders",JSON.stringify(orders));localStorage.setItem("maintenpro.plans",JSON.stringify(plans));localStorage.setItem("maintenpro.team",JSON.stringify(team));renderAll();};
 const equip=id=>equipment.find(x=>x.id===id),money=n=>new Intl.NumberFormat(settings.language,{style:"currency",currency:settings.currency}).format(Number(n||0));
