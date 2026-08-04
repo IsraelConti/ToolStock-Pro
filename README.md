@@ -14,6 +14,9 @@ correctivo de máquinas, instalaciones y equipos.
 - Informes Excel, copias JSON y personalización de empresa.
 - Propietario y hasta tres técnicos.
 - Funcionamiento local sin conexión.
+- Suscripción mensual mediante Google Play Billing (`maintenpro_premium_monthly`).
+- Configuración inicial con correo del propietario y carpetas de Drive.
+- Centro de ayuda y política de privacidad.
 
 ## Compilación
 
@@ -21,3 +24,5 @@ La acción `Build Android` de la rama `maintenpro` genera:
 
 - `MaintenPro-APK`: APK instalable para pruebas.
 - `MaintenPro-AAB-unsigned`: paquete que deberá firmarse para Google Play.
+
+La APK debug permite probar la aplicación sin compra. La variante release exige una suscripción activa de Google Play.
