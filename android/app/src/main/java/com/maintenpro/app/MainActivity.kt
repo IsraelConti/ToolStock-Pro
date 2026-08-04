@@ -117,6 +117,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     private fun connectBilling() {
+        if (BuildConfig.DEBUG) return subscriptionResult(true, "4,99 €", "Modo de prueba")
         if (billingClient.isReady) return querySubscription()
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
