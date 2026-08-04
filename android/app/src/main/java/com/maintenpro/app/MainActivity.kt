@@ -144,12 +144,14 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         ) { result, productResult ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 monthlyProduct = productResult.productDetailsList.firstOrNull()
-                val offer = paidMonthlyOffer(monthlyProduct)
+                val offer = preferredMonthlyOffer(monthlyProduct)
                 if (monthlyProduct == null || offer == null) {
-                    js("window.onMaintenProPurchaseError(${quote("Activa en Play Console el plan mensual de 4,99 € sin prueba gratuita.")})")
+                    js("window.onMaintenProPurchaseError(${quote("Activa en Play Console el plan mensual de 4,99 € y su oferta de prueba gratuita de 3 días.")})")
                 } else {
-                    val price = offer.pricingPhases.pricingPhaseList.last().formattedPrice
-                    js("document.getElementById('subscriptionPrice').textContent=${quote("$price al mes")}")
+                    val price = offer.pricingPhases.pricingPhaseList
+                        .lastOrNull { it.priceAmountMicros > 0L }?.formattedPrice ?: "4,99 €"
+                    val hasTrial = hasThreeDayTrial(offer)
+                    js("window.onMaintenProOffer(${quote(price)},$hasTrial)")
                 }
             } else {
                 monthlyProduct = null
@@ -193,9 +195,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             js("window.onMaintenProPurchaseError(${quote("Espera un momento y vuelve a pulsar Suscribirme.")})")
             return
         }
-        val offer = paidMonthlyOffer(product)
+        val offer = preferredMonthlyOffer(product)
         if (offer == null) {
-            js("window.onMaintenProPurchaseError(${quote("El plan mensual sin prueba no está disponible en Google Play.")})")
+            js("window.onMaintenProPurchaseError(${quote("El plan mensual y la oferta de prueba de 3 días no están disponibles en Google Play.")})")
             return
         }
         val details = BillingFlowParams.ProductDetailsParams.newBuilder()
@@ -211,11 +213,19 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         }
     }
 
-    private fun paidMonthlyOffer(product: ProductDetails?): ProductDetails.SubscriptionOfferDetails? {
-        return product?.subscriptionOfferDetails.orEmpty().firstOrNull { offer ->
-            val phases = offer.pricingPhases.pricingPhaseList
-            phases.isNotEmpty() && phases.none { phase -> phase.priceAmountMicros == 0L }
+    private fun hasThreeDayTrial(offer: ProductDetails.SubscriptionOfferDetails): Boolean =
+        offer.pricingPhases.pricingPhaseList.any { phase ->
+            phase.priceAmountMicros == 0L && phase.billingPeriod == "P3D"
         }
+
+    private fun preferredMonthlyOffer(product: ProductDetails?): ProductDetails.SubscriptionOfferDetails? {
+        val offers = product?.subscriptionOfferDetails.orEmpty()
+        return offers.firstOrNull(::hasThreeDayTrial)
+            ?: offers.firstOrNull { offer ->
+                val phases = offer.pricingPhases.pricingPhaseList
+                phases.isNotEmpty() && phases.none { phase -> phase.priceAmountMicros == 0L }
+            }
+            ?: offers.firstOrNull()
     }
 
     private fun subscriptionResult(active: Boolean, price: String, message: String) =
