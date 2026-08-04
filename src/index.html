@@ -63,6 +63,7 @@
         <button class="action" data-go="orders"><span>✓</span><b>Órdenes</b><small>Pendientes y finalizadas</small></button>
         <button class="action" data-go="calendar"><span>▦</span><b>Calendario</b><small>Vencimientos y avisos</small></button>
         <button class="action" data-go="reports"><span>↧</span><b>Informes</b><small>Excel profesional</small></button>
+        <button class="action ai-action" data-go="assistant"><span>✦</span><b>Asistente técnico</b><small>Diagnóstico y comprobaciones</small></button>
       </div>
     </section>
 
@@ -152,6 +153,21 @@
       </form><button class="btn wide" data-back>← Volver a órdenes</button>
     </section>
 
+    <section class="screen" data-screen="assistant">
+      <p class="eyebrow">ASISTENTE TÉCNICO INTELIGENTE</p><h2>Analizar una incidencia</h2>
+      <div class="ai-notice"><b>Privado y disponible sin Internet</b><small>El análisis se realiza en el dispositivo. No envía datos ni sustituye los procedimientos de seguridad, el manual del fabricante o a personal cualificado.</small></div>
+      <form id="assistantForm" class="form">
+        <div class="card">
+          <label>Equipo<select id="assistantEquipment" name="equipmentId"><option value="">Equipo no registrado</option></select></label>
+          <label>¿Qué ocurre? *<textarea name="symptoms" required rows="4" placeholder="Ej.: El motor vibra, hace ruido y se calienta después de 10 minutos"></textarea></label>
+          <div class="two"><label>Área<select name="area"><option value="auto">Detectar automáticamente</option><option value="mechanical">Mecánica</option><option value="electrical">Electricidad</option><option value="fluid">Bombas, presión o fugas</option><option value="temperature">Temperatura</option><option value="instrumentation">Sensores e instrumentación</option></select></label><label>Impacto<select name="impact"><option value="low">Sin parada</option><option value="medium">Rendimiento reducido</option><option value="high">Equipo parado</option><option value="critical">Riesgo para personas o producto</option></select></label></div>
+          <button class="btn primary wide">Analizar incidencia</button>
+        </div>
+      </form>
+      <div id="assistantResult" class="ai-result hidden"></div>
+      <button class="btn wide" data-back>← Volver</button>
+    </section>
+
     <section class="screen" data-screen="reports">
       <p class="eyebrow">DOCUMENTOS</p><h2>Informes profesionales</h2>
       <div class="list">
@@ -188,8 +204,10 @@
         <details><summary>Equipos y códigos QR</summary><p>Registra cada máquina con código único, ubicación, horas y criticidad. Genera su QR desde la ficha.</p></details>
         <details><summary>Averías y órdenes</summary><p>Selecciona el equipo, describe el problema y asigna técnico. Al cerrar añade solución, repuestos, horas y costes.</p></details>
         <details><summary>Mantenimiento preventivo</summary><p>Crea tareas periódicas. La agenda muestra los próximos vencimientos.</p></details>
+        <details><summary>Asistente técnico inteligente</summary><p>Describe los síntomas y el asistente propondrá causas probables, comprobaciones seguras, herramientas y acciones preventivas. Funciona localmente y no envía información fuera del dispositivo. Confirma siempre el diagnóstico con personal cualificado.</p></details>
+        <details><summary>Seguridad antes de intervenir</summary><p>Detén el equipo cuando exista riesgo. Aplica bloqueo y etiquetado, verifica ausencia de energía y libera presión o temperatura residual siguiendo los procedimientos de la empresa y del fabricante.</p></details>
         <details><summary>Tres técnicos invitados</summary><p>Registra hasta tres técnicos con correo y rol. Comparte con ellos la carpeta MaintenPro desde Google Drive.</p></details>
-        <details><summary>Suscripción</summary><p>Google Play gestiona el cobro mensual, la renovación y la cancelación. Si cambias de móvil, usa la misma cuenta de Google Play y pulsa Restaurar compra.</p></details>
+        <details><summary>Suscripción</summary><p>Los clientes nuevos disponen de 3 días gratuitos. Después Google Play gestiona el cobro de 4,99 € al mes, la renovación y la cancelación. Si cambias de móvil, usa la misma cuenta de Google Play y pulsa Restaurar compra.</p></details>
         <details><summary>Privacidad</summary><p>Los datos permanecen en el dispositivo y en el Drive elegido por el propietario. MaintenPro no solicita contraseñas ni vende datos personales.</p></details>
       </div><button class="btn wide" data-back>← Volver</button>
     </section>
