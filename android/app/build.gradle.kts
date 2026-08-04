@@ -6,6 +6,9 @@ plugins {
 android {
     namespace = "com.maintenpro.app"
     compileSdk = 35
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         applicationId = "com.maintenpro.app"
         minSdk = 29
