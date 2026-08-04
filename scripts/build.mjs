@@ -11,7 +11,7 @@ await build({
   outfile: "dist/app.js",
   target: ["es2020"]
 });
-for (const file of ["index.html", "styles.css", "manifest.webmanifest", "app-icon.png"]) {
+for (const file of ["index.html", "styles.css", "premium.css", "manifest.webmanifest", "app-icon.png"]) {
   await cp(`src/${file}`, `dist/${file}`);
 }
 console.log("MaintenPro web assets built.");
