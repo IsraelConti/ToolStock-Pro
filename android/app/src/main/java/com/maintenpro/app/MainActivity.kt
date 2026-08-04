@@ -106,6 +106,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         billingClient = BillingClient.newBuilder(this)
             .setListener(this)
             .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
+            .enableAutoServiceReconnection()
             .build()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -118,7 +119,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     private fun connectBilling() {
         if (BuildConfig.DEBUG) return subscriptionResult(true, "4,99 €", "Modo de prueba")
-        if (billingClient.isReady) return querySubscription()
+        if (billingClient.isReady) {
+            if (monthlyProduct == null) loadProduct()
+            querySubscription()
+            return
+        }
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
@@ -131,15 +136,24 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     private fun loadProduct() {
         val product = QueryProductDetailsParams.Product.newBuilder()
-            .setProductId(PRODUCT_MONTHLY).setProductType(BillingClient.ProductType.SUBS).build()
+            .setProductId(PRODUCT_MONTHLY)
+            .setProductType(BillingClient.ProductType.SUBS)
+            .build()
         billingClient.queryProductDetailsAsync(
             QueryProductDetailsParams.newBuilder().setProductList(listOf(product)).build()
-        ) { result, details ->
+        ) { result, productResult ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                monthlyProduct = details.firstOrNull()
-                val price = preferredOffer(monthlyProduct)?.pricingPhases?.pricingPhaseList
-                    ?.lastOrNull()?.formattedPrice ?: "4,99 €"
-                js("document.getElementById('subscriptionPrice').textContent=${quote("Después, $price al mes")}")
+                monthlyProduct = productResult.productDetailsList.firstOrNull()
+                val offer = paidMonthlyOffer(monthlyProduct)
+                if (monthlyProduct == null || offer == null) {
+                    js("window.onMaintenProPurchaseError(${quote("Activa en Play Console el plan mensual de 4,99 € sin prueba gratuita.")})")
+                } else {
+                    val price = offer.pricingPhases.pricingPhaseList.last().formattedPrice
+                    js("document.getElementById('subscriptionPrice').textContent=${quote("$price al mes")}")
+                }
+            } else {
+                monthlyProduct = null
+                js("window.onMaintenProPurchaseError(${quote("No se pudo consultar la suscripción en Google Play.")})")
             }
         }
     }
@@ -156,7 +170,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         }
     }
 
-    override fun onPurchasesUpdated(result: BillingResult, purchases: MutableList<Purchase>?) {
+    override fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
         if (result.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
             purchases.forEach(::acknowledge)
             querySubscription()
@@ -173,24 +187,35 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     private fun launchSubscription() {
-        val product = monthlyProduct ?: return loadProduct()
-        val offer = preferredOffer(product) ?: return
+        val product = monthlyProduct
+        if (product == null) {
+            loadProduct()
+            js("window.onMaintenProPurchaseError(${quote("Espera un momento y vuelve a pulsar Suscribirme.")})")
+            return
+        }
+        val offer = paidMonthlyOffer(product)
+        if (offer == null) {
+            js("window.onMaintenProPurchaseError(${quote("El plan mensual sin prueba no está disponible en Google Play.")})")
+            return
+        }
         val details = BillingFlowParams.ProductDetailsParams.newBuilder()
-            .setProductDetails(product).setOfferToken(offer.offerToken).build()
-        billingClient.launchBillingFlow(
+            .setProductDetails(product)
+            .setOfferToken(offer.offerToken)
+            .build()
+        val result = billingClient.launchBillingFlow(
             this, BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(details)).build()
         )
+        if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+            val message = "No se pudo abrir el pago de Google Play: ${result.debugMessage}"
+            js("window.onMaintenProPurchaseError(${quote(message)})")
+        }
     }
 
-    private fun preferredOffer(product: ProductDetails?): ProductDetails.SubscriptionOfferDetails? {
-        val offers = product?.subscriptionOfferDetails.orEmpty()
-        return offers.firstOrNull { offer ->
-            offer.pricingPhases.pricingPhaseList.any { phase ->
-                phase.priceAmountMicros == 0L && phase.billingPeriod == "P3D"
-            }
-        } ?: offers.firstOrNull { offer ->
-            offer.pricingPhases.pricingPhaseList.any { phase -> phase.priceAmountMicros == 0L }
-        } ?: offers.firstOrNull()
+    private fun paidMonthlyOffer(product: ProductDetails?): ProductDetails.SubscriptionOfferDetails? {
+        return product?.subscriptionOfferDetails.orEmpty().firstOrNull { offer ->
+            val phases = offer.pricingPhases.pricingPhaseList
+            phases.isNotEmpty() && phases.none { phase -> phase.priceAmountMicros == 0L }
+        }
     }
 
     private fun subscriptionResult(active: Boolean, price: String, message: String) =
@@ -222,6 +247,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 true
             } catch (_: Exception) { false }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::billingClient.isInitialized && !BuildConfig.DEBUG) connectBilling()
     }
 
     override fun onDestroy() {
