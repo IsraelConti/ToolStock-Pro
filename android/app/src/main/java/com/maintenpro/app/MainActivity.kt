@@ -137,9 +137,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         ) { result, details ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 monthlyProduct = details.firstOrNull()
-                val price = monthlyProduct?.subscriptionOfferDetails?.firstOrNull()
-                    ?.pricingPhases?.pricingPhaseList?.firstOrNull()?.formattedPrice ?: "4,99 €"
-                js("document.getElementById('subscriptionPrice').textContent=${quote("$price al mes")}")
+                val price = preferredOffer(monthlyProduct)?.pricingPhases?.pricingPhaseList
+                    ?.lastOrNull()?.formattedPrice ?: "4,99 €"
+                js("document.getElementById('subscriptionPrice').textContent=${quote("Después, $price al mes")}")
             }
         }
     }
@@ -174,12 +174,23 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     private fun launchSubscription() {
         val product = monthlyProduct ?: return loadProduct()
-        val offer = product.subscriptionOfferDetails?.firstOrNull() ?: return
+        val offer = preferredOffer(product) ?: return
         val details = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(product).setOfferToken(offer.offerToken).build()
         billingClient.launchBillingFlow(
             this, BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(details)).build()
         )
+    }
+
+    private fun preferredOffer(product: ProductDetails?): ProductDetails.SubscriptionOfferDetails? {
+        val offers = product?.subscriptionOfferDetails.orEmpty()
+        return offers.firstOrNull { offer ->
+            offer.pricingPhases.pricingPhaseList.any { phase ->
+                phase.priceAmountMicros == 0L && phase.billingPeriod == "P3D"
+            }
+        } ?: offers.firstOrNull { offer ->
+            offer.pricingPhases.pricingPhaseList.any { phase -> phase.priceAmountMicros == 0L }
+        } ?: offers.firstOrNull()
     }
 
     private fun subscriptionResult(active: Boolean, price: String, message: String) =
