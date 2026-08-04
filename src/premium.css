@@ -1,0 +1,29 @@
+.onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  overflow: auto;
+  background: #06111bea;
+  backdrop-filter: blur(18px);
+}
+.onboarding-card {
+  width: min(480px, 100%);
+  padding: 26px;
+  border: 1px solid #315469;
+  border-radius: 25px;
+  background: linear-gradient(155deg, #17394b, #0b1a26 70%);
+  box-shadow: 0 24px 80px #000a;
+}
+.onboarding-card > img { width: 76px; height: 76px; border-radius: 22px; box-shadow: 0 12px 35px #0008; }
+.onboarding-card h1 { font-size: 32px; }
+.privacy-note { display: block; margin-top: 14px; color: var(--muted); text-align: center; }
+.plan-box { display: grid; gap: 7px; margin: 18px 0; padding: 18px; border: 1px solid #ffb14a66; border-radius: 17px; background: #33220e; }
+.plan-box strong { color: var(--orange); font-size: 25px; }
+.plan-box small { color: #e9cfad; }
+.help-list { display: grid; gap: 10px; }
+.help-list details { padding: 15px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); }
+.help-list summary { cursor: pointer; font-weight: 850; }
+.help-list p { color: var(--muted); line-height: 1.55; }
