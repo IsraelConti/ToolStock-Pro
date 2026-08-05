@@ -1,1 +1,2 @@
--keepclassmembers class com.toolstock.pro.MainActivity$AndroidBridge { *; }
+-keepclassmembers class com.momentsplanner.events.MainActivity$AndroidBridge { *; }
+
