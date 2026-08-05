@@ -10,6 +10,7 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.util.Base64
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -34,6 +35,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private lateinit var billingClient: BillingClient
     private var monthlyProduct: ProductDetails? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
+    private var pendingSaveBytes: ByteArray? = null
+    private var pendingSaveName: String = ""
 
     private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val uris = if (result.resultCode == Activity.RESULT_OK) {
@@ -41,6 +44,24 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         } else null
         fileCallback?.onReceiveValue(uris)
         fileCallback = null
+    }
+
+    private val saveFilePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val name = pendingSaveName
+        val bytes = pendingSaveBytes
+        val success = if (result.resultCode == Activity.RESULT_OK && result.data?.data != null && bytes != null) {
+            try {
+                contentResolver.openOutputStream(result.data!!.data!!)?.use { output ->
+                    output.write(bytes)
+                    true
+                } ?: false
+            } catch (_: Exception) {
+                false
+            }
+        } else false
+        pendingSaveBytes = null
+        pendingSaveName = ""
+        js("window.onMomentsFileSaved(" + success + "," + quote(name) + ")")
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -253,6 +274,37 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             val url = "https://play.google.com/store/account/subscriptions?sku=" +
                 PRODUCT_MONTHLY + "&package=" + packageName
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
+
+        @JavascriptInterface
+        fun saveBase64File(fileName: String, mimeType: String, base64: String) {
+            val bytes = try {
+                Base64.decode(base64, Base64.DEFAULT)
+            } catch (_: Exception) {
+                js("window.onMomentsFileSaved(false," + quote(fileName) + ")")
+                return
+            }
+            runOnUiThread {
+                if (pendingSaveBytes != null) {
+                    js("window.onMomentsPurchaseError(" + quote("Termina de guardar el archivo anterior.") + ")")
+                    return@runOnUiThread
+                }
+                pendingSaveBytes = bytes
+                pendingSaveName = fileName
+                val safeName = fileName.take(120).replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = mimeType.ifBlank { "application/octet-stream" }
+                    putExtra(Intent.EXTRA_TITLE, safeName)
+                }
+                try {
+                    saveFilePicker.launch(intent)
+                } catch (_: Exception) {
+                    pendingSaveBytes = null
+                    pendingSaveName = ""
+                    js("window.onMomentsFileSaved(false," + quote(fileName) + ")")
+                }
+            }
         }
     }
 

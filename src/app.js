@@ -30,7 +30,16 @@ const normalizeText=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g
 const android=()=>window.MomentsAndroid;
 const save=()=>{projects=projects.map(normalizeProject);localStorage.setItem(KEY,JSON.stringify(projects));renderAll();};
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600);}
-function downloadBlob(content,type,name){const blob=new Blob([content],{type}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
+function downloadBlob(content,type,name){
+  const blob=content instanceof Blob?content:new Blob([content],{type});
+  if(android()?.saveBase64File){
+    const reader=new FileReader();
+    reader.onload=()=>android().saveBase64File(name,type,String(reader.result).split(",")[1]||"");
+    reader.onerror=()=>toast("No se pudo preparar el archivo");
+    reader.readAsDataURL(blob);return;
+  }
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
 
 window.onMomentsOffer=(price,hasTrial)=>{
   $("#planHeadline").textContent=hasTrial?"3 días gratis":"Suscripción mensual";
@@ -44,6 +53,7 @@ window.onMomentsSubscription=(active,price,message)=>{
   $("#paywall").classList.toggle("hidden",!!active);
 };
 window.onMomentsPurchaseError=message=>toast(message||"No se pudo completar la operación con Google Play");
+window.onMomentsFileSaved=(success,name)=>toast(success?"Archivo guardado: "+name:"No se pudo guardar el archivo");
 $("#subscribeBtn").onclick=()=>android()?.subscribeMonthly?android().subscribeMonthly():toast("La suscripción se activa desde Google Play");
 $("#restorePurchase").onclick=()=>android()?.restorePurchases?android().restorePurchases():toast("Abre la app instalada desde Google Play");
 $("#manageSubscription").onclick=()=>android()?.manageSubscription?android().manageSubscription():toast("Gestiona la suscripción desde Google Play");
@@ -318,7 +328,7 @@ async function renderInvitation(){
   const text=shareText(p);$("#sharePreview").textContent=text;
   try{$("#projectQr").src=await QRCode.toDataURL(text,{width:700,margin:2,color:{dark:"#21142f",light:"#fffaf6"}});}catch{$("#projectQr").removeAttribute("src");}
 }
-$("#downloadQr").onclick=()=>{const img=$("#projectQr");if(!img.src)return toast("Espera a que se genere el QR");const a=document.createElement("a");a.href=img.src;a.download=(current()?.name||"Moments_Planner")+"_QR.png";a.click();};
+$("#downloadQr").onclick=()=>{const img=$("#projectQr");if(!img.src)return toast("Espera a que se genere el QR");const name=(current()?.name||"Moments_Planner")+"_QR.png";if(android()?.saveBase64File){android().saveBase64File(name,"image/png",img.src.split(",")[1]||"");}else{const a=document.createElement("a");a.href=img.src;a.download=name;a.click();}};
 $("#copyShareText").onclick=async()=>{
   const text=$("#sharePreview").textContent;
   try{await navigator.clipboard.writeText(text);toast("Texto copiado");}catch{const t=document.createElement("textarea");t.value=text;document.body.append(t);t.select();document.execCommand("copy");t.remove();toast("Texto copiado");}
@@ -344,8 +354,9 @@ function addSheet(wb,name,data){
 }
 function excel(type,name){
   const data=rows(type);if(!data.length)return toast("No hay datos para exportar");
-  const wb=XLSX.utils.book_new();addSheet(wb,name,data);XLSX.writeFile(wb,(current().name||"Moments_Planner")+"_"+name+".xlsx");toast("Excel generado");
+  const wb=XLSX.utils.book_new();addSheet(wb,name,data);saveWorkbook(wb,(current().name||"Moments_Planner")+"_"+name+".xlsx");
 }
+function saveWorkbook(wb,name){const bytes=XLSX.write(wb,{bookType:"xlsx",type:"array"});downloadBlob(bytes,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",name);toast("Excel preparado");}
 $("#exportGuests").onclick=()=>excel("guests","Invitados");
 $("#exportBudget").onclick=()=>excel("budget","Presupuesto");
 $("#exportFull").onclick=()=>{
@@ -356,7 +367,7 @@ $("#exportFull").onclick=()=>{
   addSheet(wb,"Agenda",p.schedule.map(x=>({Inicio:x.time,Fin:x.endTime,Actividad:x.title,Lugar:x.place,Responsable:x.responsible})));
   addSheet(wb,"Mesas",p.tables.map(t=>({Mesa:t.name,Capacidad:Number(t.capacity||0),Zona:t.zone,Asignados:p.guests.filter(g=>g.tableId===t.id&&g.status!=="declined").reduce((a,g)=>a+Number(g.seats||1),0)})));
   addSheet(wb,"Plan B",[p.contingency]);addSheet(wb,"Prioridades",adviceItems(p).map(x=>({Prioridad:x.severity,Recomendación:x.message})));
-  XLSX.writeFile(wb,(p.name||"Moments_Planner")+"_Plan_profesional.xlsx");toast("Plan profesional generado");
+  saveWorkbook(wb,(p.name||"Moments_Planner")+"_Plan_profesional.xlsx");
 };
 
 function applySettings(){
