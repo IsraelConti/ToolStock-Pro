@@ -1,3 +1,4 @@
+import { initIndustrialSuite } from "./industrial-suite.js";
 import QRCode from "qrcode";
 import * as XLSX from "xlsx";
 
@@ -15,7 +16,7 @@ let pendingImport = [];
 
 const $ = (s, root=document) => root.querySelector(s);
 const $$ = (s, root=document) => [...root.querySelectorAll(s)];
-const titles = {home:"Panel del taller",products:"Productos",productForm:"Nuevo producto",import:"Importar materiales",movements:"Movimientos",reports:"Informes",qr:"Etiquetas QR",settings:"Configuración",employees:"Empleados"};
+const titles = {home:"Panel del taller",products:"Productos",productForm:"Nuevo producto",import:"Importar materiales",movements:"Movimientos",reports:"Informes",qr:"Etiquetas QR",settings:"Configuración",employees:"Empleados",assistant:"ToolStock IA",help:"Información y ayuda"};
 
 function go(screen, push=true) {
   if (!titles[screen]) return;
@@ -253,4 +254,10 @@ async function shareEmployeeInvite(id){
   }catch(err){if(err?.name!=="AbortError")toast("No se pudo abrir la invitación");}
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+initIndustrialSuite({
+  getProducts:()=>products,
+  getMovements:()=>movements,
+  getSettings:()=>settings,
+  go,toast,esc
+});
 applySettings();renderEmployeeSummary();renderMetrics();go("home",false);
