@@ -1,53 +1,41 @@
-# ToolStock Pro — Taller
+# ToolStock Pro — Repuestos Industriales
 
-Proyecto comercial Android/PWA para gestión de inventario de talleres.
+Aplicación Android profesional para controlar repuestos, consumibles y materiales de mantenimiento industrial.
 
-## Incluido en esta entrega de construcción
+## Funciones principales
 
-- Panel e inventario local.
-- Alta de productos con todos los campos etiquetados.
-- Importación masiva Excel/CSV, vista previa y actualización de duplicados.
-- Plantilla Excel descargable.
-- Informes Excel de inventario y stock bajo.
-- QR reales y hojas imprimibles.
-- Configuración de idioma, moneda, impuestos, empresa, tema y permisos básicos.
-- Navegación de retorno visible, botón cancelar y compatibilidad con Atrás de Android.
-- Base de variantes para futuras ediciones.
+- Inventario de repuestos con referencia interna, código de barras, fabricante y referencia OEM.
+- Clasificación de criticidad: crítica, alta, media o baja.
+- Asociación por centro, almacén, estantería, línea, equipo y compatibilidad.
+- Stock actual, mínimo, unidad, valor, proveedor y plazo de entrega.
+- Entradas, consumos, préstamos, devoluciones y ajustes con trazabilidad.
+- Registro de responsable, destino, equipo, orden de trabajo y observaciones.
+- ToolStock IA local para riesgos de parada, reposición, consumo, exceso y auditoría.
+- Escáner Android local para QR, EAN, UPC, Code 128, Code 39 y Data Matrix.
+- QR imprimibles, importación Excel/CSV e informes Excel.
+- Carpeta privada elegida por el usuario mediante Android Storage Access Framework.
+- Propietario y hasta tres empleados: encargado, operario o consulta.
+- Idiomas, monedas, impuestos, tema y navegación Atrás.
+- Centro de información, ayuda, privacidad y limitaciones.
+- 3 días gratuitos para clientes nuevos elegibles y después 4,99 € al mes mediante Google Play Billing.
 
-## Construir recursos web
+## Android
 
-```bash
-npm install
-npm run build
-```
+- Paquete: `com.toolstock.pro`
+- Versión: 1.3.0
+- Código de versión: 4
+- Android mínimo: 10 (API 29)
+- Objetivo: Android 16 (API 36)
+- Suscripción: `toolstock_pro_premium_monthly`
+- IA: local, sin enviar el inventario a servicios externos.
 
-Copiar el contenido de `dist/` en:
+## Construcción
 
-```text
-android/app/src/main/assets/
-```
+La acción **Build Android** genera en la rama `toolstock-industrial`:
 
-Abrir la carpeta `android` con Android Studio, sincronizar Gradle y generar el APK/AAB.
+- `ToolStock-Pro-Industrial-APK`: APK de prueba abierta para instalar directamente.
+- `ToolStock-Pro-Industrial-AAB-unsigned`: AAB release que debe firmarse con la clave permanente antes de Google Play.
 
-## Trabajo pendiente antes de publicar
+## Publicación
 
-- Integración completa con Android Storage Access Framework para Drive.
-- Cámara y lector QR/código de barras nativos.
-- Usuarios invitados y sincronización/conflictos.
-- Firma comercial, iconos definitivos, política de privacidad y pruebas en dispositivos.
-- Traducción completa de todos los textos (los idiomas ya están configurados).
-
-## Compilación automática
-
-Cada cambio en `main` ejecuta `.github/workflows/android.yml`.
-
-La ejecución genera:
-
-- `ToolStock-Pro-APK`: APK de depuración instalable para pruebas.
-- `ToolStock-Pro-AAB-unsigned`: paquete de publicación aún sin firma comercial.
-
-El AAB definitivo de Google Play deberá firmarse con una clave permanente
-guardada como secreto del repositorio.
-
-
-[Ver compilaciones Android](https://github.com/IsraelConti/ToolStock-Pro/actions/workflows/android.yml)
+La carpeta `play-store/toolstock-industrial` contiene la ficha, configuración de suscripción, seguridad de datos, política de privacidad y guía de subida. La cuenta de Google Play debe estar verificada antes de crear la aplicación.
