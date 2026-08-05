@@ -2,6 +2,41 @@ export function initIndustrialSuite(ctx) {
   const { getProducts, getMovements, getSettings, go, toast, esc } = ctx;
   const main = document.querySelector("#app");
   if (!main || document.querySelector('[data-screen="assistant"]')) return;
+  const OWNER_KEY = "toolstock.owner.v1";
+  const readOwner = () => { try { return JSON.parse(localStorage.getItem(OWNER_KEY) || "null"); } catch { return null; } };
+  let owner = readOwner();
+  document.body.insertAdjacentHTML("afterbegin", `
+    <div id="ownerOnboarding" class="owner-onboarding" role="dialog" aria-modal="true">
+      <form id="ownerOnboardingForm" class="owner-onboarding-card">
+        <img src="app-icon.png" alt="" class="owner-onboarding-logo">
+        <p class="eyebrow">ACTIVACIÓN DEL PROPIETARIO</p>
+        <h1>Bienvenido a ToolStock Pro</h1>
+        <p>Introduce el correo del propietario antes de acceder. Se guarda únicamente en este dispositivo.</p>
+        <label>Correo electrónico del propietario *<input id="ownerEmailInput" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="propietario@gmail.com"></label>
+        <label>Nombre o empresa<input name="displayName" autocomplete="organization" placeholder="Nombre del propietario o empresa"></label>
+        <label class="owner-consent"><input name="consent" type="checkbox" required> Confirmo que soy el propietario o una persona autorizada.</label>
+        <small>La compra se comprueba mediante Google Play. ToolStock Pro no puede leer el correo de compra de Google.</small>
+        <button class="btn primary wide" type="submit">Guardar correo y entrar</button>
+        <p id="ownerOnboardingError" class="owner-error" aria-live="polite"></p>
+      </form>
+    </div>`);
+  const ownerOverlay = document.querySelector("#ownerOnboarding");
+  if (owner && owner.email) ownerOverlay.classList.add("hidden");
+  document.body.classList.toggle("owner-registration-required", !(owner && owner.email));
+  document.querySelector("#ownerOnboardingForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.currentTarget));
+    const email = String(data.email || "").trim().toLowerCase();
+    const error = document.querySelector("#ownerOnboardingError");
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { error.textContent = "Introduce un correo electrónico válido."; return; }
+    owner = { email, displayName: String(data.displayName || "").trim(), createdAt: new Date().toISOString() };
+    localStorage.setItem(OWNER_KEY, JSON.stringify(owner));
+    ownerOverlay.classList.add("hidden");
+    document.body.classList.remove("owner-registration-required");
+    const display = document.querySelector("#ownerEmailDisplay");
+    if (display) display.textContent = owner.email;
+    toast("Correo del propietario guardado");
+  });
 
   main.insertAdjacentHTML("beforeend", `
     <section class="screen" data-screen="assistant">
@@ -43,7 +78,7 @@ export function initIndustrialSuite(ctx) {
         <details><summary>Privacidad</summary><p>El inventario y los movimientos permanecen localmente salvo las exportaciones o carpetas que el usuario elija. Google Play procesa la suscripción. La app no vende datos ni incluye publicidad o analítica.</p></details>
         <details><summary>Limitaciones</summary><p>ToolStock Pro ayuda a controlar repuestos, pero no sustituye inspecciones técnicas, evaluación de riesgos, LOTO, normativa, homologación del fabricante ni decisiones de seguridad.</p></details>
       </div>
-      <div class="card subscription-card"><h3>ToolStock Pro Premium</h3><p id="toolStockSubscriptionStatus">Comprobando Google Play…</p><p><strong>3 días gratuitos</strong> para clientes nuevos elegibles; después, 4,99 € al mes.</p><div class="subscription-actions"><button id="toolStockSubscribe" class="btn primary">Suscribirme</button><button id="toolStockRestore" class="btn">Restaurar compra</button><button id="toolStockManage" class="btn">Gestionar</button></div></div>
+      <div class="card owner-identity-card"><h3>Propietario de esta instalación</h3><p id="ownerEmailDisplay">${esc(owner && owner.email ? owner.email : "Sin registrar")}</p><button id="changeOwnerEmail" class="btn">Cambiar correo del propietario</button></div>\n      <div class="card subscription-card"><h3>ToolStock Pro Premium</h3><p id="toolStockSubscriptionStatus">Comprobando Google Play…</p><p><strong>3 días gratuitos</strong> para clientes nuevos elegibles; después, 4,99 € al mes.</p><div class="subscription-actions"><button id="toolStockSubscribe" class="btn primary">Suscribirme</button><button id="toolStockRestore" class="btn">Restaurar compra</button><button id="toolStockManage" class="btn">Gestionar</button></div></div>
       <button class="btn wide" data-industrial-back>← Volver</button>
     </section>
   `);
@@ -164,6 +199,11 @@ export function initIndustrialSuite(ctx) {
     if (status && !status.textContent.includes("activa")) status.textContent = `${hasTrial ? "3 días gratuitos; después " : ""}${price || "4,99 €"} al mes`;
   };
   window.onToolStockPurchaseError = message => toast(message || "No se pudo completar la operación de Google Play");
+  document.querySelector("#changeOwnerEmail")?.addEventListener("click", () => {
+    if (!confirm("¿Quieres cambiar el correo del propietario de esta instalación?")) return;
+    localStorage.removeItem(OWNER_KEY);
+    location.reload();
+  });
   document.querySelector("#toolStockSubscribe")?.addEventListener("click", () => window.ToolStockAndroid?.subscribeMonthly?.());
   document.querySelector("#toolStockRestore")?.addEventListener("click", () => window.ToolStockAndroid?.restorePurchases?.());
   document.querySelector("#toolStockManage")?.addEventListener("click", () => window.ToolStockAndroid?.manageSubscription?.());
