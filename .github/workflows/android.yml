@@ -3,7 +3,7 @@ name: Build Android
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, toolstock-industrial]
   pull_request:
     branches: [main]
 
@@ -13,7 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -40,6 +40,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -52,13 +58,13 @@ jobs:
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: ToolStock-Pro-APK
+          name: ToolStock-Pro-Industrial-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
       - name: Upload Play Store bundle
         uses: actions/upload-artifact@v4
         with:
-          name: ToolStock-Pro-AAB-unsigned
+          name: ToolStock-Pro-Industrial-AAB-unsigned
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
