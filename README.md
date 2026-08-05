@@ -4,7 +4,7 @@ Aplicación Android profesional para controlar repuestos, consumibles y material
 
 ## Funciones principales
 
-- Inventario de repuestos con referencia interna, código de barras, fabricante y referencia OEM.
+- Registro obligatorio del correo del propietario antes de acceder.\n- Inventario de repuestos con referencia interna, código de barras, fabricante y referencia OEM.
 - Clasificación de criticidad: crítica, alta, media o baja.
 - Asociación por centro, almacén, estantería, línea, equipo y compatibilidad.
 - Stock actual, mínimo, unidad, valor, proveedor y plazo de entrega.
@@ -22,8 +22,8 @@ Aplicación Android profesional para controlar repuestos, consumibles y material
 ## Android
 
 - Paquete: `com.toolstock.pro`
-- Versión: 1.3.0
-- Código de versión: 4
+- Versión: 1.3.1
+- Código de versión: 5
 - Android mínimo: 10 (API 29)
 - Objetivo: Android 16 (API 36)
 - Suscripción: `toolstock_pro_premium_monthly`
