@@ -13,7 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -35,8 +35,8 @@ jobs:
           mkdir -p android/app/src/main/assets
           cp -f dist/* android/app/src/main/assets/
           for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            cp -f src/app-icon.png "android/app/src/main/res/mipmap-${density}/ic_launcher.png"
-            cp -f src/app-icon.png "android/app/src/main/res/mipmap-${density}/ic_launcher_round.png"
+            cp -f src/app-icon.png "android/app/src/main/res/mipmap-$density/ic_launcher.png"
+            cp -f src/app-icon.png "android/app/src/main/res/mipmap-$density/ic_launcher_round.png"
           done
 
       - name: Setup Java
@@ -45,10 +45,16 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.9"
+          gradle-version: "8.13"
 
       - name: Compile debug APK and release bundle
         working-directory: android
