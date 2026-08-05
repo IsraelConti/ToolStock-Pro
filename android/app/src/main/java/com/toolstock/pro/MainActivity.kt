@@ -26,8 +26,8 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
-import com.google.android.gms.mlkit.codescanner.GmsBarcodeScanning
-import com.google.android.gms.mlkit.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.barcode.common.Barcode
 
 class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
@@ -271,7 +271,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     inner class AndroidBridge {
         @JavascriptInterface fun appVersion(): String = "1.3.0"
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
-        @JavascriptInterface fun scanCode() = runOnUiThread { scanCode() }
+        @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread {
             if (billingClient.isReady) launchSubscription() else connectBilling()
