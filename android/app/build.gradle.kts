@@ -10,7 +10,7 @@ android {
         buildConfig = true
     }
     defaultConfig {
-        ID de la aplicación = "com.icapps.maintenpro"
+        applicationId = "com.icapps.maintenpro"
         minSdk = 29
         targetSdk = 36
         versionCode = 4
