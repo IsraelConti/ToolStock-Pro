@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.maintenpro.app"
+    namespace = "com.icapps.maintenpro"
     compileSdk = 36
     buildFeatures {
         buildConfig = true
