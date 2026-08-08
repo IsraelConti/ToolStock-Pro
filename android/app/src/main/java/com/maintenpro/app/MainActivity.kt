@@ -1,4 +1,4 @@
-package com.maintenpro.app
+package com.icapps.maintenpro
 
 import android.annotation.SuppressLint
 import android.app.Activity
