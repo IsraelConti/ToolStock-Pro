@@ -3,7 +3,7 @@ name: Build Android
 on:
   workflow_dispatch:
   push:
-    branches: [main, toolstock-industrial]
+    branches: [main, toolstock-industrial, toolstock-owner-email]
   pull_request:
     branches: [main]
 
