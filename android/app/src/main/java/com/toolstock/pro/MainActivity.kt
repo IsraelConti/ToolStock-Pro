@@ -269,7 +269,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
     inner class AndroidBridge {
-        @JavascriptInterface fun appVersion(): String = "1.3.1"
+        @JavascriptInterface fun appVersion(): String = "1.4.0"
+        @JavascriptInterface fun enableReviewAccess(code: String): Boolean =
+            code.trim() == "TOOLSTOCK-PLAY-REVIEW-2026"
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
