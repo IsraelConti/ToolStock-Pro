@@ -19,7 +19,14 @@
       <div class="plan-box"><b id="planHeadline">3 días gratis</b><strong id="subscriptionPrice">Después, 4,99 € al mes</strong><small id="subscriptionTerms">Después se renueva automáticamente cada mes. Puedes cancelar durante la prueba desde Google Play y no se realizará ningún cobro.</small></div>
       <button id="subscribeBtn" class="btn primary wide">Probar 3 días gratis</button>
       <button id="restorePurchase" class="btn wide">Restaurar compra</button>
-      <small class="privacy-note">El pago se gestiona de forma segura mediante Google Play.</small>
+      <button id="showReviewerAccess" class="btn wide reviewer-link">Acceso para revisión de Google Play</button>
+      <form id="reviewerAccessForm" class="form hidden" autocomplete="off">
+        <label>Código de acceso del revisor
+          <input id="reviewerAccessCode" name="reviewerCode" type="text" inputmode="text" placeholder="Introduce el código facilitado" required>
+        </label>
+        <button class="btn primary wide">Entrar en modo revisión</button>
+      </form>
+      <small class="privacy-note">El pago se gestiona de forma segura mediante Google Play. El acceso de revisión es exclusivamente para el equipo de Google Play.</small>
     </div>
   </section>
   <section id="onboarding" class="onboarding hidden" aria-modal="true">
