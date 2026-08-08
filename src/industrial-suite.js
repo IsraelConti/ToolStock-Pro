@@ -3,6 +3,7 @@ export function initIndustrialSuite(ctx) {
   const main = document.querySelector("#app");
   if (!main || document.querySelector('[data-screen="assistant"]')) return;
   const OWNER_KEY = "toolstock.owner.v1";
+  const REVIEW_KEY = "toolstock.review-access.v1";
   const readOwner = () => { try { return JSON.parse(localStorage.getItem(OWNER_KEY) || "null"); } catch { return null; } };
   let owner = readOwner();
   document.body.insertAdjacentHTML("afterbegin", `
@@ -15,6 +16,7 @@ export function initIndustrialSuite(ctx) {
         <label>Correo electrónico del propietario *<input id="ownerEmailInput" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="propietario@gmail.com"></label>
         <label>Nombre o empresa<input name="displayName" autocomplete="organization" placeholder="Nombre del propietario o empresa"></label>
         <label class="owner-consent"><input name="consent" type="checkbox" required> Confirmo que soy el propietario o una persona autorizada.</label>
+        <details class="review-access"><summary>Acceso del equipo de revisión</summary><label>Código de acceso<input name="reviewCode" autocomplete="off" placeholder="Código facilitado en Play Console"></label></details>
         <small>La compra se comprueba mediante Google Play. ToolStock Pro no puede leer el correo de compra de Google.</small>
         <button class="btn primary wide" type="submit">Guardar correo y entrar</button>
         <p id="ownerOnboardingError" class="owner-error" aria-live="polite"></p>
@@ -29,6 +31,12 @@ export function initIndustrialSuite(ctx) {
     const email = String(data.email || "").trim().toLowerCase();
     const error = document.querySelector("#ownerOnboardingError");
     if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { error.textContent = "Introduce un correo electrónico válido."; return; }
+    const reviewCode = String(data.reviewCode || "").trim();
+    if (reviewCode) {
+      const accepted = window.ToolStockAndroid?.enableReviewAccess?.(reviewCode) === true;
+      if (!accepted) { error.textContent = "El código de revisión no es válido."; return; }
+      localStorage.setItem(REVIEW_KEY, "active");
+    }
     owner = { email, displayName: String(data.displayName || "").trim(), createdAt: new Date().toISOString() };
     localStorage.setItem(OWNER_KEY, JSON.stringify(owner));
     ownerOverlay.classList.add("hidden");
@@ -190,8 +198,9 @@ export function initIndustrialSuite(ctx) {
   });
 
   window.onToolStockSubscription = (active, price, message) => {
+    active = active || localStorage.getItem(REVIEW_KEY) === "active";
     const status = document.querySelector("#toolStockSubscriptionStatus");
-    if (status) status.textContent = active ? "Suscripción activa" : (message || ((price || "4,99 €") + " al mes"));
+    if (status) status.textContent = active ? (localStorage.getItem(REVIEW_KEY) === "active" ? "Acceso de revisión activo" : "Suscripción activa") : (message || ((price || "4,99 €") + " al mes"));
     document.body.classList.toggle("subscription-locked", !active);
   };
   window.onToolStockOffer = (price, hasTrial) => {
