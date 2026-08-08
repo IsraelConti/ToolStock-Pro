@@ -55,6 +55,15 @@ jobs:
         working-directory: android
         run: gradle --no-daemon clean assembleDebug bundleRelease
 
+      - name: Create ToolStock upload key and sign bundle
+        run: |
+          openssl rand -hex 24 > toolstock-upload.pass
+          TOOLSTOCK_KEY_PASS="$(tr -d '\n' < toolstock-upload.pass)"
+          keytool -genkeypair -v             -keystore toolstock-upload-key.jks             -storepass "$TOOLSTOCK_KEY_PASS"             -keypass "$TOOLSTOCK_KEY_PASS"             -alias toolstock-upload             -keyalg RSA -keysize 4096 -validity 10000             -dname "CN=ToolStock Pro, OU=Android, O=Israel Continente, L=Estepa, ST=Sevilla, C=ES"
+          jarsigner             -keystore toolstock-upload-key.jks             -storepass "$TOOLSTOCK_KEY_PASS"             -keypass "$TOOLSTOCK_KEY_PASS"             -sigalg SHA256withRSA -digestalg SHA-256             android/app/build/outputs/bundle/release/app-release.aab             toolstock-upload
+          jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab
+          keytool -exportcert -rfc             -keystore toolstock-upload-key.jks             -storepass "$TOOLSTOCK_KEY_PASS"             -alias toolstock-upload             -file toolstock-upload-certificate.pem
+
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
@@ -62,9 +71,13 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Upload Play Store bundle
+      - name: Upload signed Play Store bundle and upload key
         uses: actions/upload-artifact@v4
         with:
-          name: ToolStock-Pro-Industrial-AAB-unsigned
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          name: ToolStock-Pro-1.4.0-PLAY-STORE-FIRMADO
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            toolstock-upload-key.jks
+            toolstock-upload.pass
+            toolstock-upload-certificate.pem
           if-no-files-found: error
