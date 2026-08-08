@@ -3,6 +3,8 @@ export function initIndustrialSuite(ctx) {
   const main = document.querySelector("#app");
   if (!main || document.querySelector('[data-screen="assistant"]')) return;
   const OWNER_KEY = "toolstock.owner.v1";
+  const PLAY_REVIEW_EMAIL = "toolstock.review.2026@gmail.com";
+  const isPlayReviewer = () => owner && owner.email === PLAY_REVIEW_EMAIL;
   const readOwner = () => { try { return JSON.parse(localStorage.getItem(OWNER_KEY) || "null"); } catch { return null; } };
   let owner = readOwner();
   document.body.insertAdjacentHTML("afterbegin", `
@@ -33,6 +35,7 @@ export function initIndustrialSuite(ctx) {
     localStorage.setItem(OWNER_KEY, JSON.stringify(owner));
     ownerOverlay.classList.add("hidden");
     document.body.classList.remove("owner-registration-required");
+    if (isPlayReviewer()) document.body.classList.remove("subscription-locked");
     const display = document.querySelector("#ownerEmailDisplay");
     if (display) display.textContent = owner.email;
     toast("Correo del propietario guardado");
@@ -190,9 +193,11 @@ export function initIndustrialSuite(ctx) {
   });
 
   window.onToolStockSubscription = (active, price, message) => {
+    const reviewAccess = isPlayReviewer();
+    const unlocked = active || reviewAccess;
     const status = document.querySelector("#toolStockSubscriptionStatus");
-    if (status) status.textContent = active ? "Suscripción activa" : (message || ((price || "4,99 €") + " al mes"));
-    document.body.classList.toggle("subscription-locked", !active);
+    if (status) status.textContent = reviewAccess ? "Acceso de revisión de Google Play" : (active ? "Suscripción activa" : (message || ((price || "4,99 €") + " al mes")));
+    document.body.classList.toggle("subscription-locked", !unlocked);
   };
   window.onToolStockOffer = (price, hasTrial) => {
     const status = document.querySelector("#toolStockSubscriptionStatus");
