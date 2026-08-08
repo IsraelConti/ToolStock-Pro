@@ -13,8 +13,8 @@ android {
         applicationId = "com.toolstock.pro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.3.1"
+        versionCode = 6
+        versionName = "1.4.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
