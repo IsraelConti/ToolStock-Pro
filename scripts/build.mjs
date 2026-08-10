@@ -1,21 +1,10 @@
 import { build } from "esbuild";
 import { cp, mkdir, rm, readFile, writeFile } from "node:fs/promises";
-
-await rm("dist", { recursive: true, force: true });
-await mkdir("dist", { recursive: true });
-await build({
-  entryPoints: ["src/app.js"],
-  bundle: true,
-  minify: true,
-  sourcemap: true,
-  outfile: "dist/app.js",
-  target: ["es2020"]
-});
-for (const file of ["index.html", "styles.css", "manifest.webmanifest", "app-icon.png", "pro-layout.js", "pro-layout.css", "events-pro.js", "events-pro.css", "pro-layout-mobile-fix.js"]) {
-  await cp(`src/${file}`, `dist/${file}`);
-}
-let html = await readFile("dist/index.html", "utf8");
-html = html.replace("</head>", '  <link rel="stylesheet" href="pro-layout.css">\n  <link rel="stylesheet" href="events-pro.css">\n</head>');
-html = html.replace("</body>", '  <script src="pro-layout.js"></script>\n  <script src="pro-layout-mobile-fix.js"></script>\n  <script src="events-pro.js"></script>\n</body>');
-await writeFile("dist/index.html", html);
-console.log("Moments Planner built with professional venue planner, Android table stability fix and Events PRO.");
+await rm("dist", { recursive: true, force: true });await mkdir("dist", { recursive: true });
+await build({entryPoints:["src/app.js"],bundle:true,minify:true,sourcemap:true,outfile:"dist/app.js",target:["es2020"]});
+for(const file of ["index.html","styles.css","manifest.webmanifest","app-icon.png","pro-layout.js","pro-layout.css","events-pro.js","events-pro.css","pro-layout-mobile-fix.js","demo-projects.js"])await cp(`src/${file}`,`dist/${file}`);
+let html=await readFile("dist/index.html","utf8");
+html=html.replace("</head>",'  <link rel="stylesheet" href="pro-layout.css">\n  <link rel="stylesheet" href="events-pro.css">\n</head>');
+html=html.replace('<script src="app.js"></script>','<script src="demo-projects.js"></script>\n  <script src="app.js"></script>');
+html=html.replace("</body>",'  <script src="pro-layout.js"></script>\n  <script src="pro-layout-mobile-fix.js"></script>\n  <script src="events-pro.js"></script>\n</body>');
+await writeFile("dist/index.html",html);console.log("Moments Planner built with demo wedding/event, stable mobile venue planner and Events PRO.");
