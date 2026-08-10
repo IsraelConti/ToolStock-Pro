@@ -4,7 +4,7 @@ import { cp, mkdir, rm } from "node:fs/promises";
 await rm("dist", { recursive: true, force: true });
 await mkdir("dist", { recursive: true });
 await build({
-  entryPoints: ["src/app.js"],
+  entryPoints: ["src/app-with-floor.js"],
   bundle: true,
   minify: true,
   sourcemap: true,
@@ -14,4 +14,4 @@ await build({
 for (const file of ["index.html", "styles.css", "manifest.webmanifest", "app-icon.png"]) {
   await cp(`src/${file}`, `dist/${file}`);
 }
-console.log("Moments Planner web assets built.");
+console.log("Moments Planner with visual salon assets built.");
