@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { cp, mkdir, rm } from "node:fs/promises";
+import { cp, mkdir, rm, readFile, writeFile } from "node:fs/promises";
 
 await rm("dist", { recursive: true, force: true });
 await mkdir("dist", { recursive: true });
@@ -11,7 +11,11 @@ await build({
   outfile: "dist/app.js",
   target: ["es2020"]
 });
-for (const file of ["index.html", "styles.css", "manifest.webmanifest", "app-icon.png"]) {
+for (const file of ["index.html", "styles.css", "manifest.webmanifest", "app-icon.png", "pro-layout.js", "pro-layout.css"]) {
   await cp(`src/${file}`, `dist/${file}`);
 }
-console.log("Moments Planner web assets built.");
+let html = await readFile("dist/index.html", "utf8");
+html = html.replace("</head>", '  <link rel="stylesheet" href="pro-layout.css">\n</head>');
+html = html.replace("</body>", '  <script src="pro-layout.js"></script>\n</body>');
+await writeFile("dist/index.html", html);
+console.log("Moments Planner web assets built with professional venue planner.");
