@@ -62,6 +62,30 @@ jobs:
         working-directory: android
         run: gradle --no-daemon clean assembleDebug bundleRelease
 
+      - name: Sign MaintenPro Play bundle
+        env:
+          KEYSTORE_B64: ${{ secrets.MAINTENPRO_UPLOAD_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.MAINTENPRO_UPLOAD_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.MAINTENPRO_UPLOAD_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.MAINTENPRO_UPLOAD_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          SRC="android/app/build/outputs/bundle/release/app-release.aab"
+          OUT="android/app/build/outputs/bundle/release/MaintenPro-Play-signed.aab"
+          if [ -z "${KEYSTORE_B64:-}" ] || [ -z "${STORE_PASSWORD:-}" ] || [ -z "${KEY_PASSWORD:-}" ]; then
+            echo "::warning::MaintenPro signing secrets are not configured yet. Signed AAB will not be produced."
+            exit 0
+          fi
+          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/maintenpro-upload.jks"
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore "$RUNNER_TEMP/maintenpro-upload.jks" \
+            -storepass "$STORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" \
+            "$SRC" "${KEY_ALIAS:-upload}"
+          cp "$SRC" "$OUT"
+          jarsigner -verify -verbose -certs "$OUT"
+          rm -f "$RUNNER_TEMP/maintenpro-upload.jks"
+
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
@@ -69,9 +93,16 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Upload Play Store bundle
+      - name: Upload signed Play Store bundle
         uses: actions/upload-artifact@v4
         with:
-          name: MaintenPro-AAB-unsigned
+          name: MaintenPro-AAB-signed
+          path: android/app/build/outputs/bundle/release/MaintenPro-Play-signed.aab
+          if-no-files-found: warn
+
+      - name: Upload unsigned fallback bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaintenPro-AAB-unsigned-fallback
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
