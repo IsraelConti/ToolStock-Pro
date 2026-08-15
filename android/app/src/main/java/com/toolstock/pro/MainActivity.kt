@@ -15,29 +15,16 @@ import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.android.billingclient.api.AcknowledgePurchaseParams
-import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingClientStateListener
-import com.android.billingclient.api.BillingFlowParams
-import com.android.billingclient.api.BillingResult
-import com.android.billingclient.api.PendingPurchasesParams
-import com.android.billingclient.api.ProductDetails
-import com.android.billingclient.api.Purchase
-import com.android.billingclient.api.PurchasesUpdatedListener
-import com.android.billingclient.api.QueryProductDetailsParams
-import com.android.billingclient.api.QueryPurchasesParams
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.barcode.common.Barcode
 
-class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
+class MainActivity : AppCompatActivity() {
     companion object {
-        private const val PRODUCT_MONTHLY = "toolstock_pro_premium_monthly"
+        private const val CLOSED_TESTING_ACCESS = true
     }
 
     private lateinit var webView: WebView
-    private lateinit var billingClient: BillingClient
-    private var monthlyProduct: ProductDetails? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingSaveBytes: ByteArray? = null
     private var pendingSaveName = ""
@@ -54,7 +41,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 .substringAfterLast(':').ifBlank { "Google Drive" }
             js("window.onToolStockDriveFolderSelected(" + quote(safeName) + ")")
         } catch (_: Exception) {
-            js("window.onToolStockPurchaseError(" + quote("No se pudo conservar el permiso de la carpeta.") + ")")
+            js("window.onToolStockPurchaseError?.(" + quote("No se pudo conservar el permiso de la carpeta.") + ")")
         }
     }
 
@@ -91,10 +78,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    if (BuildConfig.DEBUG) {
-                        js("window.onToolStockOffer?.('4,99 €',true)")
-                        subscriptionResult(true, "4,99 €", "Modo de prueba")
-                    } else connectBilling()
+                    if (CLOSED_TESTING_ACCESS) {
+                        js("window.onToolStockSubscription?.(true,'','Acceso de prueba cerrada: no se realizará ningún cobro')")
+                    }
                 }
             }
             webChromeClient = object : WebChromeClient() {
@@ -120,12 +106,6 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         }
         setContentView(webView)
 
-        billingClient = BillingClient.newBuilder(this)
-            .setListener(this)
-            .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
-            .enableAutoServiceReconnection()
-            .build()
-
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 webView.evaluateJavascript(
@@ -140,108 +120,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         })
     }
 
-    private fun connectBilling() {
-        if (BuildConfig.DEBUG) return subscriptionResult(true, "4,99 €", "Modo de prueba")
-        if (billingClient.isReady) {
-            if (monthlyProduct == null) loadProduct()
-            querySubscription()
-            return
-        }
-        billingClient.startConnection(object : BillingClientStateListener {
-            override fun onBillingSetupFinished(result: BillingResult) {
-                if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                    loadProduct()
-                    querySubscription()
-                } else subscriptionResult(false, "", "Google Play no está disponible")
-            }
-            override fun onBillingServiceDisconnected() = Unit
-        })
-    }
-
-    private fun loadProduct() {
-        val product = QueryProductDetailsParams.Product.newBuilder()
-            .setProductId(PRODUCT_MONTHLY)
-            .setProductType(BillingClient.ProductType.SUBS)
-            .build()
-        billingClient.queryProductDetailsAsync(
-            QueryProductDetailsParams.newBuilder().setProductList(listOf(product)).build()
-        ) { result, productResult ->
-            if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                monthlyProduct = productResult.productDetailsList.firstOrNull()
-                val offer = preferredOffer(monthlyProduct)
-                if (monthlyProduct == null || offer == null) {
-                    js("window.onToolStockPurchaseError?.(" + quote("Activa en Play Console el plan mensual de 4,99 € y la prueba de 3 días.") + ")")
-                } else {
-                    val price = offer.pricingPhases.pricingPhaseList
-                        .lastOrNull { it.priceAmountMicros > 0L }?.formattedPrice ?: "4,99 €"
-                    js("window.onToolStockOffer?.(" + quote(price) + "," + hasTrial(offer) + ")")
-                }
-            } else {
-                monthlyProduct = null
-                js("window.onToolStockPurchaseError?.(" + quote("No se pudo consultar la suscripción.") + ")")
-            }
-        }
-    }
-
-    private fun querySubscription() {
-        if (BuildConfig.DEBUG) return subscriptionResult(true, "4,99 €", "Modo de prueba")
-        billingClient.queryPurchasesAsync(
-            QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
-        ) { result, purchases ->
-            val active = result.responseCode == BillingClient.BillingResponseCode.OK &&
-                purchases.any {
-                    it.products.contains(PRODUCT_MONTHLY) &&
-                        it.purchaseState == Purchase.PurchaseState.PURCHASED
-                }
-            subscriptionResult(active, "", if (active) "Suscripción activa" else "Suscripción necesaria")
-            purchases.filter { !it.isAcknowledged }.forEach(::acknowledge)
-        }
-    }
-
-    override fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
-        if (result.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
-            purchases.forEach(::acknowledge)
-            querySubscription()
-        } else if (result.responseCode != BillingClient.BillingResponseCode.USER_CANCELED) {
-            js("window.onToolStockPurchaseError?.(" + quote(result.debugMessage) + ")")
-        }
-    }
-
-    private fun acknowledge(purchase: Purchase) {
-        if (purchase.isAcknowledged) return
-        billingClient.acknowledgePurchase(
-            AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()
-        ) { querySubscription() }
-    }
-
-    private fun launchSubscription() {
-        val product = monthlyProduct
-        val offer = preferredOffer(product)
-        if (product == null || offer == null) {
-            loadProduct()
-            js("window.onToolStockPurchaseError?.(" + quote("Espera un momento y vuelve a pulsar Suscribirme.") + ")")
-            return
-        }
-        val details = BillingFlowParams.ProductDetailsParams.newBuilder()
-            .setProductDetails(product).setOfferToken(offer.offerToken).build()
-        val result = billingClient.launchBillingFlow(
-            this, BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(details)).build()
-        )
-        if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-            js("window.onToolStockPurchaseError?.(" + quote("No se pudo abrir el pago: " + result.debugMessage) + ")")
-        }
-    }
-
-    private fun hasTrial(offer: ProductDetails.SubscriptionOfferDetails): Boolean =
-        offer.pricingPhases.pricingPhaseList.any {
-            it.priceAmountMicros == 0L && it.billingPeriod == "P3D"
-        }
-
-    private fun preferredOffer(product: ProductDetails?): ProductDetails.SubscriptionOfferDetails? {
-        val offers = product?.subscriptionOfferDetails.orEmpty()
-        return offers.firstOrNull(::hasTrial)
-            ?: offers.firstOrNull { o -> o.pricingPhases.pricingPhaseList.none { it.priceAmountMicros == 0L } }
-            ?: offers.firstOrNull()
+    private fun grantClosedTestingAccess(message: String = "Acceso de prueba cerrada: no se realizará ningún cobro") {
+        js("window.onToolStockSubscription?.(true,''," + quote(message) + ")")
     }
 
     private fun scanCode() {
@@ -260,30 +140,24 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             }
     }
 
-    private fun subscriptionResult(active: Boolean, price: String, message: String) =
-        js("window.onToolStockSubscription?.(" + active + "," + quote(price) + "," + quote(message) + ")")
-
     private fun js(code: String) = runOnUiThread { webView.evaluateJavascript(code, null) }
 
     private fun quote(value: String): String =
         "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
     inner class AndroidBridge {
-        @JavascriptInterface fun appVersion(): String = "1.3.2"
+        @JavascriptInterface fun appVersion(): String = "1.3.3-test"
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
-        @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
+        @JavascriptInterface fun checkSubscription() = runOnUiThread { grantClosedTestingAccess() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread {
-            if (billingClient.isReady) launchSubscription() else connectBilling()
+            grantClosedTestingAccess("Durante la prueba cerrada no necesitas suscribirte ni pagar")
         }
-        @JavascriptInterface fun restorePurchases() = runOnUiThread {
-            if (billingClient.isReady) querySubscription() else connectBilling()
-        }
+        @JavascriptInterface fun restorePurchases() = runOnUiThread { grantClosedTestingAccess() }
         @JavascriptInterface fun manageSubscription() = runOnUiThread {
-            val url = "https://play.google.com/store/account/subscriptions?sku=" +
-                PRODUCT_MONTHLY + "&package=" + packageName
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            grantClosedTestingAccess("Prueba cerrada activa: no hay ningún cobro que gestionar")
         }
+
         @JavascriptInterface
         fun saveBase64File(fileName: String, mimeType: String, base64: String) {
             val bytes = try { Base64.decode(base64, Base64.DEFAULT) } catch (_: Exception) {
@@ -307,15 +181,5 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 }
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (::billingClient.isInitialized && !BuildConfig.DEBUG) connectBilling()
-    }
-
-    override fun onDestroy() {
-        if (::billingClient.isInitialized) billingClient.endConnection()
-        super.onDestroy()
     }
 }
