@@ -16,20 +16,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.documentfile.provider.DocumentFile
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
-import com.android.billingclient.api.QueryProductDetailsParams
-import com.android.billingclient.api.QueryPurchasesParams
 
 class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     companion object {
         private const val PRODUCT_MONTHLY = "maintenpro_premium_monthly"
         private const val PREFS = "maintenpro"
+        private const val CLOSED_TESTING_ACCESS = true
         private val DRIVE_FOLDERS = listOf(
             "Datos", "Equipos", "Fotografias", "Documentos", "Codigos_QR",
             "Informes", "Copias_de_seguridad"
@@ -82,8 +80,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    if (BuildConfig.DEBUG) {
-                        js("window.onMaintenProSubscription(true,'4,99 €','Modo de prueba')")
+                    if (CLOSED_TESTING_ACCESS || BuildConfig.DEBUG) {
+                        js("window.onMaintenProSubscription(true,'','Acceso de prueba cerrada: no se realizará ningún cobro')")
                     } else {
                         connectBilling()
                     }
@@ -118,114 +116,36 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     private fun connectBilling() {
-        if (BuildConfig.DEBUG) return subscriptionResult(true, "4,99 €", "Modo de prueba")
-        if (billingClient.isReady) {
-            if (monthlyProduct == null) loadProduct()
-            querySubscription()
-            return
-        }
-        billingClient.startConnection(object : BillingClientStateListener {
-            override fun onBillingSetupFinished(result: BillingResult) {
-                if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                    loadProduct(); querySubscription()
-                } else subscriptionResult(false, "", "Google Play no está disponible")
-            }
-            override fun onBillingServiceDisconnected() = Unit
-        })
-    }
-
-    private fun loadProduct() {
-        val product = QueryProductDetailsParams.Product.newBuilder()
-            .setProductId(PRODUCT_MONTHLY)
-            .setProductType(BillingClient.ProductType.SUBS)
-            .build()
-        billingClient.queryProductDetailsAsync(
-            QueryProductDetailsParams.newBuilder().setProductList(listOf(product)).build()
-        ) { result, productResult ->
-            if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                monthlyProduct = productResult.productDetailsList.firstOrNull()
-                val offer = preferredMonthlyOffer(monthlyProduct)
-                if (monthlyProduct == null || offer == null) {
-                    js("window.onMaintenProPurchaseError(${quote("Activa en Play Console el plan mensual de 4,99 € y su oferta de prueba gratuita de 3 días.")})")
-                } else {
-                    val price = offer.pricingPhases.pricingPhaseList
-                        .lastOrNull { it.priceAmountMicros > 0L }?.formattedPrice ?: "4,99 €"
-                    val hasTrial = hasThreeDayTrial(offer)
-                    js("window.onMaintenProOffer(${quote(price)},$hasTrial)")
-                }
-            } else {
-                monthlyProduct = null
-                js("window.onMaintenProPurchaseError(${quote("No se pudo consultar la suscripción en Google Play.")})")
-            }
-        }
-    }
-
-    private fun querySubscription() {
-        if (BuildConfig.DEBUG) return subscriptionResult(true, "4,99 €", "Modo de prueba")
-        billingClient.queryPurchasesAsync(
-            QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
-        ) { result, purchases ->
-            val active = result.responseCode == BillingClient.BillingResponseCode.OK &&
-                purchases.any { it.products.contains(PRODUCT_MONTHLY) && it.purchaseState == Purchase.PurchaseState.PURCHASED }
-            subscriptionResult(active, "", if (active) "Suscripción activa" else "Suscripción mensual necesaria")
-            purchases.filter { !it.isAcknowledged }.forEach(::acknowledge)
+        if (CLOSED_TESTING_ACCESS || BuildConfig.DEBUG) {
+            return subscriptionResult(true, "", "Acceso de prueba cerrada: no se realizará ningún cobro")
         }
     }
 
     override fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
-        if (result.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
-            purchases.forEach(::acknowledge)
-            querySubscription()
-        } else if (result.responseCode != BillingClient.BillingResponseCode.USER_CANCELED) {
-            js("window.onMaintenProPurchaseError(${quote(result.debugMessage)})")
-        }
+        if (CLOSED_TESTING_ACCESS) return
     }
 
     private fun acknowledge(purchase: Purchase) {
-        if (purchase.isAcknowledged) return
+        if (CLOSED_TESTING_ACCESS || purchase.isAcknowledged) return
         billingClient.acknowledgePurchase(
             AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()
-        ) { querySubscription() }
+        ) { connectBilling() }
     }
 
     private fun launchSubscription() {
-        val product = monthlyProduct
-        if (product == null) {
-            loadProduct()
-            js("window.onMaintenProPurchaseError(${quote("Espera un momento y vuelve a pulsar Suscribirme.")})")
+        if (CLOSED_TESTING_ACCESS) {
+            subscriptionResult(true, "", "Acceso de prueba cerrada: no necesitas suscribirte")
             return
         }
-        val offer = preferredMonthlyOffer(product)
-        if (offer == null) {
-            js("window.onMaintenProPurchaseError(${quote("El plan mensual y la oferta de prueba de 3 días no están disponibles en Google Play.")})")
-            return
-        }
+        val product = monthlyProduct ?: return
+        val offer = product.subscriptionOfferDetails?.firstOrNull() ?: return
         val details = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(product)
             .setOfferToken(offer.offerToken)
             .build()
-        val result = billingClient.launchBillingFlow(
+        billingClient.launchBillingFlow(
             this, BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(details)).build()
         )
-        if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-            val message = "No se pudo abrir el pago de Google Play: ${result.debugMessage}"
-            js("window.onMaintenProPurchaseError(${quote(message)})")
-        }
-    }
-
-    private fun hasThreeDayTrial(offer: ProductDetails.SubscriptionOfferDetails): Boolean =
-        offer.pricingPhases.pricingPhaseList.any { phase ->
-            phase.priceAmountMicros == 0L && phase.billingPeriod == "P3D"
-        }
-
-    private fun preferredMonthlyOffer(product: ProductDetails?): ProductDetails.SubscriptionOfferDetails? {
-        val offers = product?.subscriptionOfferDetails.orEmpty()
-        return offers.firstOrNull(::hasThreeDayTrial)
-            ?: offers.firstOrNull { offer ->
-                val phases = offer.pricingPhases.pricingPhaseList
-                phases.isNotEmpty() && phases.none { phase -> phase.priceAmountMicros == 0L }
-            }
-            ?: offers.firstOrNull()
     }
 
     private fun subscriptionResult(active: Boolean, price: String, message: String) =
@@ -236,11 +156,15 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     inner class AndroidBridge {
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
-        @JavascriptInterface fun subscribeMonthly() = runOnUiThread { if (billingClient.isReady) launchSubscription() else connectBilling() }
-        @JavascriptInterface fun restorePurchases() = runOnUiThread { if (billingClient.isReady) querySubscription() else connectBilling() }
+        @JavascriptInterface fun subscribeMonthly() = runOnUiThread { launchSubscription() }
+        @JavascriptInterface fun restorePurchases() = runOnUiThread { connectBilling() }
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
 
         @JavascriptInterface fun manageSubscription() = runOnUiThread {
+            if (CLOSED_TESTING_ACCESS) {
+                subscriptionResult(true, "", "Acceso de prueba cerrada activo")
+                return@runOnUiThread
+            }
             val url = "https://play.google.com/store/account/subscriptions?sku=$PRODUCT_MONTHLY&package=$packageName"
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
@@ -261,7 +185,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     override fun onResume() {
         super.onResume()
-        if (::billingClient.isInitialized && !BuildConfig.DEBUG) connectBilling()
+        if (::billingClient.isInitialized && !CLOSED_TESTING_ACCESS && !BuildConfig.DEBUG) connectBilling()
     }
 
     override fun onDestroy() {
