@@ -63,14 +63,14 @@ jobs:
       - name: Sign MaintenPro Tools APK
         env:
           KEYSTORE_B64: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.MAINTENPROTOOLS_STORE_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.MAINTENPROTOOLS_KEY_ALIAS }}
         run: |
           set -euo pipefail
           if [ -z "${KEYSTORE_B64:-}" ] || [ -z "${STORE_PASSWORD:-}" ] || [ -z "${KEY_PASSWORD:-}" ]; then
-            echo "::warning::MaintenPro Tools signing secrets are not configured yet."
-            exit 0
+            echo "::error::MaintenPro Tools signing secrets are not configured."
+            exit 1
           fi
 
           KEYSTORE="$RUNNER_TEMP/maintenpro-tools.jks"
@@ -102,4 +102,4 @@ jobs:
         with:
           name: MaintenPro-Tools-Uptodown-APK-signed
           path: android/app/build/outputs/apk/release/MaintenPro-Tools-Uptodown-signed.apk
-          if-no-files-found: warn
+          if-no-files-found: error
