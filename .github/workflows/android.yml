@@ -1,11 +1,9 @@
-name: Build Android
+name: Build MaintenPro Tools
 
 on:
   workflow_dispatch:
   push:
-    branches: [main, foodstock-control, maintenpro]
-  pull_request:
-    branches: [main]
+    branches: [maintenpro-tools]
 
 permissions:
   contents: read
@@ -58,85 +56,50 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Compile debug APK, release APK and release bundle
+      - name: Compile APKs
         working-directory: android
-        run: gradle --no-daemon clean assembleDebug assembleRelease bundleRelease
+        run: gradle --no-daemon clean assembleDebug assembleRelease
 
-      - name: Sign MaintenPro Play bundle and Uptodown APK
+      - name: Sign MaintenPro Tools APK
         env:
-          KEYSTORE_B64: ${{ secrets.MAINTENPRO_UPLOAD_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.MAINTENPRO_UPLOAD_STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.MAINTENPRO_UPLOAD_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.MAINTENPRO_UPLOAD_KEY_ALIAS }}
+          KEYSTORE_B64: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.MAINTENPROTOOLS_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.MAINTENPROTOOLS_KEY_ALIAS }}
         run: |
           set -euo pipefail
-
           if [ -z "${KEYSTORE_B64:-}" ] || [ -z "${STORE_PASSWORD:-}" ] || [ -z "${KEY_PASSWORD:-}" ]; then
-            echo "::warning::MaintenPro signing secrets are not configured. Signed AAB/APK will not be produced."
+            echo "::warning::MaintenPro Tools signing secrets are not configured yet."
             exit 0
           fi
 
-          KEYSTORE="$RUNNER_TEMP/maintenpro-upload.jks"
+          KEYSTORE="$RUNNER_TEMP/maintenpro-tools.jks"
           echo "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
-
-          # Sign AAB for Google Play
-          AAB_SRC="android/app/build/outputs/bundle/release/app-release.aab"
-          AAB_OUT="android/app/build/outputs/bundle/release/MaintenPro-Play-signed.aab"
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore "$KEYSTORE" \
-            -storepass "$STORE_PASSWORD" \
-            -keypass "$KEY_PASSWORD" \
-            "$AAB_SRC" "${KEY_ALIAS:-upload}"
-          cp "$AAB_SRC" "$AAB_OUT"
-          jarsigner -verify -verbose -certs "$AAB_OUT"
-
-          # Sign release APK for Uptodown / direct distribution
           APK_SRC="android/app/build/outputs/apk/release/app-release-unsigned.apk"
-          APK_ALIGNED="android/app/build/outputs/apk/release/MaintenPro-Uptodown-aligned.apk"
-          APK_OUT="android/app/build/outputs/apk/release/MaintenPro-Uptodown-signed.apk"
-
-          if [ ! -f "$APK_SRC" ]; then
-            echo "::error::Release APK not found at $APK_SRC"
-            find android/app/build/outputs/apk -maxdepth 3 -type f -print || true
-            exit 1
-          fi
+          APK_ALIGNED="android/app/build/outputs/apk/release/MaintenPro-Tools-aligned.apk"
+          APK_OUT="android/app/build/outputs/apk/release/MaintenPro-Tools-Uptodown-signed.apk"
 
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 "$APK_SRC" "$APK_ALIGNED"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
             --ks "$KEYSTORE" \
-            --ks-key-alias "${KEY_ALIAS:-upload}" \
+            --ks-key-alias "${KEY_ALIAS:-maintenprotools}" \
             --ks-pass "pass:$STORE_PASSWORD" \
             --key-pass "pass:$KEY_PASSWORD" \
             --out "$APK_OUT" \
             "$APK_ALIGNED"
-
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK_OUT"
           rm -f "$APK_ALIGNED" "$KEYSTORE"
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: MaintenPro-APK-debug
+          name: MaintenPro-Tools-APK-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Upload signed Uptodown APK
+      - name: Upload Uptodown APK
         uses: actions/upload-artifact@v4
         with:
-          name: MaintenPro-Uptodown-APK-signed
-          path: android/app/build/outputs/apk/release/MaintenPro-Uptodown-signed.apk
-          if-no-files-found: error
-
-      - name: Upload signed Play Store bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: MaintenPro-AAB-signed
-          path: android/app/build/outputs/bundle/release/MaintenPro-Play-signed.aab
+          name: MaintenPro-Tools-Uptodown-APK-signed
+          path: android/app/build/outputs/apk/release/MaintenPro-Tools-Uptodown-signed.apk
           if-no-files-found: warn
-
-      - name: Upload unsigned fallback bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: MaintenPro-AAB-unsigned-fallback
-          path: android/app/build/outputs/bundle/release/app-release.aab
-          if-no-files-found: error
