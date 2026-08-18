@@ -10,11 +10,11 @@ android {
         buildConfig = true
     }
     defaultConfig {
-        applicationId = "com.icapps.maintenpro"
+        applicationId = "com.icapps.maintenprotools"
         minSdk = 29
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.2.2"
+        versionCode = 1
+        versionName = "1.0.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
