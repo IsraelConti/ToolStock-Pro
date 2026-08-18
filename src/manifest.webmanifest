@@ -1,6 +1,6 @@
 {
-  "name":"MaintenPro — Gestión de Mantenimiento",
-  "short_name":"MaintenPro",
+  "name":"MaintenPro Tools — Gestión de Mantenimiento",
+  "short_name":"MaintenPro Tools",
   "description":"Mantenimiento preventivo y correctivo profesional",
   "start_url":".",
   "display":"standalone",
