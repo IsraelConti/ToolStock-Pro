@@ -58,11 +58,11 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Compile debug APK and release bundle
+      - name: Compile debug APK, release APK and release bundle
         working-directory: android
-        run: gradle --no-daemon clean assembleDebug bundleRelease
+        run: gradle --no-daemon clean assembleDebug assembleRelease bundleRelease
 
-      - name: Sign MaintenPro Play bundle
+      - name: Sign MaintenPro Play bundle and Uptodown APK
         env:
           KEYSTORE_B64: ${{ secrets.MAINTENPRO_UPLOAD_KEYSTORE_B64 }}
           STORE_PASSWORD: ${{ secrets.MAINTENPRO_UPLOAD_STORE_PASSWORD }}
@@ -70,27 +70,61 @@ jobs:
           KEY_ALIAS: ${{ secrets.MAINTENPRO_UPLOAD_KEY_ALIAS }}
         run: |
           set -euo pipefail
-          SRC="android/app/build/outputs/bundle/release/app-release.aab"
-          OUT="android/app/build/outputs/bundle/release/MaintenPro-Play-signed.aab"
+
           if [ -z "${KEYSTORE_B64:-}" ] || [ -z "${STORE_PASSWORD:-}" ] || [ -z "${KEY_PASSWORD:-}" ]; then
-            echo "::warning::MaintenPro signing secrets are not configured yet. Signed AAB will not be produced."
+            echo "::warning::MaintenPro signing secrets are not configured. Signed AAB/APK will not be produced."
             exit 0
           fi
-          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/maintenpro-upload.jks"
+
+          KEYSTORE="$RUNNER_TEMP/maintenpro-upload.jks"
+          echo "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+
+          # Sign AAB for Google Play
+          AAB_SRC="android/app/build/outputs/bundle/release/app-release.aab"
+          AAB_OUT="android/app/build/outputs/bundle/release/MaintenPro-Play-signed.aab"
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore "$RUNNER_TEMP/maintenpro-upload.jks" \
+            -keystore "$KEYSTORE" \
             -storepass "$STORE_PASSWORD" \
             -keypass "$KEY_PASSWORD" \
-            "$SRC" "${KEY_ALIAS:-upload}"
-          cp "$SRC" "$OUT"
-          jarsigner -verify -verbose -certs "$OUT"
-          rm -f "$RUNNER_TEMP/maintenpro-upload.jks"
+            "$AAB_SRC" "${KEY_ALIAS:-upload}"
+          cp "$AAB_SRC" "$AAB_OUT"
+          jarsigner -verify -verbose -certs "$AAB_OUT"
 
-      - name: Upload installable APK
+          # Sign release APK for Uptodown / direct distribution
+          APK_SRC="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          APK_ALIGNED="android/app/build/outputs/apk/release/MaintenPro-Uptodown-aligned.apk"
+          APK_OUT="android/app/build/outputs/apk/release/MaintenPro-Uptodown-signed.apk"
+
+          if [ ! -f "$APK_SRC" ]; then
+            echo "::error::Release APK not found at $APK_SRC"
+            find android/app/build/outputs/apk -maxdepth 3 -type f -print || true
+            exit 1
+          fi
+
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 "$APK_SRC" "$APK_ALIGNED"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks "$KEYSTORE" \
+            --ks-key-alias "${KEY_ALIAS:-upload}" \
+            --ks-pass "pass:$STORE_PASSWORD" \
+            --key-pass "pass:$KEY_PASSWORD" \
+            --out "$APK_OUT" \
+            "$APK_ALIGNED"
+
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK_OUT"
+          rm -f "$APK_ALIGNED" "$KEYSTORE"
+
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: MaintenPro-APK
+          name: MaintenPro-APK-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload signed Uptodown APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaintenPro-Uptodown-APK-signed
+          path: android/app/build/outputs/apk/release/MaintenPro-Uptodown-signed.apk
           if-no-files-found: error
 
       - name: Upload signed Play Store bundle
