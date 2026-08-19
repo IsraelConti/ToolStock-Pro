@@ -65,7 +65,6 @@ jobs:
           KEYSTORE_B64: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_B64 }}
           STORE_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.MAINTENPROTOOLS_KEY_ALIAS }}
         run: |
           set -euo pipefail
           if [ -z "${KEYSTORE_B64:-}" ] || [ -z "${STORE_PASSWORD:-}" ] || [ -z "${KEY_PASSWORD:-}" ]; then
@@ -82,7 +81,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 "$APK_SRC" "$APK_ALIGNED"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
             --ks "$KEYSTORE" \
-            --ks-key-alias "${KEY_ALIAS:-maintenprotools}" \
+            --ks-key-alias "maintenprotools" \
             --ks-pass "pass:$STORE_PASSWORD" \
             --key-pass "pass:$KEY_PASSWORD" \
             --out "$APK_OUT" \
