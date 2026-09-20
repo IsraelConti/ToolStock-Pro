@@ -4,7 +4,8 @@ Aplicación Android profesional para controlar repuestos, consumibles y material
 
 ## Funciones principales
 
-- Registro obligatorio del correo del propietario antes de acceder.\n- Inventario de repuestos con referencia interna, código de barras, fabricante y referencia OEM.
+- Registro obligatorio del correo del propietario antes de acceder.
+- Inventario de repuestos con referencia interna, código de barras, fabricante y referencia OEM.
 - Clasificación de criticidad: crítica, alta, media o baja.
 - Asociación por centro, almacén, estantería, línea, equipo y compatibilidad.
 - Stock actual, mínimo, unidad, valor, proveedor y plazo de entrega.
@@ -17,25 +18,25 @@ Aplicación Android profesional para controlar repuestos, consumibles y material
 - Propietario y hasta tres empleados: encargado, operario o consulta.
 - Idiomas, monedas, impuestos, tema y navegación Atrás.
 - Centro de información, ayuda, privacidad y limitaciones.
-- 3 días gratuitos para clientes nuevos elegibles y después 4,99 € al mes mediante Google Play Billing.
+- Compra única en Google Play, sin suscripción ni pagos dentro de la app.
 
 ## Android
 
-- Paquete: `com.toolstock.pro`
-- Versión: 1.3.1
-- Código de versión: 5
+- Paquete: `com.toolstock.pro.paid`
+- Versión: 1.0.0
+- Código de versión: 1
 - Android mínimo: 10 (API 29)
 - Objetivo: Android 16 (API 36)
-- Suscripción: `toolstock_pro_premium_monthly`
+- Monetización: compra de la aplicación en Google Play.
 - IA: local, sin enviar el inventario a servicios externos.
 
 ## Construcción
 
-La acción **Build Android** genera en la rama `toolstock-industrial`:
+La acción **Build Android** genera en la rama `toolstock-paid`:
 
-- `ToolStock-Pro-Industrial-APK`: APK de prueba abierta para instalar directamente.
-- `ToolStock-Pro-Industrial-AAB-unsigned`: AAB release que debe firmarse con la clave permanente antes de Google Play.
+- `ToolStock-Pro-APK`: APK de prueba abierta para instalar directamente.
+- `ToolStock-Pro-AAB-unsigned`: AAB release que debe firmarse con la clave permanente antes de Google Play.
 
 ## Publicación
 
-La carpeta `play-store/toolstock-industrial` contiene la ficha, configuración de suscripción, seguridad de datos, política de privacidad y guía de subida. La cuenta de Google Play debe estar verificada antes de crear la aplicación.
+La carpeta `play-store/toolstock-paid` contiene la ficha y la declaración de privacidad propuestas para la nueva aplicación de pago. La clave de firma permanente y el precio de venta deben configurarse antes de presentar la aplicación.

@@ -10,11 +10,11 @@ android {
     compileSdk = 36
     buildFeatures { buildConfig = true }
     defaultConfig {
-        applicationId = "com.toolstock.pro"
+        applicationId = "com.toolstock.pro.paid"
         minSdk = 29
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.4.0"
+        versionCode = 1
+        versionName = "1.0.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -37,6 +37,5 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.activity:activity-ktx:1.10.0")
-    implementation("com.android.billingclient:billing-ktx:9.1.0")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 }
