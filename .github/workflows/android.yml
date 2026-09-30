@@ -134,7 +134,14 @@ jobs:
         with:
           name: MaintenPro-Uptodown-APK-signed
           path: android/app/build/outputs/apk/release/MaintenPro-Uptodown-signed.apk
-          if-no-files-found: error
+          if-no-files-found: warn
+
+      - name: Upload unsigned release APK fallback
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaintenPro-Uptodown-APK-unsigned-fallback
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: warn
 
       - name: Upload signed Play Store bundle
         uses: actions/upload-artifact@v4
