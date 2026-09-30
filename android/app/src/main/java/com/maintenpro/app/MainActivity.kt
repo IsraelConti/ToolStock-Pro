@@ -239,7 +239,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         js("window.onMaintenProSubscription($active,${quote(price)},${quote(message)})")
 
     private fun js(code: String) = runOnUiThread { webView.evaluateJavascript(code, null) }
-    private fun quote(value: String) = """ + value.replace("\\", "\\\\").replace(""", "\\"") + """
+    private fun quote(value: String) = "\\"" + value.replace("\\\\", "\\\\\\\\").replace("\\"", "\\\\\"") + "\\""
 
     inner class AndroidBridge {
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
