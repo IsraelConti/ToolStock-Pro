@@ -19,9 +19,11 @@
 }
 .onboarding-card > img { width: 76px; height: 76px; border-radius: 22px; box-shadow: 0 12px 35px #0008; }
 .onboarding-card h1 { font-size: 32px; }
-.privacy-note { display: block; margin-top: 14px; color: var(--muted); text-align: center; }
+.privacy-note { display: block; margin-top: 14px; color: var(--muted); text-align: center; line-height: 1.45; }
 .plan-box { display: grid; gap: 7px; margin: 18px 0; padding: 18px; border: 1px solid #ffb14a66; border-radius: 17px; background: #33220e; }
 .plan-box strong { color: var(--orange); font-size: 25px; }
+.dismiss-btn { border: 2px solid #ffffff; color: #ffffff; background: #172c3a; font-weight: 850; }
+.dismiss-btn:focus-visible { outline: 4px solid #ffb14a; outline-offset: 3px; }
 .plan-box small { color: #e9cfad; }
 .help-list { display: grid; gap: 10px; }
 .help-list details { padding: 15px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); }
