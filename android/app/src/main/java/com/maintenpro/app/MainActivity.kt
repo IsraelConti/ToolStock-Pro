@@ -239,7 +239,19 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         js("window.onMaintenProSubscription($active,${quote(price)},${quote(message)})")
 
     private fun js(code: String) = runOnUiThread { webView.evaluateJavascript(code, null) }
-    private fun quote(value: String) = "\\"" + value.replace("\\\\", "\\\\\\\\").replace("\\"", "\\\\\"") + "\\""
+    private fun quote(value: String): String {
+        val builder = StringBuilder()
+        builder.append(34.toChar())
+        value.forEach { char ->
+            when (char) {
+                92.toChar() -> builder.append("\\\\")
+                34.toChar() -> builder.append("\\\"")
+                else -> builder.append(char)
+            }
+        }
+        builder.append(34.toChar())
+        return builder.toString()
+    }
 
     inner class AndroidBridge {
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
