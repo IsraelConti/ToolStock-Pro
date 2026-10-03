@@ -1,6 +1,6 @@
 {
-  "name": "ToolStock Pro — Repuestos Industriales",
-  "short_name": "ToolStock",
+  "name": "ToolStock Pro: Repuestos",
+  "short_name": "ToolStock Pro",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#071018",
