@@ -30,7 +30,7 @@ export function initIndustrialSuite(ctx) {
     const data = Object.fromEntries(new FormData(e.currentTarget));
     const email = String(data.email || "").trim().toLowerCase();
     const error = document.querySelector("#ownerOnboardingError");
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { error.textContent = "Introduce un correo electrónico válido."; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { error.textContent = "Introduce un correo electrónico válido."; return; }
     owner = { email, displayName: String(data.displayName || "").trim(), createdAt: new Date().toISOString() };
     localStorage.setItem(OWNER_KEY, JSON.stringify(owner));
     ownerOverlay.classList.add("hidden");
@@ -196,7 +196,7 @@ export function initIndustrialSuite(ctx) {
     const reviewAccess = isPlayReviewer();
     const unlocked = active || reviewAccess;
     const status = document.querySelector("#toolStockSubscriptionStatus");
-    if (status) status.textContent = reviewAccess ? "Acceso de revisión de Google Play" : (active ? "Suscripción activa" : (message || ((price || "4,99 €") + " al mes")));
+    if (status) status.textContent = reviewAccess ? "Acceso de revisión de Google Play" : (active ? (message || "Suscripción activa") : (message || ((price || "4,99 €") + " al mes")));
     document.body.classList.toggle("subscription-locked", !unlocked);
   };
   window.onToolStockOffer = (price, hasTrial) => {

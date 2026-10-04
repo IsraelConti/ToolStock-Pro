@@ -143,10 +143,10 @@ class MainActivity : AppCompatActivity() {
     private fun js(code: String) = runOnUiThread { webView.evaluateJavascript(code, null) }
 
     private fun quote(value: String): String =
-        "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+        org.json.JSONObject.quote(value)
 
     inner class AndroidBridge {
-        @JavascriptInterface fun appVersion(): String = "1.3.3-test"
+        @JavascriptInterface fun appVersion(): String = BuildConfig.VERSION_NAME
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { grantClosedTestingAccess() }
