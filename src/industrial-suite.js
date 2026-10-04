@@ -4,6 +4,15 @@ export function initIndustrialSuite(ctx) {
   if (!main || document.querySelector('[data-screen="assistant"]')) return;
   const OWNER_KEY = "toolstock.owner.v1";
   let subscriptionActive = false;
+  main.insertAdjacentHTML("afterbegin", '<div id="toolStockAccessNotice" class="card hidden"><p>Vista de consulta: activa la suscripción para guardar cambios. Tus datos se conservan.</p><button id="toolStockAccessHelp" class="btn">Ver suscripción y restaurar compra</button></div>');
+  document.querySelector("#toolStockAccessHelp").addEventListener("click", () => go("help"));
+  document.addEventListener("click", event => {
+    if (window.ToolStockAndroid && !subscriptionActive &&
+        event.target.closest("#confirmImport, [data-remove-employee]")) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      toast("Activa tu suscripción en Información para guardar cambios.");
+    }
+  }, true);
   document.addEventListener("submit", event => {
     if (window.ToolStockAndroid && !subscriptionActive &&
         ["productForm", "movementForm", "employeeForm", "settingsForm"].includes(event.target.id)) {
@@ -201,13 +210,14 @@ export function initIndustrialSuite(ctx) {
   window.onToolStockSubscription = (active, price, message) => {
     const unlocked = Boolean(active);
     subscriptionActive = unlocked;
+    document.querySelector("#toolStockAccessNotice")?.classList.toggle("hidden", unlocked || !window.ToolStockAndroid);
     const status = document.querySelector("#toolStockSubscriptionStatus");
     if (status) status.textContent = (active ? (message || "Suscripción activa") : (message || ((price || "4,99 €") + " al mes")));
     document.body.classList.toggle("subscription-locked", !unlocked);
   };
   window.onToolStockOffer = (price, hasTrial, conditions) => {
     const offer = document.querySelector("#toolStockOfferConditions");
-    if (offer && conditions) offer.textContent = conditions.replace(/P(\d+)D/g, "$1 días").replace(/P(\d+)W/g, "$1 semanas").replace(/P(\d+)M/g, "$1 meses").replace(/P(\d+)Y/g, "$1 años") + ". Renovación automática. Cancela en Google Play.";
+    if (offer && conditions) offer.textContent = conditions.replace(/P1M/g, "mes").replace(/P1Y/g, "año").replace(/P(\d+)D/g, "$1 días").replace(/P(\d+)W/g, "$1 semanas").replace(/P(\d+)M/g, "$1 meses").replace(/P(\d+)Y/g, "$1 años") + ". Renovación automática. Cancela en Google Play.";
     const status = document.querySelector("#toolStockSubscriptionStatus");
     if (status && !status.textContent.includes("activa")) status.textContent = `${price || "4,99 €"} al mes`;
   };

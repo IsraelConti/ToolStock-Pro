@@ -1,22 +1,16 @@
-# Guía de subida a Google Play
+# Actualización de la aplicación existente
 
-## Requisito previo
+Actualizar exclusivamente la ficha con paquete `com.toolstock.pro`. No crear otra aplicación.
 
-Google debe aprobar primero la identidad y el teléfono de la cuenta de desarrollador.
+1. Versión 1.4.2, código 8. Verificar que el código no haya sido usado ya en Play Console.
+2. Comprobar el certificado de la clave de subida en Integridad de la aplicación antes de subir el AAB firmado.
+3. Nombre visible e instalado: ToolStock Pro: Repuestos. Comparar el icono de la ficha con el icono instalado.
+4. Suscripción existente: `toolstock_pro_premium_monthly`. Confirmar plan mensual y oferta activa; el programa muestra las condiciones que devuelve Google Play.
+5. Instalar desde una pista de Google Play con una cuenta de prueba de licencia. Comprobar compra, cancelación del diálogo, compra pendiente, restauración y gestión de suscripción.
+6. Sin suscripción, comprobar la vista de consulta y el bloqueo de escrituras; los datos deben conservarse.
+7. Revisar registro del propietario, altas, movimientos, importación y exportación, escáner y navegación.
+8. Reenviar la actualización únicamente después de comprobar la ficha y la compra con Google Play.
 
-## Crear la aplicación
+La APK debug da acceso de desarrollo y no sirve para validar compras reales. El AAB sin firma no sirve para enviar una versión a Play Console.
 
-1. Nombre: ToolStock Pro: Repuestos.
-2. Idioma predeterminado: Español (España).
-3. Tipo: Aplicación.
-4. Precio de descarga: Gratis.
-5. Firma: usar la firma de aplicaciones de Google Play.
-6. Subir el AAB firmado, nunca el APK.
-7. Completar ficha, icono y capturas.
-8. Añadir la URL pública de la política de privacidad.
-9. Declarar sin anuncios.
-10. Completar Seguridad de los datos con el borrador incluido.
-11. Configurar la suscripción y la prueba de 3 días.
-12. Publicar primero en Prueba interna y validar escáner, compra, restauración, Excel, QR y Drive.
-
-Las cuentas personales nuevas pueden tener que realizar la prueba cerrada que indique la propia consola antes de solicitar producción.
+La firma automática usa secretos TOOLSTOCK_KEYSTORE_B64, TOOLSTOCK_STORE_PASSWORD, TOOLSTOCK_KEY_PASSWORD y TOOLSTOCK_KEY_ALIAS. Nunca guardar la clave privada ni las contraseñas en el repositorio o en los artefactos públicos.
