@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private lateinit var billingClient: BillingClient
     private var monthlyProduct: ProductDetails? = null
     private var connecting = false
+    private var purchaseRequested = false
     private val acknowledging = mutableSetOf<String>()
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingSaveBytes: ByteArray? = null
@@ -73,7 +74,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         val bytes = pendingSaveBytes
         val success = if (result.resultCode == Activity.RESULT_OK && result.data?.data != null && bytes != null) {
             try {
-                contentResolver.openOutputStream(result.data!!.data!!)?.use { it.write(bytes) }
+                val output = contentResolver.openOutputStream(result.data!!.data!!)
+                    ?: throw java.io.IOException("No se pudo abrir el archivo")
+                output.use { it.write(bytes) }
                 true
             } catch (_: Exception) { false }
         } else false
@@ -175,6 +178,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 monthlyProduct = productResult.productDetailsList.firstOrNull()
                 val offer = preferredOffer(monthlyProduct)
                 if (monthlyProduct == null || offer == null) {
+                    purchaseRequested = false
                     js("window.onToolStockPurchaseError?.(" + quote("La suscripción mensual no está disponible para esta cuenta. Inténtalo más tarde.") + ")")
                 } else {
                     val price = offer.pricingPhases.pricingPhaseList
@@ -184,9 +188,14 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                         else phase.formattedPrice + " por " + phase.billingPeriod
                     }
                     js("window.onToolStockOffer?.(" + quote(price) + "," + hasTrial(offer) + "," + quote(conditions) + ")")
+                    if (purchaseRequested) {
+                        purchaseRequested = false
+                        runOnUiThread { launchSubscription() }
+                    }
                 }
             } else {
                 monthlyProduct = null
+                purchaseRequested = false
                 js("window.onToolStockPurchaseError?.(" + quote("No se pudo consultar la suscripción.") + ")")
             }
         }
@@ -300,7 +309,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread {
-            if (billingClient.isReady) launchSubscription() else connectBilling()
+            purchaseRequested = true
+            if (billingClient.isReady) loadProduct() else connectBilling()
         }
         @JavascriptInterface fun restorePurchases() = runOnUiThread {
             if (billingClient.isReady) querySubscription() else connectBilling()
