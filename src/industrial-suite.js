@@ -3,8 +3,15 @@ export function initIndustrialSuite(ctx) {
   const main = document.querySelector("#app");
   if (!main || document.querySelector('[data-screen="assistant"]')) return;
   const OWNER_KEY = "toolstock.owner.v1";
-  const PLAY_REVIEW_EMAIL = "toolstock.review.2026@gmail.com";
-  const isPlayReviewer = () => owner && owner.email === PLAY_REVIEW_EMAIL;
+  let subscriptionActive = false;
+  document.addEventListener("submit", event => {
+    if (window.ToolStockAndroid && !subscriptionActive &&
+        ["productForm", "movementForm", "employeeForm", "settingsForm"].includes(event.target.id)) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      toast("Activa tu suscripción en Información para guardar cambios.");
+    }
+  }, true);
+
   const readOwner = () => { try { return JSON.parse(localStorage.getItem(OWNER_KEY) || "null"); } catch { return null; } };
   let owner = readOwner();
   document.body.insertAdjacentHTML("afterbegin", `
@@ -35,7 +42,6 @@ export function initIndustrialSuite(ctx) {
     localStorage.setItem(OWNER_KEY, JSON.stringify(owner));
     ownerOverlay.classList.add("hidden");
     document.body.classList.remove("owner-registration-required");
-    if (isPlayReviewer()) document.body.classList.remove("subscription-locked");
     const display = document.querySelector("#ownerEmailDisplay");
     if (display) display.textContent = owner.email;
     toast("Correo del propietario guardado");
@@ -81,7 +87,7 @@ export function initIndustrialSuite(ctx) {
         <details><summary>Privacidad</summary><p>El inventario y los movimientos permanecen localmente salvo las exportaciones o carpetas que el usuario elija. Google Play procesa la suscripción. La app no vende datos ni incluye publicidad o analítica.</p></details>
         <details><summary>Limitaciones</summary><p>ToolStock Pro ayuda a controlar repuestos, pero no sustituye inspecciones técnicas, evaluación de riesgos, LOTO, normativa, homologación del fabricante ni decisiones de seguridad.</p></details>
       </div>
-      <div class="card owner-identity-card"><h3>Propietario de esta instalación</h3><p id="ownerEmailDisplay">${esc(owner && owner.email ? owner.email : "Sin registrar")}</p><button id="changeOwnerEmail" class="btn">Cambiar correo del propietario</button></div>\n      <div class="card subscription-card"><h3>ToolStock Pro Premium</h3><p id="toolStockSubscriptionStatus">Comprobando Google Play…</p><p><strong>3 días gratuitos</strong> para clientes nuevos elegibles; después, 4,99 € al mes.</p><div class="subscription-actions"><button id="toolStockSubscribe" class="btn primary">Suscribirme</button><button id="toolStockRestore" class="btn">Restaurar compra</button><button id="toolStockManage" class="btn">Gestionar</button></div></div>
+      <div class="card owner-identity-card"><h3>Propietario de esta instalación</h3><p id="ownerEmailDisplay">${esc(owner && owner.email ? owner.email : "Sin registrar")}</p><button id="changeOwnerEmail" class="btn">Cambiar correo del propietario</button></div>\n      <div class="card subscription-card"><h3>ToolStock Pro Premium</h3><p id="toolStockSubscriptionStatus">Comprobando Google Play…</p><p id="toolStockOfferConditions">Consulta el precio y las condiciones de tu cuenta en Google Play. La suscripción se renueva automáticamente; puedes cancelarla en Google Play.</p><div class="subscription-actions"><button id="toolStockSubscribe" class="btn primary">Suscribirme</button><button id="toolStockRestore" class="btn">Restaurar compra</button><button id="toolStockManage" class="btn">Gestionar</button></div></div>
       <button class="btn wide" data-industrial-back>← Volver</button>
     </section>
   `);
@@ -193,15 +199,17 @@ export function initIndustrialSuite(ctx) {
   });
 
   window.onToolStockSubscription = (active, price, message) => {
-    const reviewAccess = isPlayReviewer();
-    const unlocked = active || reviewAccess;
+    const unlocked = Boolean(active);
+    subscriptionActive = unlocked;
     const status = document.querySelector("#toolStockSubscriptionStatus");
-    if (status) status.textContent = reviewAccess ? "Acceso de revisión de Google Play" : (active ? (message || "Suscripción activa") : (message || ((price || "4,99 €") + " al mes")));
+    if (status) status.textContent = (active ? (message || "Suscripción activa") : (message || ((price || "4,99 €") + " al mes")));
     document.body.classList.toggle("subscription-locked", !unlocked);
   };
-  window.onToolStockOffer = (price, hasTrial) => {
+  window.onToolStockOffer = (price, hasTrial, conditions) => {
+    const offer = document.querySelector("#toolStockOfferConditions");
+    if (offer && conditions) offer.textContent = conditions.replace(/P(\d+)D/g, "$1 días").replace(/P(\d+)W/g, "$1 semanas").replace(/P(\d+)M/g, "$1 meses").replace(/P(\d+)Y/g, "$1 años") + ". Renovación automática. Cancela en Google Play.";
     const status = document.querySelector("#toolStockSubscriptionStatus");
-    if (status && !status.textContent.includes("activa")) status.textContent = `${hasTrial ? "3 días gratuitos; después " : ""}${price || "4,99 €"} al mes`;
+    if (status && !status.textContent.includes("activa")) status.textContent = `${price || "4,99 €"} al mes`;
   };
   window.onToolStockPurchaseError = message => toast(message || "No se pudo completar la operación de Google Play");
   document.querySelector("#changeOwnerEmail")?.addEventListener("click", () => {

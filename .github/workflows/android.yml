@@ -56,6 +56,39 @@ jobs:
         working-directory: android
         run: gradle --no-daemon clean assembleDebug bundleRelease
 
+      - name: Sign Play release with existing upload key
+        id: signing
+        if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE_B64: ${{ secrets.TOOLSTOCK_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.TOOLSTOCK_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.TOOLSTOCK_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.TOOLSTOCK_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::warning::ToolStock upload-key secrets are missing; only an unsigned bundle will be available."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          KEYSTORE="$RUNNER_TEMP/toolstock-upload.jks"
+          trap 'rm -f "$KEYSTORE"' EXIT
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          jarsigner -keystore "$KEYSTORE" -storepass:env STORE_PASSWORD -keypass:env KEY_PASSWORD \
+            -signedjar android/app/build/outputs/bundle/release/ToolStock-Pro-Play-signed.aab \
+            android/app/build/outputs/bundle/release/app-release.aab "$KEY_ALIAS"
+          jarsigner -verify android/app/build/outputs/bundle/release/ToolStock-Pro-Play-signed.aab
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload signed Play bundle
+        if: steps.signing.outputs.signed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ToolStock-Pro-PLAY-signed
+          path: android/app/build/outputs/bundle/release/ToolStock-Pro-Play-signed.aab
+          if-no-files-found: error
+
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
