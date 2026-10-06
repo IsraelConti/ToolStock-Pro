@@ -97,6 +97,10 @@ jobs:
           fi
           echo "Found a private-key entry in the MaintenPro keystore."
 
+          # Export only the public certificate for a Play upload-key reset request.
+          CERT_OUT="$RUNNER_TEMP/MaintenPro-upload-certificate.pem"
+          keytool -export -rfc -keystore "$KEYSTORE" -storepass "$STORE_PASSWORD" -alias "$SIGNING_ALIAS" -file "$CERT_OUT"
+
           # Sign AAB for Google Play
           AAB_SRC="android/app/build/outputs/bundle/release/app-release.aab"
           AAB_OUT="android/app/build/outputs/bundle/release/MaintenPro-Play-signed.aab"
@@ -158,6 +162,13 @@ jobs:
           name: MaintenPro-AAB-signed
           path: android/app/build/outputs/bundle/release/MaintenPro-Play-signed.aab
           if-no-files-found: warn
+
+      - name: Upload MaintenPro upload certificate
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaintenPro-upload-certificate-PEM
+          path: ${{ runner.temp }}/MaintenPro-upload-certificate.pem
+          if-no-files-found: error
 
       - name: Upload unsigned fallback bundle
         uses: actions/upload-artifact@v4
