@@ -73,10 +73,10 @@ jobs:
 
       - name: Sign MaintenPro Play bundle and Uptodown APK
         env:
-          KEYSTORE_B64: ${{ secrets.MAINTENPRO_UPLOAD_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.MAINTENPRO_UPLOAD_STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.MAINTENPRO_UPLOAD_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.MAINTENPRO_UPLOAD_KEY_ALIAS }}
+          KEYSTORE_B64: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.MAINTENPROTOOLS_KEY_ALIAS }}
         run: |
           set -euo pipefail
 
