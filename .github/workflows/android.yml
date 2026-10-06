@@ -88,6 +88,15 @@ jobs:
           KEYSTORE="$RUNNER_TEMP/maintenpro-upload.jks"
           echo "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
 
+          # Select the first private-key entry from the keystore; never print passwords or key material.
+          SIGNING_ALIAS="$(keytool -list -v -keystore "$KEYSTORE" -storepass "$STORE_PASSWORD" 2>/dev/null | awk -F': ' '/^Alias name: / { alias = $2 } /^Entry type: PrivateKeyEntry$/ { print alias; exit }')"
+          if [ -z "$SIGNING_ALIAS" ]; then
+            echo "::error::No private-key entry found in the MaintenPro keystore."
+            keytool -list -v -keystore "$KEYSTORE" -storepass "$STORE_PASSWORD" 2>/dev/null | awk -F': ' '/^Alias name: / { alias = $2 } /^Entry type: / { print alias ": " $2 }'
+            exit 1
+          fi
+          echo "Found a private-key entry in the MaintenPro keystore."
+
           # Sign AAB for Google Play
           AAB_SRC="android/app/build/outputs/bundle/release/app-release.aab"
           AAB_OUT="android/app/build/outputs/bundle/release/MaintenPro-Play-signed.aab"
@@ -95,7 +104,7 @@ jobs:
             -keystore "$KEYSTORE" \
             -storepass "$STORE_PASSWORD" \
             -keypass "$KEY_PASSWORD" \
-            "$AAB_SRC" "${KEY_ALIAS:-upload}"
+            "$AAB_SRC" "$SIGNING_ALIAS"
           cp "$AAB_SRC" "$AAB_OUT"
           jarsigner -verify -verbose -certs "$AAB_OUT"
 
@@ -113,7 +122,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 "$APK_SRC" "$APK_ALIGNED"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
             --ks "$KEYSTORE" \
-            --ks-key-alias "${KEY_ALIAS:-upload}" \
+            --ks-key-alias "$SIGNING_ALIAS" \
             --ks-pass "pass:$STORE_PASSWORD" \
             --key-pass "pass:$KEY_PASSWORD" \
             --out "$APK_OUT" \
