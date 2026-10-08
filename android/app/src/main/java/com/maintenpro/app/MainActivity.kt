@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             }
 
             override fun onBillingServiceDisconnected() {
-                subscriptionResult(false, "4,99 €", "No se pudo conectar con Google Play. Puedes revisar la app en modo limitado.")
+                subscriptionResult(false, "El precio y la moneda se mostrarán en Google Play", "No se pudo conectar con Google Play. Puedes revisar la app en modo limitado.")
             }
         })
     }
