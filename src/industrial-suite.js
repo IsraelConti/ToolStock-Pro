@@ -29,18 +29,25 @@ export function initIndustrialSuite(ctx) {
         <img src="app-icon.png" alt="" class="owner-onboarding-logo">
         <p class="eyebrow">ACTIVACIÓN DEL PROPIETARIO</p>
         <h1>Bienvenido a ToolStock Pro</h1>
-        <p>Introduce el correo del propietario antes de acceder. Se guarda únicamente en este dispositivo.</p>
+        <p>El correo del propietario es opcional y solo se guarda en este dispositivo.</p>
         <label>Correo electrónico del propietario *<input id="ownerEmailInput" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="propietario@gmail.com"></label>
         <label>Nombre o empresa<input name="displayName" autocomplete="organization" placeholder="Nombre del propietario o empresa"></label>
         <label class="owner-consent"><input name="consent" type="checkbox" required> Confirmo que soy el propietario o una persona autorizada.</label>
         <small>La compra se comprueba mediante Google Play. ToolStock Pro no puede leer el correo de compra de Google.</small>
         <button class="btn primary wide" type="submit">Guardar correo y entrar</button>
+        <button id="continueAsGuest" class="btn wide" type="button">Continuar sin iniciar sesión</button>
         <p id="ownerOnboardingError" class="owner-error" aria-live="polite"></p>
       </form>
     </div>`);
   const ownerOverlay = document.querySelector("#ownerOnboarding");
   if (owner && owner.email) ownerOverlay.classList.add("hidden");
   document.body.classList.toggle("owner-registration-required", !(owner && owner.email));
+  document.querySelector("#continueAsGuest").addEventListener("click", () => {
+    ownerOverlay.classList.add("hidden");
+    document.body.classList.remove("owner-registration-required");
+    const display = document.querySelector("#ownerEmailDisplay");
+    if (display) display.textContent = "Sin registrar";
+  });
   document.querySelector("#ownerOnboardingForm").addEventListener("submit", e => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
