@@ -125,8 +125,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     loadBillingState()
                 } else {
-                    offerResult("4,99 €")
-                    subscriptionResult(false, "4,99 €", "Suscripción necesaria para usar todas las funciones")
+                    offerResult("El precio y la moneda se mostrarán en Google Play")
+                    subscriptionResult(false, "El precio y la moneda se mostrarán en Google Play", "Suscripción necesaria para usar todas las funciones")
                 }
             }
 
@@ -229,7 +229,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         val offer = product?.subscriptionOfferDetails
             ?.firstOrNull { details -> details.pricingPhases.pricingPhaseList.none { it.priceAmountMicros == 0L } }
             ?: product?.subscriptionOfferDetails?.firstOrNull()
-        return offer?.pricingPhases?.pricingPhaseList?.lastOrNull()?.formattedPrice ?: "4,99 €"
+        return offer?.pricingPhases?.pricingPhaseList?.lastOrNull()?.formattedPrice ?: "El precio y la moneda se mostrarán en Google Play"
     }
 
     private fun offerResult(price: String) =
