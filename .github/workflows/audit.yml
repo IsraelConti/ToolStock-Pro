@@ -23,6 +23,9 @@ jobs:
   android-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      ANDROID_AVD_HOME: ${{ runner.temp }}/toolstock-avd
+      ANDROID_USER_HOME: ${{ runner.temp }}/toolstock-android
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,9 +52,12 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Prepare Android 10 emulator
         run: |
+          mkdir -p "$ANDROID_AVD_HOME" "$ANDROID_USER_HOME"
           sudo chmod 666 /dev/kvm
           sdkmanager 'system-images;android-29;google_apis;x86_64'
-          printf 'no\n' | avdmanager create avd --name toolstock-audit --package 'system-images;android-29;google_apis;x86_64' --force
+          printf 'no\n' | avdmanager create avd --name toolstock-audit --package 'system-images;android-29;google_apis;x86_64' --device pixel --path "$ANDROID_AVD_HOME/toolstock-audit.avd" --force
+          test -f "$ANDROID_AVD_HOME/toolstock-audit.ini"
+          "$ANDROID_HOME/emulator/emulator" -list-avds
           "$ANDROID_HOME/emulator/emulator" -avd toolstock-audit -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$RUNNER_TEMP/toolstock-emulator.log" 2>&1 &
           timeout 180 adb wait-for-device
           for attempt in $(seq 1 120); do
