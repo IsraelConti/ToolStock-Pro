@@ -1,17 +1,19 @@
 {
   "name": "toolstock-pro",
-  "version": "1.4.2",
+  "version": "1.4.4",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "serve": "npx http-server dist -p 4173 -c-1"
+    "serve": "npx http-server dist -p 4173 -c-1",
+    "test": "node audit/browser-regression.cjs && node audit/fault-regression.cjs"
   },
   "dependencies": {
     "qrcode": "^1.5.4",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "playwright": "1.62.1"
   }
 }

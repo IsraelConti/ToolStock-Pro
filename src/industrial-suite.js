@@ -1,14 +1,15 @@
+import { storage, demoMode } from "./storage.js";
 export function initIndustrialSuite(ctx) {
   const { getProducts, getMovements, getSettings, go, toast, esc } = ctx;
   const main = document.querySelector("#app");
   if (!main || document.querySelector('[data-screen="assistant"]')) return;
   const OWNER_KEY = "toolstock.owner.v1";
-  let subscriptionActive = false;
+  let subscriptionActive = demoMode;
   main.insertAdjacentHTML("afterbegin", '<div id="toolStockAccessNotice" class="card hidden"><p>Vista de consulta: activa la suscripción para guardar cambios. Tus datos se conservan.</p><button id="toolStockAccessHelp" class="btn">Ver suscripción y restaurar compra</button></div>');
   document.querySelector("#toolStockAccessHelp").addEventListener("click", () => go("help"));
   document.addEventListener("click", event => {
     if (window.ToolStockAndroid && !subscriptionActive &&
-        event.target.closest("#confirmImport, [data-remove-employee]")) {
+        event.target.closest("#confirmImport, [data-remove-employee], [data-delete-product]")) {
       event.preventDefault(); event.stopImmediatePropagation();
       toast("Activa tu suscripción en Información para guardar cambios.");
     }
@@ -21,8 +22,10 @@ export function initIndustrialSuite(ctx) {
     }
   }, true);
 
-  const readOwner = () => { try { return JSON.parse(localStorage.getItem(OWNER_KEY) || "null"); } catch { return null; } };
+  const readOwner = () => { try { return JSON.parse(storage.getItem(OWNER_KEY) || "null"); } catch { return null; } };
   let owner = readOwner();
+  if (demoMode) owner = { email: "demo@toolstock.example" };
+  if (demoMode) main.insertAdjacentHTML("afterbegin", '<div class="card demo-notice"><p>Demostración: los cambios se guardan en un inventario separado. No se realizan compras.</p><button id="exitDemo" class="btn">Salir de la demostración</button></div>');
   document.body.insertAdjacentHTML("afterbegin", `
     <div id="ownerOnboarding" class="owner-onboarding" role="dialog" aria-modal="true">
       <form id="ownerOnboardingForm" class="owner-onboarding-card">
@@ -35,10 +38,13 @@ export function initIndustrialSuite(ctx) {
         <label class="owner-consent"><input name="consent" type="checkbox" required> Confirmo que soy el propietario o una persona autorizada.</label>
         <small>La compra se comprueba mediante Google Play. ToolStock Pro no puede leer el correo de compra de Google.</small>
         <button class="btn primary wide" type="submit">Guardar correo y entrar</button>
+        <button id="startDemo" class="btn wide" type="button">Probar demostración completa</button>
         <button id="continueAsGuest" class="btn wide" type="button">Continuar sin iniciar sesión</button>
         <p id="ownerOnboardingError" class="owner-error" aria-live="polite"></p>
       </form>
     </div>`);
+  document.querySelector("#startDemo").addEventListener("click", () => { location.search = "?demo=1"; });
+  document.querySelector("#exitDemo")?.addEventListener("click", () => { location.search = ""; });
   const ownerOverlay = document.querySelector("#ownerOnboarding");
   if (owner && owner.email) ownerOverlay.classList.add("hidden");
   document.body.classList.toggle("owner-registration-required", !(owner && owner.email));
@@ -55,7 +61,7 @@ export function initIndustrialSuite(ctx) {
     const error = document.querySelector("#ownerOnboardingError");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { error.textContent = "Introduce un correo electrónico válido."; return; }
     owner = { email, displayName: String(data.displayName || "").trim(), createdAt: new Date().toISOString() };
-    localStorage.setItem(OWNER_KEY, JSON.stringify(owner));
+    try { storage.setItem(OWNER_KEY, JSON.stringify(owner)); } catch(failure) { error.textContent=failure.message; return; }
     ownerOverlay.classList.add("hidden");
     document.body.classList.remove("owner-registration-required");
     const display = document.querySelector("#ownerEmailDisplay");
@@ -98,8 +104,8 @@ export function initIndustrialSuite(ctx) {
         <details><summary>Reposición y mínimos</summary><p>Define el mínimo considerando consumo, plazo de entrega, redundancia y consecuencias de rotura. Revisa especialmente los repuestos críticos sin existencias y los que tengan plazos largos.</p></details>
         <details><summary>Movimientos y auditoría</summary><p>Registra quién retira o entrega, cantidad, destino, equipo u orden de trabajo y observaciones. Las correcciones deben hacerse como ajustes trazables.</p></details>
         <details><summary>QR y códigos de barras</summary><p>Genera etiquetas QR por repuesto. En Android, el escáner local permite buscar referencias QR, EAN, UPC y códigos internos sin almacenar imágenes.</p></details>
-        <details><summary>Drive y copias</summary><p>Vincula una carpeta elegida por el propietario y conserva copias periódicas. La selección de carpeta concede acceso únicamente al destino escogido por el usuario.</p></details>
-        <details><summary>Usuarios</summary><p>El propietario puede preparar hasta tres empleados con rol de encargado, operario o consulta. Comprueba los permisos antes de compartir documentos o carpetas.</p></details>
+        <details><summary>Drive y copias</summary><p>Exporta una copia JSON completa y guárdala en Google Drive o en el destino elegido. Para transferir datos a otra instalación, restaura la copia. Elegir una carpeta no sincroniza automáticamente los datos.</p></details>
+        <details><summary>Usuarios</summary><p>Puedes guardar tres contactos y preparar un mensaje de invitación. Sus funciones son informativas: no hay cuentas compartidas ni autenticación o permisos por empleado.</p></details>
         <details><summary>Privacidad</summary><p>El inventario y los movimientos permanecen localmente salvo las exportaciones o carpetas que el usuario elija. Google Play procesa la suscripción. La app no vende datos ni incluye publicidad o analítica.</p></details>
         <details><summary>Limitaciones</summary><p>ToolStock Pro ayuda a controlar repuestos, pero no sustituye inspecciones técnicas, evaluación de riesgos, LOTO, normativa, homologación del fabricante ni decisiones de seguridad.</p></details>
       </div>
@@ -124,7 +130,12 @@ export function initIndustrialSuite(ctx) {
     const search = document.querySelector("#searchProducts");
     go("products");
     if (search) {
-      search.value = value || "";
+      let query = value || "";
+      try {
+        const code = JSON.parse(query);
+        if (code.type === "toolstock-product" && typeof code.reference === "string") query = code.reference;
+      } catch { /* Ordinary barcode values are plain text. */ }
+      search.value = query;
       search.dispatchEvent(new Event("input", { bubbles: true }));
     }
     toast(value ? "Código leído: " + value : "No se obtuvo ningún código");
@@ -186,7 +197,7 @@ export function initIndustrialSuite(ctx) {
         const d = last.get(p.id) || last.get(p.reference);
         return n(p.stock) > n(p.minimumStock)*2 && (!d || now-d.getTime() > 180*86400000);
       }).sort((a,b)=>n(b.stock)*n(b.unitPrice)-n(a.stock)*n(a.unitPrice)).slice(0,10);
-      lines = rows.length ? rows.map(p => `${label(p)}: ${n(p.stock)} ${esc(p.unit || "unidades")}, valor estimado ${(n(p.stock)*n(p.unitPrice)).toFixed(2)}.`) : ["No se detecta exceso claro con los datos disponibles."];
+      lines = rows.length ? rows.map(p => `${label(p)}: ${n(p.stock)} ${esc(p.unit || "unidades")}, ${getSettings().hidePrices ? "importe oculto" : "valor estimado "+(n(p.stock)*n(p.unitPrice)).toFixed(2)}.`) : ["No se detecta exceso claro con los datos disponibles."];
     } else if (kind === "usage" || /consum|usad|salida|retir/.test(q)) {
       title = "Consumo y utilización";
       const totals = new Map();
@@ -215,23 +226,24 @@ export function initIndustrialSuite(ctx) {
   });
 
   window.onToolStockSubscription = (active, price, message) => {
-    const unlocked = Boolean(active);
+    const unlocked = demoMode || Boolean(active);
     subscriptionActive = unlocked;
     document.querySelector("#toolStockAccessNotice")?.classList.toggle("hidden", unlocked || !window.ToolStockAndroid);
     const status = document.querySelector("#toolStockSubscriptionStatus");
-    if (status) status.textContent = (active ? (message || "Suscripción activa") : (message || ((price || "4,99 €") + " al mes")));
+    if (status) status.textContent = (demoMode ? "Demostración completa · datos separados" : active ? (message || "Suscripción activa") : (message || (price ? price + " al mes" : "Consulta el precio y las condiciones en Google Play")));
     document.body.classList.toggle("subscription-locked", !unlocked);
   };
   window.onToolStockOffer = (price, hasTrial, conditions) => {
+    if (demoMode) return;
     const offer = document.querySelector("#toolStockOfferConditions");
     if (offer && conditions) offer.textContent = conditions.replace(/P1M/g, "mes").replace(/P1Y/g, "año").replace(/P(\d+)D/g, "$1 días").replace(/P(\d+)W/g, "$1 semanas").replace(/P(\d+)M/g, "$1 meses").replace(/P(\d+)Y/g, "$1 años") + ". Renovación automática. Cancela en Google Play.";
     const status = document.querySelector("#toolStockSubscriptionStatus");
-    if (status && !status.textContent.includes("activa")) status.textContent = `${price || "4,99 €"} al mes`;
+    if (status && !status.textContent.includes("activa")) status.textContent = price ? `${price} al mes` : "Consulta el precio en Google Play";
   };
   window.onToolStockPurchaseError = message => toast(message || "No se pudo completar la operación de Google Play");
   document.querySelector("#changeOwnerEmail")?.addEventListener("click", () => {
     if (!confirm("¿Quieres cambiar el correo del propietario de esta instalación?")) return;
-    localStorage.removeItem(OWNER_KEY);
+    storage.removeItem(OWNER_KEY);
     location.reload();
   });
   document.querySelector("#toolStockSubscribe")?.addEventListener("click", () => window.ToolStockAndroid?.subscribeMonthly?.());
@@ -240,6 +252,13 @@ export function initIndustrialSuite(ctx) {
 
   health();
   answer("audit");
-  if (window.ToolStockAndroid?.checkSubscription) window.ToolStockAndroid.checkSubscription();
-  else window.onToolStockSubscription(true, "4,99 €", "Versión web de prueba");
+  if (demoMode) {
+    ["toolStockSubscribe", "toolStockRestore", "toolStockManage"].forEach(id => {
+      const button = document.getElementById(id);
+      button?.replaceWith(button.cloneNode(true));
+      document.getElementById(id)?.addEventListener("click", () => toast("Sal de la demostración para gestionar una compra real."));
+    });
+    window.onToolStockSubscription(true, "", "Demostración");
+  } else if (window.ToolStockAndroid?.checkSubscription) window.ToolStockAndroid.checkSubscription();
+  else window.onToolStockSubscription(true, "", "Versión web de prueba");
 }

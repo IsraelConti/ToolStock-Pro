@@ -1,6 +1,7 @@
 package com.toolstock.pro
 
 import android.annotation.SuppressLint
+import android.print.PrintManager
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -12,9 +13,14 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
@@ -88,17 +94,40 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            settings.allowFileAccess = true
+            settings.allowFileAccess = false
+            settings.allowFileAccessFromFileURLs = false
+            settings.allowUniversalAccessFromFileURLs = false
             settings.allowContentAccess = true
             webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    val uri = request?.url ?: return true
+                    if (uri.scheme == "file" && uri.path == "/android_asset/index.html") return false
+                    if (uri.scheme in listOf("https", "mailto") && request.isForMainFrame) {
+                        try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) {
+                            js("window.onToolStockPurchaseError?.(" + quote("No hay una aplicación para abrir el enlace.") + ")")
+                        }
+                    }
+                    return true
+                }
+                override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                    val uri = request?.url ?: return null
+                    val allowed = uri.scheme == "file" && uri.path in listOf("/android_asset/index.html", "/android_asset/app.js", "/android_asset/styles.css", "/android_asset/app-icon.png", "/android_asset/manifest.webmanifest")
+                    return if (allowed || uri.scheme == "data") null else WebResourceResponse("text/plain", "UTF-8", java.io.ByteArrayInputStream(ByteArray(0)))
+                }
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
+                    val folderUri = getSharedPreferences("toolstock", MODE_PRIVATE).getString("drive_tree_uri", null)
+                    if (folderUri != null) {
+                        try { js("window.onToolStockDriveFolderSelected?.(" + quote(DocumentsContract.getTreeDocumentId(Uri.parse(folderUri)).substringAfterLast(':')) + ")") } catch (_: Exception) { }
+                    }
                     if (BuildConfig.DEBUG) {
-                        js("window.onToolStockOffer?.('4,99 €',true)")
-                        subscriptionResult(true, "4,99 €", "Modo de prueba")
+                        js("window.onToolStockOffer?.('',false,'Modo de desarrollo: no valida compras de Google Play')")
+                        subscriptionResult(true, "", "Modo de prueba")
                     } else connectBilling()
                 }
             }
@@ -123,7 +152,13 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             addJavascriptInterface(AndroidBridge(), "ToolStockAndroid")
             loadUrl("file:///android_asset/index.html")
         }
+        ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
         setContentView(webView)
+        ViewCompat.requestApplyInsets(webView)
 
         billingClient = BillingClient.newBuilder(this)
             .setListener(this)
@@ -146,7 +181,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     private fun connectBilling() {
-        if (BuildConfig.DEBUG) return subscriptionResult(true, "4,99 €", "Modo de prueba")
+        if (BuildConfig.DEBUG) return subscriptionResult(true, "", "Modo de prueba")
         if (billingClient.isReady) {
             loadProduct()
             querySubscription()
@@ -182,7 +217,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                     js("window.onToolStockPurchaseError?.(" + quote("La suscripción mensual no está disponible para esta cuenta. Inténtalo más tarde.") + ")")
                 } else {
                     val price = offer.pricingPhases.pricingPhaseList
-                        .lastOrNull { it.priceAmountMicros > 0L }?.formattedPrice ?: "4,99 €"
+                        .lastOrNull { it.priceAmountMicros > 0L }?.formattedPrice ?: ""
                     val conditions = offer.pricingPhases.pricingPhaseList.joinToString("; después, ") { phase ->
                         if (phase.priceAmountMicros == 0L) "Prueba gratuita durante " + phase.billingPeriod
                         else phase.formattedPrice + " por " + phase.billingPeriod
@@ -202,7 +237,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     private fun querySubscription() {
-        if (BuildConfig.DEBUG) return subscriptionResult(true, "4,99 €", "Modo de prueba")
+        if (BuildConfig.DEBUG) return subscriptionResult(true, "", "Modo de prueba")
         billingClient.queryPurchasesAsync(
             QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
         ) { result, purchases ->
@@ -304,6 +339,16 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         org.json.JSONObject.quote(value)
 
     inner class AndroidBridge {
+        @JavascriptInterface fun printHtml(html: String) = runOnUiThread {
+            val printView = WebView(this@MainActivity)
+            printView.webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    val manager = getSystemService(PRINT_SERVICE) as PrintManager
+                    manager.print("ToolStock etiquetas QR", printView.createPrintDocumentAdapter("ToolStock QR"), null)
+                }
+            }
+            printView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+        }
         @JavascriptInterface fun appVersion(): String = BuildConfig.VERSION_NAME
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
@@ -324,12 +369,19 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         }
         @JavascriptInterface
         fun saveBase64File(fileName: String, mimeType: String, base64: String) {
+            if (base64.length > 32 * 1024 * 1024) {
+                js("window.onToolStockFileSaved?.(false," + quote(fileName) + ")")
+                return
+            }
             val bytes = try { Base64.decode(base64, Base64.DEFAULT) } catch (_: Exception) {
                 js("window.onToolStockFileSaved?.(false," + quote(fileName) + ")")
                 return
             }
             runOnUiThread {
-                if (pendingSaveBytes != null) return@runOnUiThread
+                if (pendingSaveBytes != null) {
+                    js("window.onToolStockPurchaseError?.(" + quote("Termina o cancela el guardado anterior antes de exportar otro archivo.") + ")")
+                    return@runOnUiThread
+                }
                 pendingSaveBytes = bytes
                 pendingSaveName = fileName
                 val safeName = fileName.take(120).replace(Regex("[\\\\/:*?\"<>|]"), "_")
@@ -337,6 +389,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                     addCategory(Intent.CATEGORY_OPENABLE)
                     type = mimeType.ifBlank { "application/octet-stream" }
                     putExtra(Intent.EXTRA_TITLE, safeName)
+                    getSharedPreferences("toolstock", MODE_PRIVATE).getString("drive_tree_uri", null)?.let {
+                        putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(it))
+                    }
                 }
                 try { saveFilePicker.launch(intent) } catch (_: Exception) {
                     pendingSaveBytes = null
@@ -354,6 +409,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     override fun onDestroy() {
         if (::billingClient.isInitialized) billingClient.endConnection()
+        webView.removeJavascriptInterface("ToolStockAndroid")
+        webView.destroy()
         super.onDestroy()
     }
 }

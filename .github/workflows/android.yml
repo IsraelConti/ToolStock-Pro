@@ -90,6 +90,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload installable APK
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: ToolStock-Pro-Industrial-APK
@@ -97,6 +98,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Play Store bundle
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: ToolStock-Pro-Industrial-AAB-unsigned
