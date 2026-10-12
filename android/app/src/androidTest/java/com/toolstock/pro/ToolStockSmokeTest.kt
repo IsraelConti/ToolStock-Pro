@@ -108,7 +108,15 @@ class ToolStockSmokeTest {
         val end = System.currentTimeMillis() + 20000
         while (System.currentTimeMillis() < end && device.currentPackageName == "com.toolstock.pro") Thread.sleep(200)
         assertTrue("Android document picker did not open", device.currentPackageName?.contains("documentsui") == true)
-        device.pressBack()
+        // The first Back can dismiss the filename keyboard; cancel the picker itself.
+        repeat(3) {
+            if (device.currentPackageName?.contains("documentsui") == true) {
+                device.pressBack()
+                device.waitForIdle(1000)
+                Thread.sleep(400)
+            }
+        }
+        assertEquals("Picker did not return to ToolStock", "com.toolstock.pro", device.currentPackageName)
         waitFor("document.getElementById('toast').textContent.indexOf('No se guardó')>=0")
         assertEquals(true, js("return !!document.getElementById('exitDemo');"))
     }
