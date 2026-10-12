@@ -45,7 +45,7 @@
 
     <section class="screen" data-screen="products">
       <div class="section-head"><div><p class="eyebrow">INVENTARIO</p><h2>Productos</h2></div><button class="btn primary" data-go="productForm">＋ Añadir</button></div>
-      <label class="search">⌕ <input id="searchProducts" type="search" placeholder="Buscar por nombre, referencia, equipo o ubicación"></label>
+      <label class="search">⌕ <input id="searchProducts" type="search" placeholder="Buscar por nombre, referencia, barras, categoría, almacén o equipo"></label>
       <div id="productList" class="list"></div>
     </section>
 
@@ -102,7 +102,7 @@
               <option value="output">Préstamo o entrega</option>
               <option value="entry">Entrada de material</option>
               <option value="return">Devolución</option>
-              <option value="adjustment">Ajuste de inventario</option>
+              <option value="adjustment">Ajuste: stock total contado</option>
             </select></label>
             <label>Cantidad *<input name="quantity" type="number" min="0.001" step="0.001" required placeholder="Ej.: 2"></label>
           </div>
@@ -145,30 +145,34 @@
       <p class="eyebrow">PERSONALIZACIÓN</p><h2>Configuración</h2>
       <form id="settingsForm" class="form">
         <div class="form-section"><h3>Empresa</h3><label>Nombre comercial<input name="companyName" placeholder="Nombre del taller"></label><label>Nombre de la aplicación<input name="appName" value="ToolStock Pro"></label></div>
-        <div class="form-section"><h3>Nube privada</h3>
-          <p class="lead">Selecciona o crea la carpeta de esta empresa en Google Drive. La aplicación conservará el permiso concedido por Android.</p>
-          <button id="chooseDriveFolder" class="btn primary" type="button">Vincular carpeta de Google Drive</button>
+        <div class="form-section"><h3>Copias de seguridad</h3>
+          <p class="lead">Exporta una copia completa del inventario, movimientos, configuración y equipo. Guárdala en Google Drive o en una carpeta elegida. Para recuperarla en otro dispositivo, restaura el archivo JSON. No hay sincronización automática.</p>
+          <button id="exportBackup" class="btn primary" type="button">Exportar copia completa</button>
+          <label class="btn" for="restoreBackup">Restaurar copia JSON</label>
+          <input id="restoreBackup" type="file" accept=".json,application/json">
+          <button id="chooseDriveFolder" class="btn primary" type="button">Elegir carpeta para exportaciones</button>
           <small id="driveFolderStatus" class="hint">Todavía no hay una carpeta vinculada.</small>
         </div>
         <div class="form-section"><h3>Equipo de trabajo</h3>
-          <p class="lead">El propietario puede añadir hasta 3 empleados y decidir qué puede hacer cada uno.</p>
+          <p class="lead">Guarda hasta 3 contactos y su función en el equipo. Estos datos no crean cuentas ni restringen el acceso; cada instalación conserva su inventario local.</p>
           <div id="employeeSummary" class="employee-summary"></div>
           <button class="btn primary wide" type="button" data-go="employees">Gestionar empleados</button>
         </div>
-        <div class="form-section"><h3>Idioma y región</h3>
-          <div class="two"><label>Idioma<select name="language"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option><option value="BRL">BRL — R$</option></select></label></div>
+        <div class="form-section"><h3>Formato regional</h3>
+          <p class="lead">El formato regional cambia las fechas y los importes. La interfaz está en español.</p>
+          <div class="two"><label>Formato de fechas e importes<select name="language"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option><option value="BRL">BRL — R$</option></select></label></div>
           <div class="two"><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step="0.01" value="21"></label><label>Tema<select name="theme"><option value="dark">Oscuro</option><option value="light">Claro</option><option value="system">Sistema</option></select></label></div>
         </div>
-        <div class="form-section"><h3>Seguridad y operación</h3><label class="toggle"><input name="negativeStock" type="checkbox"><span></span>Permitir stock negativo</label><label class="toggle"><input name="hidePrices" type="checkbox"><span></span>Ocultar importes a operarios</label><label class="toggle"><input name="confirmDelete" type="checkbox" checked><span></span>Confirmar antes de eliminar</label></div>
+        <div class="form-section"><h3>Seguridad y operación</h3><label class="toggle"><input name="negativeStock" type="checkbox"><span></span>Permitir stock negativo</label><label class="toggle"><input name="hidePrices" type="checkbox"><span></span>Ocultar importes en pantalla y en informes</label><p class="hint">Ocultar importes es una preferencia visual. No sustituye el bloqueo del dispositivo ni crea permisos por usuario.</p></div>
         <div class="sticky-actions"><button type="button" class="btn" data-back>Cancelar y volver</button><button class="btn primary" type="submit">Guardar configuración</button></div>
       </form>
     </section>
 
     <section class="screen" data-screen="employees">
-      <p class="eyebrow">USUARIOS Y PERMISOS</p><h2>Empleados</h2>
+      <p class="eyebrow">EQUIPO LOCAL</p><h2>Empleados</h2>
       <div class="owner-card">
         <span class="avatar owner">P</span>
-        <div><b>Propietario</b><small>Control total de la empresa y de los invitados</small></div>
+        <div><b>Propietario de esta instalación</b><small>Contactos locales; no son cuentas de acceso</small></div>
         <span class="badge">Administrador</span>
       </div>
       <div class="capacity"><div><b id="employeeCapacity">0 de 3 empleados</b><small>Plazas utilizadas</small></div><span id="capacityDots"></span></div>
@@ -176,10 +180,10 @@
         <div class="form-section"><h3>Añadir empleado</h3>
           <label>Nombre completo *<input name="name" required placeholder="Ej.: Alberto García"></label>
           <label>Correo de Google *<input name="email" type="email" required placeholder="empleado@gmail.com"></label>
-          <label>Rol y permisos<select name="role">
-            <option value="manager">Encargado — gestiona productos y movimientos</option>
-            <option value="operator">Operario — consulta y registra movimientos</option>
-            <option value="viewer">Consulta — solo puede ver información</option>
+          <label>Función en el equipo<select name="role">
+            <option value="manager">Encargado</option>
+            <option value="operator">Operario</option>
+            <option value="viewer">Consulta</option>
           </select></label>
           <button class="btn primary wide" type="submit">＋ Añadir y preparar invitación</button>
         </div>

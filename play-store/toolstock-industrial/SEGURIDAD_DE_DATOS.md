@@ -1,6 +1,6 @@
 # Seguridad de los datos — borrador
 
-Versión 1.3.1, paquete `com.toolstock.pro`.
+Versión 1.4.4, paquete `com.toolstock.pro`.
 
 ## Declaración recomendada
 

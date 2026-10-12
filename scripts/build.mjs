@@ -9,7 +9,7 @@ await build({
   minify: true,
   sourcemap: true,
   outfile: "dist/app.js",
-  target: ["es2020"]
+  target: ["chrome74"]
 });
 for (const file of ["index.html", "styles.css", "manifest.webmanifest", "app-icon.png"]) {
   await cp(`src/${file}`, `dist/${file}`);

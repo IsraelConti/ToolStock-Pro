@@ -23,9 +23,9 @@ CONTROL INDUSTRIAL
 • Escáner Android para QR y códigos de barras.
 • Etiquetas QR imprimibles.
 • Importación Excel/CSV e informes Excel profesionales.
-• Propietario y hasta tres empleados con permisos.
-• Carpeta privada elegida por el usuario.
-• Varios idiomas, monedas, impuestos y temas.
+• Correo del propietario opcional y hasta tres contactos locales de equipo.
+• Copia completa JSON y restauración manual con destino elegido por el usuario.
+• Formatos regionales, monedas, impuestos y temas; interfaz en español.
 • Centro de información, ayuda y privacidad.
 
 PRIVACIDAD
@@ -34,7 +34,7 @@ Los datos de inventario permanecen en el dispositivo salvo los archivos o carpet
 
 SUSCRIPCIÓN
 
-Los clientes nuevos elegibles pueden disfrutar de 3 días gratuitos. Después cuesta 4,99 € al mes, se renueva automáticamente y puede cancelarse desde Google Play. Google muestra precio y condiciones antes de confirmar.
+Suscripción mensual con renovación automática y cancelación desde Google Play. Google muestra el precio y las ofertas disponibles para la cuenta antes de confirmar. Prueba las funciones con un inventario de demostración separado, sin efectuar compras.
 
 ToolStock Pro es una herramienta de organización. No sustituye inspecciones, homologaciones, LOTO, normativa ni decisiones de seguridad.
 
