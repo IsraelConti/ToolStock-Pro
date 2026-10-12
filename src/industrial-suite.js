@@ -30,7 +30,7 @@ export function initIndustrialSuite(ctx) {
         <p class="eyebrow">ACTIVACIÓN DEL PROPIETARIO</p>
         <h1>Bienvenido a ToolStock Pro</h1>
         <p>El correo del propietario es opcional y solo se guarda en este dispositivo.</p>
-        <label>Correo electrónico del propietario *<input id="ownerEmailInput" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="propietario@gmail.com"></label>
+        <label>Correo electrónico del propietario (opcional)<input id="ownerEmailInput" name="email" type="email" inputmode="email" autocomplete="email" placeholder="propietario@gmail.com"></label>
         <label>Nombre o empresa<input name="displayName" autocomplete="organization" placeholder="Nombre del propietario o empresa"></label>
         <label class="owner-consent"><input name="consent" type="checkbox" required> Confirmo que soy el propietario o una persona autorizada.</label>
         <small>La compra se comprueba mediante Google Play. ToolStock Pro no puede leer el correo de compra de Google.</small>
