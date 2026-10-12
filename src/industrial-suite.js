@@ -30,16 +30,16 @@ export function initIndustrialSuite(ctx) {
     <div id="ownerOnboarding" class="owner-onboarding" role="dialog" aria-modal="true">
       <form id="ownerOnboardingForm" class="owner-onboarding-card">
         <img src="app-icon.png" alt="" class="owner-onboarding-logo">
-        <p class="eyebrow">ACTIVACIÓN DEL PROPIETARIO</p>
+        <p class="eyebrow">INVENTARIO LOCAL</p>
         <h1>Bienvenido a ToolStock Pro</h1>
         <p>El correo del propietario es opcional y solo se guarda en este dispositivo.</p>
+        <button id="startDemo" class="btn wide" type="button">Probar demostración completa</button>
+        <button id="continueAsGuest" class="btn wide" type="button">Continuar sin iniciar sesión</button>
         <label>Correo electrónico del propietario *<input id="ownerEmailInput" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="propietario@gmail.com"></label>
         <label>Nombre o empresa<input name="displayName" autocomplete="organization" placeholder="Nombre del propietario o empresa"></label>
         <label class="owner-consent"><input name="consent" type="checkbox" required> Confirmo que soy el propietario o una persona autorizada.</label>
         <small>La compra se comprueba mediante Google Play. ToolStock Pro no puede leer el correo de compra de Google.</small>
         <button class="btn primary wide" type="submit">Guardar correo y entrar</button>
-        <button id="startDemo" class="btn wide" type="button">Probar demostración completa</button>
-        <button id="continueAsGuest" class="btn wide" type="button">Continuar sin iniciar sesión</button>
         <p id="ownerOnboardingError" class="owner-error" aria-live="polite"></p>
       </form>
     </div>`);

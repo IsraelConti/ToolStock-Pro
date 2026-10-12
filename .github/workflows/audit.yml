@@ -42,13 +42,15 @@ jobs:
           npm run build
           mkdir -p android/app/src/main/assets
           cp dist/* android/app/src/main/assets/
+      - name: Configure Android SDK tools
+        uses: android-actions/setup-android@v3
       - name: Prepare Android 10 emulator
         run: |
           sudo chmod 666 /dev/kvm
           sdkmanager 'system-images;android-29;google_apis;x86_64'
           printf 'no\n' | avdmanager create avd --name toolstock-audit --package 'system-images;android-29;google_apis;x86_64' --force
-          emulator -avd toolstock-audit -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$RUNNER_TEMP/toolstock-emulator.log" 2>&1 &
-          adb wait-for-device
+          "$ANDROID_HOME/emulator/emulator" -avd toolstock-audit -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$RUNNER_TEMP/toolstock-emulator.log" 2>&1 &
+          timeout 180 adb wait-for-device
           for attempt in $(seq 1 120); do
             if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; then break; fi
             sleep 2
