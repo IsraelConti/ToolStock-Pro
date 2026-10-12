@@ -19,3 +19,46 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm test
+
+  android-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+      - name: Build embedded app
+        run: |
+          npm ci
+          npm run build
+          mkdir -p android/app/src/main/assets
+          cp dist/* android/app/src/main/assets/
+      - name: Prepare Android 10 emulator
+        run: |
+          sudo chmod 666 /dev/kvm
+          sdkmanager 'system-images;android-29;google_apis;x86_64'
+          printf 'no\n' | avdmanager create avd --name toolstock-audit --package 'system-images;android-29;google_apis;x86_64' --force
+          emulator -avd toolstock-audit -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$RUNNER_TEMP/toolstock-emulator.log" 2>&1 &
+          adb wait-for-device
+          for attempt in $(seq 1 120); do
+            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
+          adb shell input keyevent 82
+      - name: Test installed Android WebView and native file picker
+        run: gradle -p android --no-daemon connectedDebugAndroidTest
+      - name: Show native test reports
+        if: always()
+        run: |
+          find android/app/build/outputs/androidTest-results -name '*.xml' -type f -exec cat {} \; || true
+          tail -80 "$RUNNER_TEMP/toolstock-emulator.log" || true
