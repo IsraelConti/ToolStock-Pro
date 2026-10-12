@@ -24,8 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      ANDROID_AVD_HOME: ${{ runner.temp }}/toolstock-avd
-      ANDROID_USER_HOME: ${{ runner.temp }}/toolstock-android
+      ANDROID_AVD_HOME: ${{ github.workspace }}/toolstock-avd
+      ANDROID_USER_HOME: ${{ github.workspace }}/toolstock-android
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
