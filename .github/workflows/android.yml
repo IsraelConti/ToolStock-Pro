@@ -3,7 +3,7 @@ name: Build Android
 on:
   workflow_dispatch:
   push:
-    branches: [main, foodstock-control, maintenpro]
+    branches: [main, foodstock-control, maintenpro, codex/maintenpro-full-review-20261013]
   pull_request:
     branches: [main]
 
@@ -27,6 +27,9 @@ jobs:
 
       - name: Install web dependencies
         run: npm ci
+
+      - name: Review smoke checks
+        run: npm test
 
       - name: Build embedded application
         run: |

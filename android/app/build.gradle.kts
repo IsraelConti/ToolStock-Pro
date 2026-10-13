@@ -13,8 +13,8 @@ android {
         applicationId = "com.icapps.maintenpro"
         minSdk = 29
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.2.3"
+        versionCode = 8
+        versionName = "1.2.5"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

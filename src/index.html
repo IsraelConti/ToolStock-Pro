@@ -15,7 +15,7 @@
       <img src="app-icon.png" alt="MaintenPro">
       <p class="eyebrow">MAINTENPRO PREMIUM</p>
       <h1>Mantenimiento profesional para tu empresa</h1>
-      <p class="lead">Para usar todas las funciones de MaintenPro se requiere una suscripción mensual. Puedes cerrar esta pantalla y revisar la app en modo limitado.</p>
+      <p class="lead">Para usar todas las funciones de MaintenPro se requiere una suscripción mensual. Puedes cerrar esta pantalla y consultar la app en modo limitado. Para registrar o modificar datos necesitas una suscripción.</p>
       <div class="plan-box"><b id="planHeadline">Suscripción mensual</b><strong id="subscriptionPrice">El precio y la moneda se mostrarán en Google Play</strong><small id="subscriptionTerms">El precio se confirma siempre en Google Play antes del pago. La suscripción se renueva automáticamente cada mes y puedes cancelarla desde Google Play.</small></div>
       <button id="subscribeBtn" class="btn primary wide">Continuar con Google Play</button>
       <button id="dismissPaywall" class="btn wide dismiss-btn" type="button">Cerrar y ver modo limitado</button>
@@ -35,13 +35,22 @@
       <img src="app-icon.png" alt="MaintenPro">
       <p class="eyebrow">CONFIGURACIÓN INICIAL</p>
       <h1>Tu mantenimiento, en tu propio Drive</h1>
-      <p class="lead">Introduce el correo del propietario. Después selecciona una ubicación de Google Drive y MaintenPro creará sus carpetas automáticamente.</p>
+      <p class="lead">Los registros se guardan en este dispositivo. Si eliges una ubicación de Drive, MaintenPro crea sus carpetas y permite guardar una copia manual.</p>
       <form id="onboardingForm" class="form">
         <label>Correo del propietario *<input name="ownerEmail" type="email" required placeholder="propietario@empresa.com"></label>
         <label>Nombre de la empresa *<input name="companyName" required placeholder="Mi empresa"></label>
         <button class="btn primary wide">Continuar y conectar Drive</button>
       </form>
       <small class="privacy-note">MaintenPro nunca solicita ni guarda tu contraseña de Google.</small>
+    </div>
+  </section>
+  <section id="qrModal" class="onboarding hidden" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+    <div class="onboarding-card qr-card">
+      <h2 id="qrTitle">Código QR del equipo</h2>
+      <img id="qrImage" class="qr-image" alt="Código QR del equipo">
+      <p id="qrInfo" class="lead"></p>
+      <button id="printQr" type="button" class="btn primary wide">Imprimir QR</button>
+      <button id="closeQr" type="button" class="btn wide">Cerrar</button>
     </div>
   </section>
   <header class="topbar">
@@ -66,7 +75,7 @@
       </div>
       <div class="action-grid">
         <button class="action primary" data-go="workForm"><span>＋</span><b>Nueva avería</b><small>Abrir orden correctiva</small></button>
-        <button class="action" data-go="equipment"><span>⚙</span><b>Equipos</b><small>Fichas, QR y documentos</small></button>
+        <button class="action" data-go="equipment"><span>⚙</span><b>Equipos</b><small>Fichas técnicas y códigos QR</small></button>
         <button class="action" data-go="plans"><span>◷</span><b>Preventivos</b><small>Fechas y frecuencias</small></button>
         <button class="action" data-go="orders"><span>✓</span><b>Órdenes</b><small>Pendientes y finalizadas</small></button>
         <button class="action" data-go="calendar"><span>▦</span><b>Calendario</b><small>Vencimientos y avisos</small></button>
@@ -156,14 +165,14 @@
           <label>Repuestos utilizados<input name="parts" placeholder="Rodamiento x2, correa..."></label>
           <label>Coste de repuestos<div class="money"><input name="partsCost" type="number" min="0" step=".01"><span class="currency">€</span></div></label>
           <label>Fotografía final<input name="photo" type="file" accept="image/*" capture="environment"></label>
-          <button class="btn primary wide">Finalizar y firmar orden</button>
+          <button class="btn primary wide">Finalizar orden</button>
         </div>
       </form><button class="btn wide" data-back>← Volver a órdenes</button>
     </section>
 
     <section class="screen" data-screen="assistant">
-      <p class="eyebrow">ASISTENTE TÉCNICO INTELIGENTE</p><h2>Analizar una incidencia</h2>
-      <div class="ai-notice"><b>Privado y disponible sin Internet</b><small>El análisis se realiza en el dispositivo. No envía datos ni sustituye los procedimientos de seguridad, el manual del fabricante o a personal cualificado.</small></div>
+      <p class="eyebrow">ASISTENTE TÉCNICO GUIADO</p><h2>Orientación inicial de una incidencia</h2>
+      <div class="ai-notice"><b>Disponible sin Internet; diagnóstico por reglas</b><small>Ofrece orientación general basada en palabras clave; no utiliza un modelo de inteligencia artificial ni sustituye los procedimientos de seguridad, el manual del fabricante o a personal cualificado.</small></div>
       <form id="assistantForm" class="form">
         <div class="card">
           <label>Equipo<select id="assistantEquipment" name="equipmentId"><option value="">Equipo no registrado</option></select></label>
@@ -177,7 +186,7 @@
     </section>
 
     <section class="screen" data-screen="reports">
-      <p class="eyebrow">DOCUMENTOS</p><h2>Informes profesionales</h2>
+      <p class="eyebrow">INFORMES</p><h2>Informes profesionales</h2>
       <div class="list">
         <article class="row"><div><b>Equipos y activos</b><small>Inventario técnico completo</small></div><button id="exportEquipment" class="btn primary">Excel</button></article>
         <article class="row"><div><b>Órdenes e intervenciones</b><small>Averías, tiempos, técnicos y costes</small></div><button id="exportOrders" class="btn">Excel</button></article>
@@ -190,11 +199,11 @@
       <form id="settingsForm" class="form">
         <div class="card"><h3>Empresa</h3><label>Correo del propietario<input name="ownerEmail" type="email"></label><label>Nombre comercial<input name="companyName"></label><label>Nombre de la aplicación<input name="appName" value="MaintenPro"></label></div>
         <div class="card"><h3>Idioma e importes</h3><div class="two"><label>Idioma<select name="language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option></select></label></div><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step=".01" value="21"></label></div>
-        <div class="card"><h3>Avisos</h3><div class="two"><label>Primer aviso (días)<input name="alertDays" type="number" value="7"></label><label>Aviso urgente (días)<input name="urgentDays" type="number" value="2"></label></div><label class="toggle"><input name="notifications" type="checkbox" checked> Activar recordatorios</label></div>
-        <div class="card"><h3>Equipo de trabajo</h3><p class="lead">Propietario y hasta tres técnicos invitados.</p><div id="teamSummary"></div><button type="button" class="btn" data-go="team">Gestionar técnicos</button></div>
+        <div class="card"><h3>Avisos</h3><div class="two"><label>Primer aviso (días)<input name="alertDays" type="number" value="7"></label><label>Aviso urgente (días)<input name="urgentDays" type="number" value="2"></label></div><label class="toggle"><input name="notifications" type="checkbox" checked> Resaltar avisos de fecha en la aplicación</label></div>
+        <div class="card"><h3>Equipo de trabajo</h3><p class="lead">Registro local del propietario y hasta tres técnicos. Añadirlos aquí no crea cuentas ni envía invitaciones.</p><div id="teamSummary"></div><button type="button" class="btn" data-go="team">Gestionar técnicos</button></div>
         <div class="card"><h3>Suscripción</h3><p id="subscriptionStatus" class="lead">Comprobando en Google Play…</p><button id="manageSubscription" type="button" class="btn">Gestionar suscripción</button></div>
         <div class="card"><h3>Google Drive</h3><p id="driveStatus" class="lead">Drive pendiente de conectar.</p><button id="connectDrive" type="button" class="btn primary">Conectar o cambiar carpeta</button></div>
-        <div class="card"><h3>Copia de seguridad</h3><button id="backup" type="button" class="btn">Guardar copia completa</button></div>
+        <div class="card"><h3>Copia de seguridad</h3><p class="lead">Incluye equipos, órdenes, preventivos, técnicos y configuración. Puedes guardarla en Drive o como archivo JSON.</p><button id="backup" type="button" class="btn">Guardar copia completa</button><button id="restoreBackup" type="button" class="btn">Restaurar copia JSON</button><input id="restoreBackupFile" type="file" accept="application/json,.json" class="hidden"></div>
         <div class="sticky"><button type="button" class="btn" data-back>Cancelar</button><button class="btn primary">Guardar</button></div>
       </form>
     </section>
@@ -208,12 +217,12 @@
     <section class="screen" data-screen="privacy">
       <p class="eyebrow">PRIVACIDAD</p><h2>Política de privacidad de MaintenPro</h2>
       <div class="help-list">
-        <details open><summary>Datos tratados</summary><p>MaintenPro puede guardar el correo indicado por el propietario, nombre de empresa, fichas de equipos, órdenes, perfiles de técnicos, fotografías, documentos y la configuración que el usuario introduce voluntariamente.</p></details>
+        <details open><summary>Datos tratados</summary><p>MaintenPro puede guardar el correo indicado por el propietario, nombre de empresa, fichas de equipos, órdenes, contactos técnicos, fotografías y la configuración que el usuario introduce voluntariamente.</p></details>
         <details><summary>Dónde se guardan</summary><p>Los datos operativos se guardan localmente en el dispositivo. Si el usuario selecciona una ubicación de Google Drive mediante el selector protegido de Android, MaintenPro crea sus carpetas y guarda allí las copias solicitadas. La aplicación no pide ni almacena la contraseña de Google.</p></details>
         <details><summary>Pagos</summary><p>La suscripción mensual se procesa mediante Google Play Billing. MaintenPro no recibe ni almacena números de tarjeta ni datos bancarios. Google Play gestiona el cobro, la renovación y la cancelación.</p></details>
         <details><summary>Compartición</summary><p>MaintenPro no vende datos personales ni incluye publicidad. Los datos solo se comparten cuando el propietario comparte su carpeta de Drive, exporta un informe o utiliza las funciones de compartir del dispositivo.</p></details>
-        <details><summary>Conservación y eliminación</summary><p>El usuario controla sus datos: puede borrar registros, eliminar la carpeta MaintenPro de Drive y desinstalar la aplicación. La suscripción se cancela desde Google Play.</p></details>
-        <details><summary>Permisos y seguridad</summary><p>La aplicación puede usar la cámara o el selector de archivos cuando el usuario decide añadir una fotografía o documento. El acceso se limita a la acción iniciada por el usuario.</p></details>
+        <details><summary>Conservación y eliminación</summary><p>El usuario puede borrar todos los registros locales desde el botón de esta pantalla. Las copias guardadas en Drive deben eliminarse también desde Drive.</p></details><button id="clearLocalData" type="button" class="btn danger-btn">Borrar todos los registros locales</button>
+        <details><summary>Permisos y seguridad</summary><p>La aplicación puede usar la cámara o el selector de archivos cuando el usuario decide añadir una fotografía, restaurar una copia o elegir una carpeta de Drive.</p></details>
         <details><summary>Contacto</summary><p>Para consultas de privacidad o eliminación de datos, utiliza el correo de soporte publicado en la ficha oficial de MaintenPro en Google Play.</p></details>
       </div>
       <button class="btn wide" data-back>← Volver</button>
@@ -222,15 +231,15 @@
     <section class="screen" data-screen="help">
       <p class="eyebrow">CENTRO DE AYUDA</p><h2>Cómo usar MaintenPro</h2>
       <div class="help-list">
-        <details open><summary>Configuración inicial</summary><p>Indica el correo del propietario y la empresa. Selecciona una ubicación de Google Drive y MaintenPro creará Datos, Equipos, Fotografías, Documentos, QR, Informes y Copias de seguridad.</p></details>
+        <details open><summary>Configuración inicial</summary><p>Indica el correo del propietario y la empresa. Selecciona una ubicación de Google Drive y MaintenPro creará carpetas para equipos, fotografías, códigos QR, informes y copias de seguridad.</p></details>
         <details><summary>Equipos y códigos QR</summary><p>Registra cada máquina con código único, ubicación, horas y criticidad. Genera su QR desde la ficha.</p></details>
         <details><summary>Averías y órdenes</summary><p>Selecciona el equipo, describe el problema y asigna técnico. Al cerrar añade solución, repuestos, horas y costes.</p></details>
         <details><summary>Mantenimiento preventivo</summary><p>Crea tareas periódicas. La agenda muestra los próximos vencimientos.</p></details>
-        <details><summary>Asistente técnico inteligente</summary><p>Describe los síntomas y el asistente propondrá causas probables, comprobaciones seguras, herramientas y acciones preventivas. Funciona localmente y no envía información fuera del dispositivo. Confirma siempre el diagnóstico con personal cualificado.</p></details>
+        <details><summary>Asistente técnico guiado</summary><p>Describe los síntomas y el sistema propondrá causas probables y comprobaciones generales usando reglas locales; no utiliza un modelo de IA. Confirma siempre el diagnóstico con personal cualificado.</p></details>
         <details><summary>Seguridad antes de intervenir</summary><p>Detén el equipo cuando exista riesgo. Aplica bloqueo y etiquetado, verifica ausencia de energía y libera presión o temperatura residual siguiendo los procedimientos de la empresa y del fabricante.</p></details>
-        <details><summary>Tres técnicos invitados</summary><p>Registra hasta tres técnicos con correo y rol. Comparte con ellos la carpeta MaintenPro desde Google Drive.</p></details>
+        <details><summary>Técnicos</summary><p>Registra hasta tres técnicos con correo y etiqueta de rol. MaintenPro no crea cuentas ni sincroniza datos con sus dispositivos. Comparte manualmente una copia de Drive si quieres que consulten esos datos.</p></details>
         <details><summary>Suscripción</summary><p>El precio y la moneda aplicables se muestran en Google Play antes del pago. La suscripción se renueva automáticamente cada mes y puedes cancelarla desde Google Play. Si cambias de móvil, usa la misma cuenta de Google Play y pulsa Restaurar compra.</p></details>
-        <details><summary>Privacidad</summary><p>Los datos permanecen en el dispositivo y en el Drive elegido por el propietario. MaintenPro no solicita contraseñas ni vende datos personales.</p><button class="btn" data-go="privacy">Ver política completa</button></details>
+        <details><summary>Privacidad</summary><p>Los registros permanecen en el dispositivo; el propietario puede guardar manualmente una copia JSON en Drive. MaintenPro no solicita contraseñas ni vende datos personales.</p><button class="btn" data-go="privacy">Ver política completa</button></details>
       </div><button class="btn wide" data-back>← Volver</button>
     </section>
   </main>

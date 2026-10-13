@@ -4,12 +4,14 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.util.Base64
 import android.os.Bundle
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.WebResourceRequest
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -32,7 +34,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         private const val PRODUCT_MONTHLY = "maintenpro_premium_monthly"
         private const val PREFS = "maintenpro"
         private val DRIVE_FOLDERS = listOf(
-            "Datos", "Equipos", "Fotografias", "Documentos", "Codigos_QR",
+            "Datos", "Equipos", "Fotografias", "Codigos_QR",
             "Informes", "Copias_de_seguridad"
         )
     }
@@ -41,6 +43,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private lateinit var billingClient: BillingClient
     private var monthlyProduct: ProductDetails? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
+    private var pendingFileName = ""
+    private var pendingFileBytes: ByteArray? = null
 
     private val folderPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri == null) {
@@ -72,6 +76,24 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         fileCallback = null
     }
 
+    private val saveFilePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val name = pendingFileName
+        val bytes = pendingFileBytes
+        pendingFileName = ""
+        pendingFileBytes = null
+        val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
+        if (uri == null || bytes == null) {
+            js("window.onMaintenProFileSaveError('Guardado cancelado')")
+            return@registerForActivityResult
+        }
+        try {
+            contentResolver.openOutputStream(uri)?.use { it.write(bytes) } ?: error("No se pudo abrir el archivo")
+            js("window.onMaintenProFileSaved(${quote(name)})")
+        } catch (_: Exception) {
+            js("window.onMaintenProFileSaveError('No se pudo escribir el archivo')")
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +103,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             settings.allowFileAccess = true
             settings.allowContentAccess = true
             webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    val uri = request?.url ?: return true
+                    return uri.scheme != "file" || uri.path?.startsWith("/android_asset/") != true
+                }
+
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     connectBilling()
@@ -92,7 +119,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 ): Boolean {
                     fileCallback?.onReceiveValue(null)
                     fileCallback = callback
-                    val intent = params?.createIntent() ?: return false
+                    val intent = params?.createIntent() ?: run { fileCallback = null; return false }
                     return try { filePicker.launch(intent); true } catch (_: Exception) { fileCallback = null; false }
                 }
             }
@@ -153,7 +180,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         billingClient.queryProductDetailsAsync(params) { _, productDetailsResult ->
             val details = productDetailsResult.productDetailsList.firstOrNull()
             monthlyProduct = details
-            offerResult(displayPrice(details))
+            offerResult(displayPrice(details), hasFreeTrial(details))
         }
     }
 
@@ -209,10 +236,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             js("window.onMaintenProPurchaseError('Google Play todavía está cargando la suscripción. Inténtalo de nuevo.')")
             return
         }
-        val offer = product.subscriptionOfferDetails
-            ?.firstOrNull { details -> details.pricingPhases.pricingPhaseList.none { it.priceAmountMicros == 0L } }
-            ?: product.subscriptionOfferDetails?.firstOrNull()
-            ?: run {
+        val offer = selectedOffer(product) ?: run {
                 js("window.onMaintenProPurchaseError('No se encontró el plan mensual en Google Play')")
                 return
             }
@@ -225,15 +249,23 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         )
     }
 
+    private fun selectedOffer(product: ProductDetails?) =
+        product?.subscriptionOfferDetails?.firstOrNull { offer ->
+            offer.pricingPhases.pricingPhaseList.any { it.priceAmountMicros == 0L }
+        } ?: product?.subscriptionOfferDetails?.firstOrNull()
+
+    private fun hasFreeTrial(product: ProductDetails?): Boolean =
+        selectedOffer(product)?.pricingPhases?.pricingPhaseList?.any { it.priceAmountMicros == 0L } == true
+
     private fun displayPrice(product: ProductDetails?): String {
-        val offer = product?.subscriptionOfferDetails
-            ?.firstOrNull { details -> details.pricingPhases.pricingPhaseList.none { it.priceAmountMicros == 0L } }
-            ?: product?.subscriptionOfferDetails?.firstOrNull()
-        return offer?.pricingPhases?.pricingPhaseList?.lastOrNull()?.formattedPrice ?: "El precio y la moneda se mostrarán en Google Play"
+        val phases = selectedOffer(product)?.pricingPhases?.pricingPhaseList.orEmpty()
+        return phases.lastOrNull { it.priceAmountMicros > 0L }?.formattedPrice
+            ?: phases.lastOrNull()?.formattedPrice
+            ?: "El precio y la moneda se mostrarán en Google Play"
     }
 
-    private fun offerResult(price: String) =
-        js("window.onMaintenProOffer(${quote(price)})")
+    private fun offerResult(price: String, hasTrial: Boolean = false) =
+        js("window.onMaintenProOffer(${quote(price)},$hasTrial)")
 
     private fun subscriptionResult(active: Boolean, price: String, message: String) =
         js("window.onMaintenProSubscription($active,${quote(price)},${quote(message)})")
@@ -258,6 +290,27 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread { launchSubscription() }
         @JavascriptInterface fun restorePurchases() = runOnUiThread { queryPurchases() }
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
+
+        @JavascriptInterface fun saveFile(fileName: String, mimeType: String, encoded: String): Boolean {
+            if (pendingFileBytes != null || encoded.length > 32_000_000) return false
+            return try {
+                val bytes = Base64.decode(encoded, Base64.DEFAULT)
+                val safeName = fileName.substringAfterLast('/').substringAfterLast('\\').take(120).ifBlank { "MaintenPro_export" }
+                pendingFileName = safeName
+                pendingFileBytes = bytes
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = mimeType.ifBlank { "application/octet-stream" }
+                    putExtra(Intent.EXTRA_TITLE, safeName)
+                }
+                runOnUiThread { saveFilePicker.launch(intent) }
+                true
+            } catch (_: Exception) {
+                pendingFileName = ""
+                pendingFileBytes = null
+                false
+            }
+        }
 
         @JavascriptInterface fun manageSubscription() = runOnUiThread {
             val url = "https://play.google.com/store/account/subscriptions?sku=$PRODUCT_MONTHLY&package=$packageName"

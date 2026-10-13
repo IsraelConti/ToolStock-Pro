@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "test": "node scripts/review-smoke.mjs",
     "serve": "npx http-server dist -p 4173 -c-1"
   },
   "dependencies": {

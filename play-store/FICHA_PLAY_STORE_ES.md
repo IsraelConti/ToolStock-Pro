@@ -4,24 +4,24 @@
 MaintenPro
 
 ## Descripción corta
-Mantenimiento preventivo y correctivo, equipos, QR, técnicos e informes.
+Equipos, averías, preventivos, QR e informes de mantenimiento.
 
 ## Descripción completa
 MaintenPro centraliza el mantenimiento de máquinas, instalaciones y equipos desde el móvil.
 
 Registra equipos con fotografía, ubicación, número de serie, horas de uso, criticidad y código QR. Abre órdenes correctivas cuando aparece una avería y documenta la intervención con técnico, prioridad, fotografías, repuestos, tiempos y costes.
 
-Programa mantenimientos preventivos semanales, mensuales, trimestrales, semestrales o anuales y consulta los próximos vencimientos desde la agenda. Exporta inventarios e intervenciones en Excel y conserva copias de seguridad en una ubicación de Google Drive elegida por el propietario.
+Programa mantenimientos preventivos semanales, mensuales, trimestrales, semestrales o anuales y consulta los próximos vencimientos desde la agenda. Exporta inventarios, intervenciones y planes a Excel. Los datos operativos se conservan en el dispositivo; el propietario puede guardar manualmente una copia JSON en una ubicación de Drive elegida.
 
 Funciones principales:
 
 - Equipos y máquinas con códigos únicos y QR.
 - Averías y órdenes de trabajo completas.
 - Preventivos y calendario de vencimientos.
-- Propietario y hasta tres técnicos.
-- Fotografías, repuestos, tiempos y costes.
+- Registro local del propietario y hasta tres contactos técnicos (no crea cuentas ni permisos de acceso).
+- Fotografías de equipos e intervenciones, repuestos, horas y costes.
 - Informes Excel y copias de seguridad.
-- Datos locales y carpetas en el Drive elegido por el cliente.
+- Datos locales y copias JSON manuales en el Drive elegido por el cliente; no hay sincronización automática.
 - Centro de ayuda integrado.
 - Navegación hacia atrás desde todas las pantallas.
 
