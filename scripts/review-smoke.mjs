@@ -32,7 +32,8 @@ assert.ok(html.includes('id="qrModal"') && app.includes('$("#qrModal").classList
 assert.ok(app.includes("data-complete-plan") && app.includes("function completePlan"), "Falta el cierre recurrente de preventivos");
 assert.ok(app.includes('native.saveFile(') && native.includes("@JavascriptInterface fun saveFile"), "La exportación Android no llega al selector de guardado");
 assert.ok(!/\bwindow\.open\s*\(/.test(app), "El QR no debe depender de ventanas emergentes");
-assert.ok(gradle.includes("versionCode = 8") && gradle.includes('versionName = "1.2.5"'), "Versión Android inesperada");
+assert.ok(gradle.includes("minSdk = 24"), "La versión nueva debe conservar Android 7/API 24 como mínimo");
+assert.ok(gradle.includes("versionCode = 9") && gradle.includes('versionName = "1.2.6"'), "Versión Android inesperada");
 assert.ok(native.includes('PRODUCT_MONTHLY = "maintenpro_premium_monthly"') && subscription.includes("maintenpro_premium_monthly"), "El ID de suscripción no coincide");
 
 console.log(`MaintenPro review smoke OK: ${ids.length} IDs, ${screens.size} pantallas y ${bridgeMethods.length} métodos Android.`);
