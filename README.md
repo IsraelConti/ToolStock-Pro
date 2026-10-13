@@ -24,4 +24,4 @@ La acción `Build Android` compila los paquetes Android y, cuando están configu
 
 La APK debug permite revisar la aplicación sin compra y no consume la oferta comercial. La variante release consulta Google Play: ofrece 3 días gratis a las cuentas elegibles y el plan mensual normal a las demás.
 
-La versión candidata siguiente es 1.2.6 (versionCode 8), compilada con Android 16 (API 36).
+La versión candidata siguiente es 1.2.7 (versionCode 10), compilada con Android 16 (API 36).

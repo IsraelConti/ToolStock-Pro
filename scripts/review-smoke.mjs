@@ -5,6 +5,7 @@ const html = readFileSync("src/index.html", "utf8");
 const app = readFileSync("src/app.js", "utf8");
 const native = readFileSync("android/app/src/main/java/com/maintenpro/app/MainActivity.kt", "utf8");
 const gradle = readFileSync("android/app/build.gradle.kts", "utf8");
+const manifest = readFileSync("android/app/src/main/AndroidManifest.xml", "utf8");
 const subscription = readFileSync("play-store/SUSCRIPCION.md", "utf8");
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
@@ -33,7 +34,8 @@ assert.ok(app.includes("data-complete-plan") && app.includes("function completeP
 assert.ok(app.includes('native.saveFile(') && native.includes("@JavascriptInterface fun saveFile"), "La exportación Android no llega al selector de guardado");
 assert.ok(!/\bwindow\.open\s*\(/.test(app), "El QR no debe depender de ventanas emergentes");
 assert.ok(gradle.includes("minSdk = 24"), "La versión nueva debe conservar Android 7/API 24 como mínimo");
-assert.ok(gradle.includes("versionCode = 9") && gradle.includes('versionName = "1.2.6"'), "Versión Android inesperada");
+assert.ok(manifest.includes('android:name="android.hardware.camera" android:required="false"'), "La cámara debe ser opcional para no excluir dispositivos sin cámara");
+assert.ok(gradle.includes("versionCode = 10") && gradle.includes('versionName = "1.2.7"'), "Versión Android inesperada");
 assert.ok(native.includes('PRODUCT_MONTHLY = "maintenpro_premium_monthly"') && subscription.includes("maintenpro_premium_monthly"), "El ID de suscripción no coincide");
 
 console.log(`MaintenPro review smoke OK: ${ids.length} IDs, ${screens.size} pantallas y ${bridgeMethods.length} métodos Android.`);
