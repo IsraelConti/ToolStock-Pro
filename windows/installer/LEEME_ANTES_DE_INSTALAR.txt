@@ -1,0 +1,11 @@
+MAINTENPRO PC
+
+Requisitos: Google Chrome instalado. Esta edición funciona sin Internet para consultar y modificar los datos locales del ordenador.
+
+1. Extrae todo el ZIP en una carpeta.
+2. Ejecuta Instalar_MaintenPro_PC.bat. La instalación solo afecta al usuario actual y no requiere permisos de administrador.
+3. Abre MaintenPro PC desde el acceso directo del escritorio o desde el menú Inicio.
+
+Para actualizar, instala el nuevo paquete sobre la ruta existente. Mantén copias JSON antes de cualquier cambio. La desinstalación elimina la aplicación y sus accesos directos; los datos del perfil de Chrome no se borran automáticamente.
+
+La sincronización móvil-PC y la verificación de suscripción deben habilitarse en una versión posterior validada.
