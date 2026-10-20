@@ -6,6 +6,14 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Base64
 import android.os.Bundle
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import java.nio.ByteBuffer
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -285,7 +293,82 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         return builder.toString()
     }
 
+    private fun syncTokenKey(): SecretKey {
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val alias = "MaintenProSyncTokenKey"
+        val existing = store.getKey(alias, null) as? SecretKey
+        if (existing != null) return existing
+        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        generator.init(KeyGenParameterSpec.Builder(
+            alias,
+            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+        ).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            .setRandomizedEncryptionRequired(true)
+            .build())
+        return generator.generateKey()
+    }
+
+    private fun readSyncToken(): String {
+        val encoded = getSharedPreferences(PREFS, MODE_PRIVATE).getString("sync_token_enc", null) ?: return ""
+        return try {
+            val bytes = Base64.decode(encoded, Base64.NO_WRAP)
+            if (bytes.size < 13) return ""
+            val buffer = ByteBuffer.wrap(bytes)
+            val iv = ByteArray(12).also(buffer::get)
+            val ciphertext = ByteArray(buffer.remaining()).also(buffer::get)
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, syncTokenKey(), GCMParameterSpec(128, iv))
+            String(cipher.doFinal(ciphertext), Charsets.UTF_8)
+        } catch (_: Exception) {
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove("sync_token_enc").apply()
+            ""
+        }
+    }
+
+    private fun writeSyncToken(value: String): Boolean {
+        if (value.length > 4096) return false
+        return try {
+            if (value.isBlank()) {
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove("sync_token_enc").apply()
+                return true
+            }
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, syncTokenKey())
+            val bytes = ByteBuffer.allocate(12 + cipher.getOutputSize(value.toByteArray(Charsets.UTF_8).size))
+                .put(cipher.iv)
+                .put(cipher.doFinal(value.toByteArray(Charsets.UTF_8)))
+                .array()
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putString("sync_token_enc", Base64.encodeToString(bytes, Base64.NO_WRAP))
+                .commit()
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun emitSubscriptionPurchaseToken() {
+        if (!::billingClient.isInitialized || !billingClient.isReady) {
+            js("window.onMaintenProPurchaseToken(\"\")")
+            return
+        }
+        val params = QueryPurchasesParams.newBuilder().setProductType(ProductType.SUBS).build()
+        billingClient.queryPurchasesAsync(params) { result, purchases ->
+            val token = if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+                purchases.firstOrNull {
+                    it.products.contains(PRODUCT_MONTHLY) &&
+                        it.purchaseState == Purchase.PurchaseState.PURCHASED
+                }?.purchaseToken.orEmpty()
+            } else ""
+            js("window.onMaintenProPurchaseToken(${quote(token)})")
+        }
+    }
+
     inner class AndroidBridge {
+        @JavascriptInterface fun getSyncToken(): String = readSyncToken()
+        @JavascriptInterface fun setSyncToken(token: String): Boolean = writeSyncToken(token)
+        @JavascriptInterface fun clearSyncToken(): Boolean = writeSyncToken("")
+        @JavascriptInterface fun requestSubscriptionPurchaseToken() = runOnUiThread { emitSubscriptionPurchaseToken() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread { launchSubscription() }
         @JavascriptInterface fun restorePurchases() = runOnUiThread { queryPurchases() }
