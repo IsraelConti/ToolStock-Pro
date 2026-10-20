@@ -335,9 +335,10 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             }
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             cipher.init(Cipher.ENCRYPT_MODE, syncTokenKey())
-            val bytes = ByteBuffer.allocate(12 + cipher.getOutputSize(value.toByteArray(Charsets.UTF_8).size))
+            val encrypted = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+            val bytes = ByteBuffer.allocate(cipher.iv.size + encrypted.size)
                 .put(cipher.iv)
-                .put(cipher.doFinal(value.toByteArray(Charsets.UTF_8)))
+                .put(encrypted)
                 .array()
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putString("sync_token_enc", Base64.encodeToString(bytes, Base64.NO_WRAP))
