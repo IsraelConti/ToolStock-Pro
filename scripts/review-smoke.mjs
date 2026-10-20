@@ -39,3 +39,10 @@ assert.ok(gradle.includes("versionCode = 10") && gradle.includes('versionName = 
 assert.ok(native.includes('PRODUCT_MONTHLY = "maintenpro_premium_monthly"') && subscription.includes("maintenpro_premium_monthly"), "El ID de suscripción no coincide");
 
 console.log(`MaintenPro review smoke OK: ${ids.length} IDs, ${screens.size} pantallas y ${bridgeMethods.length} métodos Android.`);
+
+assert.match(html, /alicateguideSearch/);
+assert.match(html, /alicateguideResults/);
+assert.match(html, /Sr. Alicate/);
+assert.match(html, /mobile-alicate-help/);
+assert.match(app, /const alicateGuide=/);
+assert.match(app, /renderAlicateGuide/);
