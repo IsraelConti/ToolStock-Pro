@@ -56,7 +56,7 @@
   <header class="topbar">
     <button id="backBtn" class="icon-btn hidden" aria-label="Volver">‹</button>
     <div class="brand"><img src="app-icon.png" alt=""><div><strong id="appName">MaintenPro</strong><small id="screenTitle">Mantenimiento profesional</small></div></div>
-    <button class="icon-btn" data-go="help" aria-label="Ayuda">ⓘ</button>
+    <button class="icon-btn" data-go="assistant" aria-label="Sr. Alicate, ayuda local">✦</button>
     <button class="icon-btn" data-go="settings" aria-label="Configuración">⚙</button>
   </header>
 
@@ -80,7 +80,7 @@
         <button class="action" data-go="orders"><span>✓</span><b>Órdenes</b><small>Pendientes y finalizadas</small></button>
         <button class="action" data-go="calendar"><span>▦</span><b>Calendario</b><small>Vencimientos y avisos</small></button>
         <button class="action" data-go="reports"><span>↧</span><b>Informes</b><small>Excel profesional</small></button>
-        <button class="action ai-action" data-go="assistant"><span>✦</span><b>Asistente técnico</b><small>Diagnóstico y comprobaciones</small></button>
+        <button class="action ai-action" data-go="assistant"><span>✦</span><b>Sr. Alicate</b><small>Guía local y diagnóstico</small></button>
       </div>
     </section>
 
@@ -171,7 +171,9 @@
     </section>
 
     <section class="screen" data-screen="assistant">
-      <p class="eyebrow">ASISTENTE TÉCNICO GUIADO</p><h2>Orientación inicial de una incidencia</h2>
+      <div class="alicate-guide-head"><div class="alicate-mascot" aria-hidden="true"><svg viewBox="0 0 96 96"><path d="M27 19 43 38M69 19 53 38" fill="none" stroke="#ff921e" stroke-width="9" stroke-linecap="round"/><circle cx="48" cy="52" r="24" fill="#ff921e"/><circle cx="41" cy="48" r="3.4" fill="#102331"/><circle cx="55" cy="48" r="3.4" fill="#102331"/><path d="M41 59q7 7 14 0M38 73l-5 11m25-11 5 11" fill="none" stroke="#102331" stroke-width="4" stroke-linecap="round"/></svg></div><div><p class="eyebrow">SR. ALICATE · GUÍA LOCAL</p><h2>¿Qué necesitas hacer?</h2><small>Ayuda integrada en MaintenPro; funciona sin conexión.</small></div></div>
+      <div class="alicateguide"><label for="alicateguideSearch">Buscar en la guía</label><input id="alicateguideSearch" type="search" placeholder="Ej.: orden, preventivo, copia…"><div id="alicateguideResults" class="alicateguide-results" aria-live="polite"></div></div>
+      <p class="eyebrow">DIAGNÓSTICO LOCAL POR REGLAS</p><h2>Orientación inicial de una incidencia</h2>
       <div class="ai-notice"><b>Disponible sin Internet; diagnóstico por reglas</b><small>Ofrece orientación general basada en palabras clave; no utiliza un modelo de inteligencia artificial ni sustituye los procedimientos de seguridad, el manual del fabricante o a personal cualificado.</small></div>
       <form id="assistantForm" class="form">
         <div class="card">
@@ -244,6 +246,7 @@
     </section>
   </main>
 
+  <button class="mobile-alicate-help" type="button" data-go="assistant" aria-label="Abrir ayuda local Sr. Alicate"><span>✦</span><small>Ayuda</small></button>
   <nav class="bottom-nav">
     <button data-go="home" class="active"><span>⌂</span>Inicio</button>
     <button data-go="equipment"><span>⚙</span>Equipos</button>
