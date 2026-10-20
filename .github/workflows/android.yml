@@ -179,3 +179,22 @@ jobs:
           name: MaintenPro-AAB-unsigned-fallback
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+      - name: Upload MaintenPro source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaintenPro-source-review-2026-10-20
+          path: |
+            README.md
+            package.json
+            package-lock.json
+            src/
+            scripts/
+            play-store/
+            android/app/src/main/
+            android/app/build.gradle.kts
+            android/build.gradle.kts
+            android/settings.gradle.kts
+            android/gradle.properties
+            .github/workflows/android.yml
+          if-no-files-found: error
