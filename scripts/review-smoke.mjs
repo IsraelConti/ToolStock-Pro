@@ -46,3 +46,4 @@ assert.match(html, /Sr. Alicate/);
 assert.match(html, /mobile-alicate-help/);
 assert.match(app, /const alicateGuide=/);
 assert.match(app, /renderAlicateGuide/);
+assert.ok(app.includes(String.raw`replace(/[\u0300-\u036f]/g,''`) && app.includes(String.raw`split(/\s+/)`), "La búsqueda de la guía debe normalizar acentos y separar palabras correctamente");
