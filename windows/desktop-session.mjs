@@ -16,7 +16,7 @@ const secret = () => randomBytes(32).toString("base64url");
 const equals = (a, b) => typeof a === "string" && typeof b === "string" && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 export function openChrome(url) {
   if (process.platform !== "win32") return;
-  const choices = [join(process.env.LOCALAPPDATA || "", "Google", "Chrome", "Application", "chrome.exe"), join(process.env.ProgramFiles || "C:\\Program Files", "Google", "Chrome", "Application", "chrome.exe"), join(process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)", "Google", "Chrome", "Application", "chrome.exe")];
+  const choices = [process.env.LOCALAPPDATA, process.env.ProgramW6432, process.env.ProgramFiles || "C:\\Program Files", process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)"].filter(Boolean).map(base => join(base, "Google", "Chrome", "Application", "chrome.exe"));
   const chrome = choices.find(existsSync);
   if (!chrome) throw new Error("Google Chrome no está instalado para este equipo");
   spawn(chrome, [`--app=${url}`, "--new-window"], { detached: true, stdio: "ignore", windowsHide: true }).unref();

@@ -1,0 +1,14 @@
+const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
+const { encryptPayload, decryptEnvelope } = require('./signing-recovery.cjs');
+const pair = () => crypto.generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } });
+const keys = pair(), bytes = crypto.randomBytes(256);
+const payload = { packageName: 'com.icapps.maintenpro', keystoreBase64: bytes.toString('base64'), keystoreSha256: crypto.createHash('sha256').update(bytes).digest('hex'), storePassword: 'fixture-store-password', keyPassword: 'fixture-key-password', configuredAlias: '' };
+const envelope = encryptPayload(payload, keys.publicKey);
+assert.deepEqual(decryptEnvelope(envelope, keys.privateKey), payload);
+assert.equal(JSON.stringify(envelope).includes(payload.storePassword), false);
+assert.equal(JSON.stringify(envelope).includes(payload.keystoreBase64), false);
+assert.throws(() => decryptEnvelope(envelope, pair().privateKey));
+const corrupted = Buffer.from(envelope.ciphertext, 'base64'); corrupted[0] ^= 1;
+assert.throws(() => decryptEnvelope({ ...envelope, ciphertext: corrupted.toString('base64') }, keys.privateKey));
+console.log('Signing recovery: exact roundtrip, no plaintext secrets, wrong-key and tamper rejection passed.');

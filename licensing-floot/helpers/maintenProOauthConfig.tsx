@@ -4,5 +4,7 @@ export const maintenProGoogleClientIds: string[] = [
   "610155930689-6jr9j4dacsjmjf166hku7ro02cmhu4ud.apps.googleusercontent.com",
   "610155930689-m7c5t8umvm8tqrnhabb0algco79oempq.apps.googleusercontent.com",
   // Signed release APK used by the owner for real Google Play license tests.
-  "610155930689-unj0ge1fok4oafa1mro4gne6o52bh466.apps.googleusercontent.com"
+  "610155930689-unj0ge1fok4oafa1mro4gne6o52bh466.apps.googleusercontent.com",
+  "610155930689-9t8k1lbacsfrb6j3cuvqhihssvl39e7b.apps.googleusercontent.com",
+  "610155930689-kf4l1aselau42cfr6fqfmjn89es88mgr.apps.googleusercontent.com"
 ];

@@ -1,9 +1,10 @@
 ﻿#Requires -Version 5.1
+param([switch]$NoLaunch)
 $ErrorActionPreference = 'Stop'
 
 function Find-Chrome {
   $candidates = New-Object System.Collections.Generic.List[string]
-  foreach ($root in @($env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:LOCALAPPDATA)) {
+  foreach ($root in @($env:ProgramW6432, $env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:LOCALAPPDATA)) {
     if ($root) {
       $candidates.Add((Join-Path $root 'Google\Chrome\Application\chrome.exe'))
     }
@@ -122,7 +123,9 @@ try {
   Write-Host "MaintenPro PC quedó instalado para el usuario actual."
   Write-Host "Acceso directo: $desktopShortcut"
   Write-Host "Si usabas la vista previa anterior, exporta su copia JSON e importala en esta version. Los datos anteriores no se borran."
-  & (Join-Path $env:WINDIR 'System32\wscript.exe') (Join-Path $destinationApp 'INICIAR_MAINTENPRO_PC.vbs')
+  if (-not $NoLaunch) {
+    & (Join-Path $env:WINDIR 'System32\wscript.exe') (Join-Path $destinationApp 'INICIAR_MAINTENPRO_PC.vbs')
+  }
   exit 0
 } catch {
   Write-Host "No se pudo instalar MaintenPro PC durante esta operación: $($_.Exception.Message)"

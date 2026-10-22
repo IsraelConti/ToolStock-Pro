@@ -12,10 +12,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  windows:
+  build:
     if: github.ref == 'refs/heads/codex/maintenpro-pc-drive-20261022'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -26,6 +26,21 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Verify signing recovery encryption
+        run: node scripts/signing-recovery.test.cjs
+      - name: Create encrypted Android signing recovery
+        env:
+          KEYSTORE_B64: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.MAINTENPROTOOLS_KEY_ALIAS }}
+        run: node scripts/signing-recovery.cjs encrypt config/signing-recovery-public.pem "$RUNNER_TEMP/MaintenPro_Firma_Recuperacion_CIFRADA.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MaintenPro-Firma-Recuperacion-Cifrada
+          path: ${{ runner.temp }}/MaintenPro_Firma_Recuperacion_CIFRADA.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Verify official Windows runtime
         run: python3 scripts/prepare-windows-runtime.py
       - name: Configure installed OAuth client
@@ -55,12 +70,37 @@ jobs:
             MaintenPro_PC_1.2.9_Instalar.exe
             MaintenPro_PC_1.2.9_Instalar.exe.sha256
           if-no-files-found: error
+          retention-days: 7
+
+  windows-lifecycle:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: MaintenPro-PC-1.2.9-Windows
+          path: installer-artifact
+      - name: Test actual Windows installation and launcher
+        shell: pwsh
+        run: ./scripts/windows-installer-lifecycle.ps1 -InstallerPath ./installer-artifact/MaintenPro_PC_1.2.9_Instalar.exe
+
+  publish:
+    needs: windows-lifecycle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: MaintenPro-PC-1.2.9-Windows
       - name: Publish Windows preview download
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tag=maintenpro-pc-1.2.9
+          tag=maintenpro-pc-1.2.9.1
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo 'The Windows release already exists. Published installers are never replaced automatically.'
             exit 1
@@ -72,12 +112,17 @@ jobs:
 
           Instalación para tu usuario de Windows de 64 bits, con accesos en el escritorio e Inicio. Requiere Google Chrome. Incluye Sr. Alicate, tres temas e impresión de documentos. Los registros se sincronizan mediante el espacio privado de MaintenPro en el Drive del cliente.
 
+          Esta revisión separa el inicio del programa del cierre del asistente de instalación.
+
           El instalador no cobra ni concede una suscripción por sí mismo. Conserva una copia JSON si vienes de una vista previa anterior.
 
           Privacidad: https://israelconti.github.io/privacidad.html
           Datos y desconexión: https://israelconti.github.io/eliminar-datos.html
           NOTES
           gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --prerelease --title 'MaintenPro PC 1.2.9 · Windows' \
+            --prerelease --title 'MaintenPro PC 1.2.9 · Instalador revisado' \
             --notes-file "$RUNNER_TEMP/windows-release.md" \
             MaintenPro_PC_1.2.9_Instalar.exe MaintenPro_PC_1.2.9_Instalar.exe.sha256
+          if gh release view maintenpro-pc-1.2.9 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit maintenpro-pc-1.2.9 --repo "$GITHUB_REPOSITORY" --draft=true
+          fi
