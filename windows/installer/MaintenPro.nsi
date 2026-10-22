@@ -1,6 +1,6 @@
 Unicode true
 RequestExecutionLevel user
-SetCompressor /SOLID lzma
+SetCompressor /FINAL zlib
 Name "MaintenPro PC"
 OutFile "${OUTPUT}"
 Icon "..\maintenpro-icon.ico"

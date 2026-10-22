@@ -24,7 +24,7 @@ const base=broker.url,origin=new URL(base).origin;
 try{
   assert.equal((await fetch(base)).status,403,'Private broker refuses pages without its launch cookie');
   const opened=await fetch(broker.launchUrl,{redirect:'manual'});assert.equal(opened.status,302);
-  const cookie=opened.headers.get('set-cookie').split(';')[0];assert.match(opened.headers.get('set-cookie'),/HttpOnly; SameSite=Strict/);
+  const cookie=opened.headers.get('set-cookie').split(';')[0];assert.match(opened.headers.get('set-cookie'),/HttpOnly; SameSite=Lax/);
   assert.equal((await fetch(broker.launchUrl,{redirect:'manual'})).status,403,'Launch key is single-use');
   const get=(path)=>fetch(base+path,{headers:{cookie},redirect:'manual'});
   const initial=await (await get('session/status')).json();assert.equal(initial.connected,false);assert.ok(initial.csrf);
@@ -34,7 +34,10 @@ try{
   const login=await get('session/start');assert.equal(login.status,302);const auth=new URL(login.headers.get('location'));assert.equal(auth.searchParams.get('code_challenge_method'),'S256');assert.ok(auth.searchParams.get('scope').includes(DRIVE_SCOPE));assert.ok(!auth.href.includes('code_verifier'));
   assert.equal((await fetch(base+'callback?state=wrong&code=x',{redirect:'manual'})).status,401);
   const login2=await get('session/start'),state=new URL(login2.headers.get('location')).searchParams.get('state');
-  assert.equal((await fetch(base+`callback?code=x&state=${state}`,{redirect:'manual'})).status,302);
+  const returned=await fetch(base+`callback?code=x&state=${state}`,{redirect:'manual'});
+  assert.equal(returned.status,302);
+  assert.equal(returned.headers.get('location'),'/','Google returns to the app without exposing tokens in its URL');
+  assert.match(returned.headers.get('set-cookie'),/HttpOnly; SameSite=Lax; Path=\//,'The OAuth callback permits the cross-site redirect back to the local app');
   const status=await (await get('session/status')).json();assert.equal(status.accountId,'google-user-1');assert.equal(status.entitled,true);assert.equal(JSON.stringify(status).includes('fixture'),true);assert.ok(!JSON.stringify(status).includes('google-access-fixture'));assert.ok(!JSON.stringify(status).includes('google-refresh-fixture'));
   assert.equal(vaultData.refreshToken,'google-refresh-fixture');assert.ok(!('accessToken'in vaultData));
   const listed=await fetch(base+'drive/rpc',{method:'POST',headers,body:JSON.stringify({op:'list'})});assert.equal(listed.status,200);assert.equal((await listed.json()).ok,true);assert.ok(outbound.some(u=>u.includes('spaces=appDataFolder')));

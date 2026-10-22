@@ -78,7 +78,9 @@ export async function startDesktopSession({ config = {}, clientId, apiBase, port
   const server = createServer(async (request, response) => {
     const local = `http://127.0.0.1:${server.address().port}`;
     const send = (statusCode, value, headers = {}) => { response.writeHead(statusCode, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff", ...headers }); response.end(Buffer.isBuffer(value) || typeof value === "string" ? value : JSON.stringify(value)); };
-    const setCookie = () => `mp_session=${cookie}; HttpOnly; SameSite=Strict; Path=/; Max-Age=31536000`;
+    // Google returns through a cross-site top-level navigation. Lax allows its
+    // redirect to reach the app; POST requests still require Origin and CSRF.
+    const setCookie = () => `mp_session=${cookie}; HttpOnly; SameSite=Lax; Path=/; Max-Age=31536000`;
     try {
       if (request.headers.host !== `127.0.0.1:${server.address().port}`) return send(403, { error: "invalid-host" });
       const url = new URL(request.url || "/", local);
