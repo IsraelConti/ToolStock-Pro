@@ -1,0 +1,22 @@
+MAINTENPRO PC 1.2.9 — CANDIDATO DE PRUEBAS
+
+1. Extrae todo el ZIP. Ejecuta Instalar_MaintenPro_PC.bat.
+2. Se instala para el usuario actual, con accesos en Escritorio e Inicio.
+   Necesita Windows 10/11 de 64 bits y Google Chrome. No necesita permisos
+   de administrador ni que instales Node.js: incluye su motor de ejecucion.
+3. Abre Movil y PC. Conecta la misma cuenta de Google en ambos dispositivos.
+   La compra del movil debe estar activa y vinculada para activar el PC.
+4. Los registros se guardan en este ordenador. La guia local funciona sin Internet.
+   La conexion con Google, la verificacion de compra y la sincronizacion requieren Internet.
+5. Si usabas el ZIP anterior, abre aquella version y exporta una copia JSON
+   desde Configuracion. Importala en esta version ANTES de conectar Drive.
+   El cambio de file:// a una direccion local estable tiene un almacen distinto.
+   El instalador no borra el almacen ni los datos anteriores.
+6. Documentos prepara una orden, ficha, etiqueta o informe y abre el dialogo
+   de impresion del sistema para elegir tu impresora o guardar PDF.
+
+Este candidato contiene la integracion de Drive, pero no esta autorizado
+para publicacion hasta configurar los clientes OAuth, el servicio de compra,
+la descarga HTTPS y superar las pruebas reales indicadas en ESTADO_Y_PRUEBAS_1.2.9.md.
+Los tokens de Google no se guardan en el navegador. La sesion persistente
+se cifra con Windows DPAPI, vinculada a tu usuario de Windows.

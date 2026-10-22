@@ -53,3 +53,5 @@
   .hero { padding: 34px; }
   .bottom-nav { left: 50%; width: min(760px, 100%); transform: translateX(-50%); border: 1px solid var(--line); border-bottom: 0; border-radius: 20px 20px 0 0; }
 }
+
+#driveConflicts{max-width:820px;width:calc(100% - 40px);max-height:85vh;overflow:auto;background:var(--panel,#102436);color:var(--text,#f0f5fa);border:1px solid var(--line,#395369);border-radius:16px;padding:24px}#driveConflicts::backdrop{background:#000b}#driveConflicts article{padding:16px 0;border-bottom:1px solid var(--line,#395369)}#driveConflicts pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}#driveConflicts .btn{margin:8px 6px 0 0}.action[data-go="pc"] span{color:#81d3ff}

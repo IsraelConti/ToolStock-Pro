@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict';
+import {mkdtemp,writeFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {request} from 'node:http';
+import {startDesktopSession} from '../windows/desktop-session.mjs';
+import {DRIVE_SCOPE} from '../src/google-drive-rpc.js';
+const root=await mkdtemp(join(tmpdir(),'maintenpro-broker-'));
+await writeFile(join(root,'index.html'),'<head></head><main>MaintenPro</main>');
+const binary=Buffer.from([137,80,78,71,0,255,254,128]);await writeFile(join(root,'icon.png'),binary);
+await writeFile(join(root,'maintenpro.runtime.json'),'sensitive-config');
+let vaultData=null,revoked=false,allowPurchase=true;
+const outbound=[];
+const broker=await startDesktopSession({port:0,root,config:{desktopClientId:'public-client',entitlementBase:'https://licence.example'},openImpl:()=>{},vault:{load:async()=>null,save:async d=>{vaultData=d},clear:async()=>{vaultData=null}},fetchImpl:async(url,o={})=>{
+  outbound.push(String(url));
+  if(String(url)==='https://oauth2.googleapis.com/token')return new Response(JSON.stringify({access_token:'google-access-fixture',id_token:'google-id-fixture',refresh_token:'google-refresh-fixture',expires_in:3600,scope:`openid email ${DRIVE_SCOPE}`}));
+  if(String(url).includes('userinfo'))return new Response(JSON.stringify({sub:'google-user-1',email:'fixture@example.invalid',email_verified:true}));
+  if(String(url)==='https://licence.example/v1/entitlement')return new Response(JSON.stringify({entitlement:{active:allowPurchase,serverValidated:allowPurchase,productId:'maintenpro_premium_monthly'}}));
+  if(String(url).includes('googleapis.com/drive/v3/files'))return new Response(JSON.stringify({files:[]}));
+  if(String(url)==='https://oauth2.googleapis.com/revoke'){revoked=true;return new Response('{}')}
+  throw Error('Unexpected upstream '+url);
+}});
+const base=broker.url,origin=new URL(base).origin;
+try{
+  assert.equal((await fetch(base)).status,403,'Private broker refuses pages without its launch cookie');
+  const opened=await fetch(broker.launchUrl,{redirect:'manual'});assert.equal(opened.status,302);
+  const cookie=opened.headers.get('set-cookie').split(';')[0];assert.match(opened.headers.get('set-cookie'),/HttpOnly; SameSite=Strict/);
+  assert.equal((await fetch(broker.launchUrl,{redirect:'manual'})).status,403,'Launch key is single-use');
+  const get=(path)=>fetch(base+path,{headers:{cookie},redirect:'manual'});
+  const initial=await (await get('session/status')).json();assert.equal(initial.connected,false);assert.ok(initial.csrf);
+  const headers={cookie,origin,'x-maintenpro-csrf':initial.csrf,'content-type':'application/json'};
+  assert.equal((await fetch(base+'drive/rpc',{method:'POST',headers:{cookie},body:'{}'})).status,403);
+  assert.equal((await fetch(base+'drive/rpc',{method:'POST',headers:{...headers,origin:'https://evil.invalid'},body:'{}'})).status,403);
+  const login=await get('session/start');assert.equal(login.status,302);const auth=new URL(login.headers.get('location'));assert.equal(auth.searchParams.get('code_challenge_method'),'S256');assert.ok(auth.searchParams.get('scope').includes(DRIVE_SCOPE));assert.ok(!auth.href.includes('code_verifier'));
+  assert.equal((await fetch(base+'callback?state=wrong&code=x',{redirect:'manual'})).status,401);
+  const login2=await get('session/start'),state=new URL(login2.headers.get('location')).searchParams.get('state');
+  assert.equal((await fetch(base+`callback?code=x&state=${state}`,{redirect:'manual'})).status,302);
+  const status=await (await get('session/status')).json();assert.equal(status.accountId,'google-user-1');assert.equal(status.entitled,true);assert.equal(JSON.stringify(status).includes('fixture'),true);assert.ok(!JSON.stringify(status).includes('google-access-fixture'));assert.ok(!JSON.stringify(status).includes('google-refresh-fixture'));
+  assert.equal(vaultData.refreshToken,'google-refresh-fixture');assert.ok(!('accessToken'in vaultData));
+  const listed=await fetch(base+'drive/rpc',{method:'POST',headers,body:JSON.stringify({op:'list'})});assert.equal(listed.status,200);assert.equal((await listed.json()).ok,true);assert.ok(outbound.some(u=>u.includes('spaces=appDataFolder')));
+  assert.equal(await (await get('icon.png')).arrayBuffer().then(b=>Buffer.from(b).equals(binary)),true,'Binary images survive the broker');
+  assert.ok((await (await get('')).text()).includes('MaintenProDesktopBroker=true'));
+  for(const path of ['maintenpro.runtime.json','desktop-session.mjs','..%2Fpackage.json'])assert.equal((await get(path)).status,404);
+  assert.equal((await get('%')).status,400);
+  assert.equal(await new Promise((resolve,reject)=>{const req=request(base,{headers:{cookie,host:'evil.invalid'}},res=>{res.resume();resolve(res.statusCode)});req.on('error',reject);req.end()}),403,'Host blocks DNS rebinding');
+  const logout=await fetch(base+'session/disconnect',{method:'POST',headers});assert.equal(logout.status,200);assert.equal(vaultData,null);assert.equal(revoked,true);
+  const blocked=await fetch(base+'drive/rpc',{method:'POST',headers,body:JSON.stringify({op:'list'})});assert.equal(blocked.status,400);assert.equal((await blocked.json()).error,'sign-in-required');
+  assert.equal((await (await get('session/status')).json()).entitled,false);
+}finally{await new Promise(resolve=>broker.server.close(resolve));await rm(root,{recursive:true,force:true})}
+console.log('Desktop broker: launch, PKCE, CSRF/Origin/Host protection, native-only tokens, Drive transport, binary assets and revocation passed.');

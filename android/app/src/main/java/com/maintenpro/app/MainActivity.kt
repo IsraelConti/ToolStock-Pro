@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Base64
 import android.os.Bundle
+import android.widget.FrameLayout
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -14,7 +15,11 @@ import android.webkit.WebViewClient
 import android.webkit.WebResourceRequest
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import org.json.JSONObject
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.documentfile.provider.DocumentFile
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
@@ -45,6 +50,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingFileName = ""
     private var pendingFileBytes: ByteArray? = null
+    private var playPurchaseToken: String? = null
+    private lateinit var driveConnection: GoogleDriveConnection
+    private val driveAuthorization = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        if (::driveConnection.isInitialized) driveConnection.authorizationResult(result.data)
+    }
 
     private val folderPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri == null) {
@@ -97,6 +107,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        driveConnection = GoogleDriveConnection(this, { playPurchaseToken }, { driveAuthorization.launch(it) }, {
+            js("window.onMaintenProDriveSessionChanged&&window.onMaintenProDriveSessionChanged()")
+        })
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -126,7 +139,26 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             addJavascriptInterface(AndroidBridge(), "MaintenProAndroid")
             loadUrl("file:///android_asset/index.html")
         }
-        setContentView(webView)
+        // Keep every WebView control outside system bars and display cutouts,
+        // including Android 15/16 where edge-to-edge is enforced.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val content = FrameLayout(this).apply {
+            setBackgroundColor(0xFF0B1823.toInt())
+            addView(webView, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
+            val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            view.setPadding(safe.left, safe.top, safe.right, safe.bottom)
+            insets
+        }
+        setContentView(content)
+        WindowCompat.getInsetsController(window, content).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
+        ViewCompat.requestApplyInsets(content)
         billingClient = BillingClient.newBuilder(this)
             .setListener(this)
             .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
@@ -191,6 +223,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
         billingClient.queryPurchasesAsync(params) { result, purchases ->
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                playPurchaseToken = null
                 subscriptionResult(false, displayPrice(monthlyProduct), "Suscripción necesaria para usar todas las funciones")
                 return@queryPurchasesAsync
             }
@@ -199,10 +232,14 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                     acknowledge(purchase)
                 }
             }
+            playPurchaseToken = purchases.firstOrNull { purchase ->
+                purchase.products.contains(PRODUCT_MONTHLY) && purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+            }?.purchaseToken
             val active = purchases.any { purchase ->
                 purchase.products.contains(PRODUCT_MONTHLY) && purchase.purchaseState == Purchase.PurchaseState.PURCHASED
             }
             subscriptionResult(active, displayPrice(monthlyProduct), if (active) "Suscripción mensual activa" else "Suscripción necesaria para usar todas las funciones")
+            driveConnection.refreshPurchase()
         }
     }
 
@@ -270,7 +307,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private fun subscriptionResult(active: Boolean, price: String, message: String) =
         js("window.onMaintenProSubscription($active,${quote(price)},${quote(message)})")
 
-    private fun js(code: String) = runOnUiThread { webView.evaluateJavascript(code, null) }
+    private fun js(code: String) = runOnUiThread {
+        if (::webView.isInitialized && !isFinishing && !isDestroyed) webView.evaluateJavascript(code, null)
+    }
     private fun quote(value: String): String {
         val builder = StringBuilder()
         builder.append(34.toChar())
@@ -286,6 +325,33 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     inner class AndroidBridge {
+        @JavascriptInterface fun connectSyncDrive() = runOnUiThread { driveConnection.connect() }
+        @JavascriptInterface fun disconnectSyncDrive() = runOnUiThread { driveConnection.disconnect() }
+        @JavascriptInterface fun requestSyncDrive(id: String, raw: String) {
+            if (!id.matches(Regex("[A-Za-z0-9_-]{1,80}")) || raw.toByteArray().size > 21 * 1024 * 1024) return
+            driveConnection.executor.execute {
+                val reply = try { JSONObject().put("ok", true).put("result", driveConnection.request(JSONObject(raw))) }
+                catch (error: Exception) {
+                    val allowed = setOf("configuration-missing", "authorization-required", "purchase-required", "invalid-file", "too-many-devices", "invalid-operation", "invalid-document", "payload-too-large", "wrong-device-file", "quota-exceeded")
+                    JSONObject().put("ok", false).put("error", if (error.message in allowed) error.message else "drive-unreachable")
+                }
+                js("window.onMaintenProDriveResponse&&window.onMaintenProDriveResponse(${JSONObject.quote(id)},$reply)")
+            }
+        }
+        @JavascriptInterface fun openPrivacyPage(page: String) = runOnUiThread {
+            val route = when (page) {
+                "privacy" -> "/privacidad.html"
+                "deletion" -> "/eliminar-datos.html"
+                else -> return@runOnUiThread
+            }
+            try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(BuildConfig.PUBLIC_SITE_URL + route))) }
+            catch (_: Exception) { js("window.onMaintenProDriveError('No se pudo abrir el navegador.')") }
+        }
+        @JavascriptInterface fun openPcDownload() = runOnUiThread {
+            val url = BuildConfig.PC_DOWNLOAD_URL
+            if (url.startsWith("https://")) startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            else js("window.onMaintenProDriveError('La descarga para PC todavía no está publicada por el editor.')")
+        }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread { launchSubscription() }
         @JavascriptInterface fun restorePurchases() = runOnUiThread { queryPurchases() }
@@ -329,15 +395,22 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 true
             } catch (_: Exception) { false }
         }
+
     }
 
     override fun onResume() {
         super.onResume()
         if (::billingClient.isInitialized) connectBilling()
+        if (::driveConnection.isInitialized) driveConnection.connect(false)
     }
 
     override fun onDestroy() {
         if (::billingClient.isInitialized) billingClient.endConnection()
+        if (::driveConnection.isInitialized) driveConnection.close()
+        if (::webView.isInitialized) {
+            webView.removeJavascriptInterface("MaintenProAndroid")
+            webView.destroy()
+        }
         super.onDestroy()
     }
 }

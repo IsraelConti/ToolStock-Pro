@@ -1,14 +1,20 @@
 {
   "name": "maintenpro",
-  "version": "0.1.0",
+  "version": "1.2.9",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node scripts/review-smoke.mjs",
-    "serve": "npx http-server dist -p 4173 -c-1"
+    "test": "node scripts/sync-revisions.test.mjs && node scripts/sync-contract.test.mjs && node scripts/server-api.test.mjs && node scripts/sync-roundtrip.test.mjs && node scripts/sync-queue.test.mjs && node scripts/runtime-config.test.mjs && node scripts/provider-sim.test.mjs && node scripts/review-smoke.mjs && node scripts/drive-sync.test.mjs && node scripts/desktop-session.test.mjs",
+    "build:windows": "node windows/build.mjs && node windows/package-installer.mjs && node windows/installer-smoke.mjs",
+    "build:windows:exe": "node windows/build.mjs && node windows/package-executable.mjs && node windows/installer-smoke.mjs",
+    "serve": "npx http-server dist -p 4173 -c-1",
+    "test:ui": "node scripts/ui-browser.test.mjs",
+    "release:check": "node scripts/release-config.mjs --check"
   },
   "dependencies": {
+    "google-auth-library": "^9.15.1",
+    "pg": "^8.16.3",
     "qrcode": "^1.5.4",
     "xlsx": "^0.18.5"
   },

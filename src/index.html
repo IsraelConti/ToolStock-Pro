@@ -35,11 +35,12 @@
       <img src="app-icon.png" alt="MaintenPro">
       <p class="eyebrow">CONFIGURACIÓN INICIAL</p>
       <h1>Tu mantenimiento, en tu propio Drive</h1>
-      <p class="lead">Los registros se guardan en este dispositivo. Si eliges una ubicación de Drive, MaintenPro crea sus carpetas y permite guardar una copia manual.</p>
+      <p class="lead">Configura tu empresa y conecta tu cuenta de Google cuando quieras unir tus datos con el PC. Puedes empezar guardando los registros solo en el dispositivo.</p>
       <form id="onboardingForm" class="form">
         <label>Correo del propietario *<input name="ownerEmail" type="email" required placeholder="propietario@empresa.com"></label>
         <label>Nombre de la empresa *<input name="companyName" required placeholder="Mi empresa"></label>
-        <button class="btn primary wide">Continuar y conectar Drive</button>
+        <button class="btn primary wide">Guardar empresa y continuar</button>
+        <button id="skipOnboarding" type="button" class="btn wide">Configurar más tarde</button>
       </form>
       <small class="privacy-note">MaintenPro nunca solicita ni guarda tu contraseña de Google.</small>
     </div>
@@ -56,7 +57,7 @@
   <header class="topbar">
     <button id="backBtn" class="icon-btn hidden" aria-label="Volver">‹</button>
     <div class="brand"><img src="app-icon.png" alt=""><div><strong id="appName">MaintenPro</strong><small id="screenTitle">Mantenimiento profesional</small></div></div>
-    <button class="icon-btn" data-go="assistant" aria-label="Sr. Alicate, ayuda local">✦</button>
+    <button class="icon-btn" data-go="assistant" aria-label="Abrir guía local Sr. Alicate"><img class="alicatelogo" src="preguntalicates.svg" alt=""></button>
     <button class="icon-btn" data-go="settings" aria-label="Configuración">⚙</button>
   </header>
 
@@ -80,7 +81,8 @@
         <button class="action" data-go="orders"><span>✓</span><b>Órdenes</b><small>Pendientes y finalizadas</small></button>
         <button class="action" data-go="calendar"><span>▦</span><b>Calendario</b><small>Vencimientos y avisos</small></button>
         <button class="action" data-go="reports"><span>↧</span><b>Informes</b><small>Excel profesional</small></button>
-        <button class="action ai-action" data-go="assistant"><span>✦</span><b>Sr. Alicate</b><small>Guía local y diagnóstico</small></button>
+        <button class="action ai-action" data-go="assistant"><span><img class="alicatelogo" src="preguntalicates.svg" alt=""></span><b>Sr. Alicate</b><small>Guía local y diagnóstico</small></button>
+        <button class="action" data-go="pc"><span>▣</span><b>Móvil y PC</b><small>Tu cuenta y datos en Drive</small></button>
       </div>
     </section>
 
@@ -171,9 +173,9 @@
     </section>
 
     <section class="screen" data-screen="assistant">
-      <div class="alicate-guide-head"><div class="alicate-mascot" aria-hidden="true"><svg viewBox="0 0 96 96"><path d="M27 19 43 38M69 19 53 38" fill="none" stroke="#ff921e" stroke-width="9" stroke-linecap="round"/><circle cx="48" cy="52" r="24" fill="#ff921e"/><circle cx="41" cy="48" r="3.4" fill="#102331"/><circle cx="55" cy="48" r="3.4" fill="#102331"/><path d="M41 59q7 7 14 0M38 73l-5 11m25-11 5 11" fill="none" stroke="#102331" stroke-width="4" stroke-linecap="round"/></svg></div><div><p class="eyebrow">SR. ALICATE · GUÍA LOCAL</p><h2>¿Qué necesitas hacer?</h2><small>Ayuda integrada en MaintenPro; funciona sin conexión.</small></div></div>
-      <div class="alicateguide"><label for="alicateguideSearch">Buscar en la guía</label><input id="alicateguideSearch" type="search" placeholder="Ej.: orden, preventivo, copia…"><div id="alicateguideResults" class="alicateguide-results" aria-live="polite"></div></div>
-      <p class="eyebrow">DIAGNÓSTICO LOCAL POR REGLAS</p><h2>Orientación inicial de una incidencia</h2>
+      <div class="ai-notice alicate-guide-head"><img src="preguntalicates.svg" alt="" class="alicatelogo-large"><div><p class="eyebrow">SR. ALICATE · AYUDA LOCAL</p><h2>Guía de MaintenPro</h2><small>Busca cómo usar las funciones de la aplicación. La guía funciona sin conexión y sus respuestas están incluidas en la app.</small></div></div>
+      <div class="alicateguide"><label for="alicateguideSearch">¿Qué necesitas hacer?</label><input id="alicateguideSearch" type="search" placeholder="Ej.: crear una orden, imprimir, guardar una copia"><div id="alicateguideResults" class="alicateguide-results" aria-live="polite"></div></div>
+      <p class="eyebrow">DIAGNÓSTICO TÉCNICO POR REGLAS</p><h2>Orientación inicial de una incidencia</h2>
       <div class="ai-notice"><b>Disponible sin Internet; diagnóstico por reglas</b><small>Ofrece orientación general basada en palabras clave; no utiliza un modelo de inteligencia artificial ni sustituye los procedimientos de seguridad, el manual del fabricante o a personal cualificado.</small></div>
       <form id="assistantForm" class="form">
         <div class="card">
@@ -200,14 +202,23 @@
       <p class="eyebrow">CONFIGURACIÓN</p><h2>Empresa y aplicación</h2>
       <form id="settingsForm" class="form">
         <div class="card"><h3>Empresa</h3><label>Correo del propietario<input name="ownerEmail" type="email"></label><label>Nombre comercial<input name="companyName"></label><label>Nombre de la aplicación<input name="appName" value="MaintenPro"></label></div>
-        <div class="card"><h3>Idioma e importes</h3><div class="two"><label>Idioma<select name="language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option></select></label></div><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step=".01" value="21"></label></div>
+        <div class="card"><h3>Formato de fechas e importes</h3><div class="two"><label>Formato de fechas<select name="language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option></select></label></div><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step=".01" value="21"></label></div>
         <div class="card"><h3>Avisos</h3><div class="two"><label>Primer aviso (días)<input name="alertDays" type="number" value="7"></label><label>Aviso urgente (días)<input name="urgentDays" type="number" value="2"></label></div><label class="toggle"><input name="notifications" type="checkbox" checked> Resaltar avisos de fecha en la aplicación</label></div>
         <div class="card"><h3>Equipo de trabajo</h3><p class="lead">Registro local del propietario y hasta tres técnicos. Añadirlos aquí no crea cuentas ni envía invitaciones.</p><div id="teamSummary"></div><button type="button" class="btn" data-go="team">Gestionar técnicos</button></div>
         <div class="card"><h3>Suscripción</h3><p id="subscriptionStatus" class="lead">Comprobando en Google Play…</p><button id="manageSubscription" type="button" class="btn">Gestionar suscripción</button></div>
-        <div class="card"><h3>Google Drive</h3><p id="driveStatus" class="lead">Drive pendiente de conectar.</p><button id="connectDrive" type="button" class="btn primary">Conectar o cambiar carpeta</button></div>
-        <div class="card"><h3>Copia de seguridad</h3><p class="lead">Incluye equipos, órdenes, preventivos, técnicos y configuración. Puedes guardarla en Drive o como archivo JSON.</p><button id="backup" type="button" class="btn">Guardar copia completa</button><button id="restoreBackup" type="button" class="btn">Restaurar copia JSON</button><input id="restoreBackupFile" type="file" accept="application/json,.json" class="hidden"></div>
+        <div class="card"><h3>Móvil y PC</h3><p class="lead">Usa la misma cuenta de Google en los dos dispositivos. El acceso al PC está incluido en tu compra activa.</p><button class="btn primary" type="button" data-go="pc">Abrir conexión móvil–PC</button></div>
+        <div class="card"><h3>Copia de seguridad</h3><p class="lead">Incluye equipos, órdenes, preventivos, técnicos y configuración. Al restaurarla se unen los registros con los de este dispositivo y se conserva lo que solo está aquí. Puedes guardarla en Drive o como archivo JSON.</p><button id="backup" type="button" class="btn">Guardar copia completa</button><button id="restoreBackup" type="button" class="btn">Restaurar copia JSON</button><input id="restoreBackupFile" type="file" accept="application/json,.json" class="hidden"></div>
         <div class="sticky"><button type="button" class="btn" data-back>Cancelar</button><button class="btn primary">Guardar</button></div>
       </form>
+    </section>
+
+    <section class="screen" data-screen="pc">
+      <p class="eyebrow">MÓVIL Y ORDENADOR</p><h2>Tu mantenimiento, en tu propio Drive</h2>
+      <div class="card"><h3>1. Conecta tu cuenta</h3><p>Conecta aquí la misma cuenta de Google que utilizarás en el PC. Los registros se conservan en el espacio privado de MaintenPro de tu Drive; no se almacenan en una base de datos de mantenimiento del editor.</p><p id="driveAccount" class="lead">Sin cuenta conectada</p><button id="syncSignIn" type="button" class="btn primary">Conectar Google Drive</button><button id="driveDisconnect" type="button" class="btn">Desconectar esta cuenta</button></div>
+      <div class="card"><h3>2. Abre MaintenPro en tu PC</h3><p>El PC está incluido en tu compra activa de Android. Vincula la cuenta desde el móvil y conecta la misma cuenta en el ordenador. Descarga el paquete desde el ordenador e instálalo para tu usuario; no se necesitan permisos de administrador.</p><button id="openPcDownload" type="button" class="btn primary">Descargar MaintenPro para PC</button></div>
+      <div class="card"><h3>3. Une los cambios</h3><p id="syncStatus" class="lead" role="status" aria-live="polite">Conecta tu cuenta de Google para unir el móvil y el PC.</p><p id="driveLastSync">Todavía no se han unido datos con Drive.</p><button id="syncNow" type="button" class="btn primary">Sincronizar ahora</button><button id="showDriveConflicts" type="button" class="btn" hidden>Revisar cambios simultáneos</button><p>Los cambios se envían mientras utilizas la aplicación. Si no hay Internet, se conservan aquí y se reintentan al recuperar la conexión. La primera unión conserva los registros de ambos dispositivos. Si dos personas modifican la misma ficha, podrás revisar las dos versiones.</p></div>
+      <div class="card"><h3>¿Vienes de la versión anterior de PC?</h3><p>Antes de cambiar de instalación, exporta una copia JSON desde la versión anterior. Abre Configuración en esta versión e importa esa copia. No se borran el programa anterior ni sus registros durante la instalación.</p><button type="button" class="btn" data-go="settings">Copias e importación</button></div>
+      <button class="btn wide" data-back>← Volver</button>
     </section>
 
     <section class="screen" data-screen="team">
@@ -220,12 +231,14 @@
       <p class="eyebrow">PRIVACIDAD</p><h2>Política de privacidad de MaintenPro</h2>
       <div class="help-list">
         <details open><summary>Datos tratados</summary><p>MaintenPro puede guardar el correo indicado por el propietario, nombre de empresa, fichas de equipos, órdenes, contactos técnicos, fotografías y la configuración que el usuario introduce voluntariamente.</p></details>
-        <details><summary>Dónde se guardan</summary><p>Los datos operativos se guardan localmente en el dispositivo. Si el usuario selecciona una ubicación de Google Drive mediante el selector protegido de Android, MaintenPro crea sus carpetas y guarda allí las copias solicitadas. La aplicación no pide ni almacena la contraseña de Google.</p></details>
+        <details><summary>Dónde se guardan</summary><p>Los datos operativos se guardan en el dispositivo y, si conectas Google, en el espacio privado de MaintenPro de tu propio Drive. Cada dispositivo mantiene su copia y los cambios se unen mientras se utiliza la aplicación. La aplicación no solicita la contraseña de Google. El servicio de licencias del editor conserva el identificador y correo verificado de tu cuenta Google, el estado y vencimiento del acceso y un recibo de compra cifrado. Lo utiliza para comprobar tu suscripción y permitir el acceso desde PC; no recibe las fichas de mantenimiento.</p></details>
         <details><summary>Pagos</summary><p>La suscripción mensual se procesa mediante Google Play Billing. MaintenPro no recibe ni almacena números de tarjeta ni datos bancarios. Google Play gestiona el cobro, la renovación y la cancelación.</p></details>
-        <details><summary>Compartición</summary><p>MaintenPro no vende datos personales ni incluye publicidad. Los datos solo se comparten cuando el propietario comparte su carpeta de Drive, exporta un informe o utiliza las funciones de compartir del dispositivo.</p></details>
-        <details><summary>Conservación y eliminación</summary><p>El usuario puede borrar todos los registros locales desde el botón de esta pantalla. Las copias guardadas en Drive deben eliminarse también desde Drive.</p></details><button id="clearLocalData" type="button" class="btn danger-btn">Borrar todos los registros locales</button>
+        <details><summary>Compartición</summary><p>MaintenPro no vende datos personales ni incluye publicidad. Google presta el servicio de identidad, Drive y pagos; Floot aloja el servicio de licencias. Los informes y las copias exportadas solo se comparten cuando el propietario utiliza las funciones de exportar o compartir.</p></details>
+        <details><summary>Conservación y eliminación</summary><p>El usuario puede borrar todos los registros locales desde el botón de esta pantalla. Desconectar la cuenta no elimina los registros. Los datos privados de la aplicación en Drive se pueden eliminar desde la configuración de aplicaciones de Google Drive. Las copias JSON exportadas son archivos independientes.</p></details><button id="clearLocalData" type="button" class="btn danger-btn">Borrar todos los registros locales</button>
         <details><summary>Permisos y seguridad</summary><p>La aplicación puede usar la cámara o el selector de archivos cuando el usuario decide añadir una fotografía, restaurar una copia o elegir una carpeta de Drive.</p></details>
-        <details><summary>Contacto</summary><p>Para consultas de privacidad o eliminación de datos, utiliza el correo de soporte publicado en la ficha oficial de MaintenPro en Google Play.</p></details>
+        <details><summary>Contacto</summary><p>Puedes solicitar la eliminación de la vinculación de cuenta y sus datos escribiendo a contini1976@gmail.com desde el correo vinculado. Borrar los datos o desconectar Google no cancela la suscripción: la cancelación se realiza en Google Play. No envíes contraseñas ni datos bancarios.</p></details>
+        <button id="openPrivacyPolicy" type="button" class="btn wide">Política de privacidad completa</button>
+        <button id="openAccountDeletion" type="button" class="btn wide">Solicitar eliminación de cuenta y datos</button>
       </div>
       <button class="btn wide" data-back>← Volver</button>
     </section>
@@ -233,20 +246,20 @@
     <section class="screen" data-screen="help">
       <p class="eyebrow">CENTRO DE AYUDA</p><h2>Cómo usar MaintenPro</h2>
       <div class="help-list">
-        <details open><summary>Configuración inicial</summary><p>Indica el correo del propietario y la empresa. Selecciona una ubicación de Google Drive y MaintenPro creará carpetas para equipos, fotografías, códigos QR, informes y copias de seguridad.</p></details>
+        <details open><summary>Configuración inicial</summary><p>Indica los datos de empresa. Abre Móvil y PC y conecta la misma cuenta de Google en los dispositivos que quieras sincronizar. La compra se vincula desde Android; el PC no requiere otra compra.</p></details>
         <details><summary>Equipos y códigos QR</summary><p>Registra cada máquina con código único, ubicación, horas y criticidad. Genera su QR desde la ficha.</p></details>
         <details><summary>Averías y órdenes</summary><p>Selecciona el equipo, describe el problema y asigna técnico. Al cerrar añade solución, repuestos, horas y costes.</p></details>
         <details><summary>Mantenimiento preventivo</summary><p>Crea tareas periódicas. La agenda muestra los próximos vencimientos.</p></details>
         <details><summary>Asistente técnico guiado</summary><p>Describe los síntomas y el sistema propondrá causas probables y comprobaciones generales usando reglas locales; no utiliza un modelo de IA. Confirma siempre el diagnóstico con personal cualificado.</p></details>
         <details><summary>Seguridad antes de intervenir</summary><p>Detén el equipo cuando exista riesgo. Aplica bloqueo y etiquetado, verifica ausencia de energía y libera presión o temperatura residual siguiendo los procedimientos de la empresa y del fabricante.</p></details>
-        <details><summary>Técnicos</summary><p>Registra hasta tres técnicos con correo y etiqueta de rol. MaintenPro no crea cuentas ni sincroniza datos con sus dispositivos. Comparte manualmente una copia de Drive si quieres que consulten esos datos.</p></details>
+        <details><summary>Técnicos</summary><p>Registra hasta tres técnicos con correo y etiqueta de rol. El registro de técnicos no envía invitaciones ni concede acceso a otra cuenta. La sincronización móvil–PC une únicamente los dispositivos de la misma cuenta de Google conectada.</p></details>
         <details><summary>Suscripción</summary><p>El precio y la moneda aplicables se muestran en Google Play antes del pago. La suscripción se renueva automáticamente cada mes y puedes cancelarla desde Google Play. Si cambias de móvil, usa la misma cuenta de Google Play y pulsa Restaurar compra.</p></details>
-        <details><summary>Privacidad</summary><p>Los registros permanecen en el dispositivo; el propietario puede guardar manualmente una copia JSON en Drive. MaintenPro no solicita contraseñas ni vende datos personales.</p><button class="btn" data-go="privacy">Ver política completa</button></details>
+        <details><summary>Privacidad</summary><p>Los registros permanecen en el dispositivo y, al conectar Google, se unen en el espacio privado de MaintenPro de su propio Drive. MaintenPro no solicita contraseñas ni vende datos personales.</p><button class="btn" data-go="privacy">Ver política completa</button></details>
       </div><button class="btn wide" data-back>← Volver</button>
     </section>
   </main>
+  <dialog id="driveConflicts" aria-label="Revisar cambios simultáneos"></dialog>
 
-  <button class="mobile-alicate-help" type="button" data-go="assistant" aria-label="Abrir ayuda local Sr. Alicate"><span>✦</span><small>Ayuda</small></button>
   <nav class="bottom-nav">
     <button data-go="home" class="active"><span>⌂</span>Inicio</button>
     <button data-go="equipment"><span>⚙</span>Equipos</button>
@@ -254,6 +267,7 @@
     <button data-go="orders"><span>✓</span>Órdenes</button>
     <button data-go="calendar"><span>▦</span>Agenda</button>
   </nav>
+  <button class="mobile-alicate-help" type="button" data-go="assistant" aria-label="Abrir ayuda de Sr. Alicate"><img src="preguntalicates.svg" alt=""><span>Ayuda</span></button>
   <div id="toast"></div>
   <script src="app.js"></script>
 </body>

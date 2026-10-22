@@ -1,0 +1,19 @@
+{
+  "version": "1.2.9",
+  "versionCode": 12,
+  "packageName": "com.icapps.maintenpro",
+  "googleWebClientId": "610155930689-m7c5t8umvm8tqrnhabb0algco79oempq.apps.googleusercontent.com",
+  "desktopClientId": "610155930689-bj0c9u7d502g21hqmd6fnqp16in3modg.apps.googleusercontent.com",
+  "desktopClientSecret": "",
+  "entitlementBase": "https://maintenpro-icapps.floot.app/_api",
+  "pcDownloadUrl": "https://israelconti.github.io/pc/",
+  "playProductId": "maintenpro_premium_monthly",
+  "googleProjectId": "encoded-victory-512321-v3",
+  "googleAndroidClientIds": [
+    "610155930689-6jr9j4dacsjmjf166hku7ro02cmhu4ud.apps.googleusercontent.com"
+  ],
+  "googlePlaySigningSha1": [
+    "2F:D9:31:BF:7C:77:81:FB:F3:FC:C9:26:35:B2:6A:CA:34:90:52:1D"
+  ],
+  "publicSiteUrl": "https://israelconti.github.io"
+}

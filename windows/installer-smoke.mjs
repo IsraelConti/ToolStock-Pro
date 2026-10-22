@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+const installer=await readFile('windows/installer/Instalar.ps1','utf8');
+assert.match(installer,/LOCALAPPDATA/);assert.match(installer,/CreateShortcut/);assert.match(installer,/wscript\.exe/);assert.match(installer,/INICIAR_MAINTENPRO_PC\.vbs/);assert.match(installer,/app-anterior-/);
+assert.doesNotMatch(installer,/Verb\s+RunAs|--app=\$uri|AbsoluteUri/);
+const entries=new Set(execFileSync('unzip',['-Z1','MaintenPro_PC_1.2.9_CANDIDATO_2026-10-21.zip'],{encoding:'utf8'}).trim().split(/\r?\n/));
+for(const name of ['Instalar_MaintenPro_PC.bat','installer/Instalar.ps1','installer/Desinstalar.ps1','app/index.html','app/app.js','app/desktop-session.mjs','app/INICIAR_MAINTENPRO_PC.vbs','app/runtime/node.exe','app/runtime/LICENSE','app/runtime/runtime-manifest.json','app/preguntalicates.svg','app/maintenpro-icon.ico','app/maintenpro.runtime.json','ESTADO_Y_PRUEBAS_1.2.9.md'])assert.ok(entries.has(name),'Missing package entry: '+name);
+const manifest=JSON.parse(await readFile('windows/dist/runtime/runtime-manifest.json','utf8'));
+assert.equal(createHash('sha256').update(await readFile('windows/dist/runtime/node.exe')).digest('hex'),manifest.nodeExeSha256);
+assert.ok(![...entries].some(n=>/node_modules|\.env$|\.jks$|\.keystore$/.test(n)));
+console.log('Installer: per-user launcher, previous-file backup, bundled official runtime and checksum, icons and source-free distribution passed.');
