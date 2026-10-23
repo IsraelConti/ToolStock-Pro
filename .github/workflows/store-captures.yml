@@ -1,0 +1,26 @@
+name: Capture actual Play Store screens
+on:
+  push:
+    branches: [codex/toolstock-store-captures-20261023]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node audit/capture-playstore.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ToolStock-MaintenPro-PlayStore-captures
+          path: store-captures/
+          if-no-files-found: error
