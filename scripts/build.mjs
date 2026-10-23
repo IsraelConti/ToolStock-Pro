@@ -18,14 +18,15 @@ for (const file of ["index.html", "styles.css", "premium.css", "manifest.webmani
   await cp(`src/${file}`, `dist/${file}`);
 }
 const config = await releaseConfig();
+await cp("android/webview-compat.css", "dist/webview-compat.css");
 const html = await readFile('dist/index.html', 'utf8');
-await writeFile('dist/index.html', html.replace('</head>', `<script>window.MaintenProRelease=${JSON.stringify({ pcDownloadUrl: config.pcDownloadUrl, publicSiteUrl: config.publicSiteUrl }).replaceAll('<', '\\u003c')};</script></head>`));
+await writeFile('dist/index.html', html.replace('</head>', `<link rel="stylesheet" href="webview-compat.css"><script>window.MaintenProRelease=${JSON.stringify({ pcDownloadUrl: config.pcDownloadUrl, publicSiteUrl: config.publicSiteUrl }).replaceAll('<', '\\u003c')};</script></head>`));
 if (!existsSync("src/app-icon.png")) {
   await writeFile("src/app-icon.png", Buffer.from((await readFile("src/app-icon.b64", "utf8")).replace(/\s/g, ""), "base64"));
 }
 await cp("src/app-icon.png", "dist/app-icon.png");
 await mkdir("android/app/src/main/assets", { recursive: true });
-for (const file of ["app.js", "index.html", "styles.css", "premium.css", "manifest.webmanifest", "app-icon.png", "preguntalicates.svg"]) {
+for (const file of ["app.js", "index.html", "styles.css", "premium.css", "webview-compat.css", "manifest.webmanifest", "app-icon.png", "preguntalicates.svg"]) {
   await cp(`dist/${file}`, `android/app/src/main/assets/${file}`);
 }
 console.log("MaintenPro web assets built.");
