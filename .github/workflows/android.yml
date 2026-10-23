@@ -3,7 +3,7 @@ name: Build Android
 on:
   workflow_dispatch:
   push:
-    branches: [main, toolstock-industrial]
+    branches: [main, toolstock-industrial, codex/toolstock-pc-drive-lupa-20261023]
   pull_request:
     branches: [main]
 
