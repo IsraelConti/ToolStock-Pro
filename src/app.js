@@ -1,6 +1,8 @@
 import "./compat.js";
 import { storage, storageProblems, demoMode } from "./storage.js";
 import { initIndustrialSuite } from "./industrial-suite.js";
+import { initLupa } from "./lupa.js";
+import { createDriveSync } from "./drive-sync.js";
 import QRCode from "qrcode";
 import * as XLSX from "xlsx";
 
@@ -251,7 +253,7 @@ $("#printQr").addEventListener("click",async()=>{
   const labels=await Promise.all(selected.map(async p=>({p,img:await QRCode.toDataURL(JSON.stringify({type:"toolstock-product",id:p.id,reference:p.reference}),{width:320,margin:1})})));
   const printWindow = window.ToolStockAndroid?.printHtml ? null : open("","_blank");
   if (!window.ToolStockAndroid?.printHtml && !printWindow) return toast("Permite las ventanas emergentes para imprimir etiquetas.");
-  const html = `<html><head><title>QR ToolStock</title><style>body{font-family:Arial;display:grid;grid-template-columns:repeat(3,1fr);gap:8mm;padding:10mm}.l{border:1px solid #bbb;text-align:center;padding:4mm;break-inside:avoid}.l img{width:42mm}.l b,.l small{display:block;margin:2mm}@media print{button{display:none}}</style></head><body>${labels.map(({p,img})=>`<div class=l><img src="${img}"><b>${esc(p.name)}</b><small>${esc(p.reference)} · ${esc(p.location||"")}</small></div>`).join("")}<button onclick="print()">Imprimir</button></body></html>`;if (window.ToolStockAndroid?.printHtml) window.ToolStockAndroid.printHtml(html);
+  const html = `<html><head><title>QR ToolStock</title><style>@page{size:A4;margin:8mm}body{font-family:Arial;display:grid;grid-template-columns:repeat(3,1fr);gap:8mm;padding:2mm}.l{border:1px solid #bbb;text-align:center;padding:4mm;break-inside:avoid}.l img{width:42mm}.l b,.l small{display:block;margin:2mm}@media print{button{display:none}}</style></head><body>${labels.map(({p,img})=>`<div class=l><img src="${img}"><b>${esc(p.name)}</b><small>${esc(p.reference)} · ${esc(p.location||"")}</small></div>`).join("")}<button onclick="print()">Imprimir</button></body></html>`;if (window.ToolStockAndroid?.printHtml) window.ToolStockAndroid.printHtml(html);
   else { printWindow.document.write(html); printWindow.document.close(); }
   toast("Hoja QR generada. Al cerrar volverás aquí.");
 });
@@ -262,7 +264,7 @@ function applySettings(){
   $("#appName").textContent=settings.appName;$$(".currencySymbol").forEach(x=>x.textContent=new Intl.NumberFormat(settings.language,{style:"currency",currency:settings.currency}).formatToParts(0).find(x=>x.type==="currency")?.value||settings.currency);
   document.body.classList.toggle("light",(settings.theme==="light"||(settings.theme==="system"&&window.matchMedia?.("(prefers-color-scheme: light)").matches)));const form=$("#settingsForm");Object.entries(settings).forEach(([k,v])=>{if(!form.elements[k])return;if(form.elements[k].type==="checkbox")form.elements[k].checked=Boolean(v);else form.elements[k].value=v;});renderMetrics();
 }
-$("#settingsForm").addEventListener("submit",e=>{e.preventDefault();const f=new FormData(e.currentTarget);settings={...settings,...Object.fromEntries(f),negativeStock:f.has("negativeStock"),hidePrices:f.has("hidePrices"),confirmDelete:f.has("confirmDelete")};try{storage.setItem(STORE_SETTINGS,JSON.stringify(settings));}catch(error){settings={...defaultSettings,...storage.readJSON(STORE_SETTINGS,{},v=>v&&typeof v==="object")};toast(error.message);return;}applySettings();toast("Configuración guardada");back();});
+$("#settingsForm").addEventListener("submit",e=>{e.preventDefault();const f=new FormData(e.currentTarget);settings={...settings,...Object.fromEntries(f),negativeStock:f.has("negativeStock"),hidePrices:f.has("hidePrices"),confirmDelete:f.has("confirmDelete"),updatedAt:new Date().toISOString()};try{storage.setItem(STORE_SETTINGS,JSON.stringify(settings));}catch(error){settings={...defaultSettings,...storage.readJSON(STORE_SETTINGS,{},v=>v&&typeof v==="object")};toast(error.message);return;}applySettings();toast("Configuración guardada");back();});
 $("#chooseDriveFolder").addEventListener("click",()=>{
   if(window.ToolStockAndroid?.chooseDriveFolder){window.ToolStockAndroid.chooseDriveFolder();}
   else toast("Esta opción se activa dentro de la aplicación Android");
@@ -359,4 +361,106 @@ initIndustrialSuite({
   getSettings:()=>settings,
   go,toast,esc
 });
+const setDriveAccountStatus = (label, linked = Boolean(label)) => {
+  const element = document.querySelector("#driveAccountStatus");
+  if (element) element.textContent = linked ? `Cuenta de Google: ${label || "vinculada"}` : "Cuenta de Google: no vinculada en este dispositivo.";
+};
+const driveSync = createDriveSync({
+  getSnapshot: () => ({
+    schemaVersion: 1,
+    clientId: storage.getItem("toolstock.client.v1") || "",
+    updatedAt: settings.updatedAt || new Date().toISOString(),
+    data: { products, movements, employees, settings }
+  }),
+  setSnapshot: async snapshot => {
+    const data = snapshot?.data;
+    if (!data || !Array.isArray(data.products) || !Array.isArray(data.movements) || !Array.isArray(data.employees) || !data.settings || typeof data.settings !== "object") {
+      throw new Error("La copia de Drive no tiene el formato de ToolStock");
+    }
+    products = data.products;
+    movements = data.movements;
+    employees = data.employees.slice(0, 3);
+    settings = { ...defaultSettings, ...data.settings, updatedAt: snapshot.updatedAt || new Date().toISOString() };
+    if (snapshot.clientId) storage.setItem("toolstock.client.v1", snapshot.clientId);
+    storage.writeBatch({
+      [STORE_PRODUCTS]: JSON.stringify(products),
+      [STORE_MOVEMENTS]: JSON.stringify(movements),
+      [STORE_EMPLOYEES]: JSON.stringify(employees),
+      [STORE_SETTINGS]: JSON.stringify(settings)
+    });
+    applySettings();
+    renderEmployeeSummary();
+    renderMetrics();
+  },
+  getAccessToken: async () => {
+    if (demoMode) throw new Error("La demo no puede sincronizar datos reales");
+    if (window.ToolStockAndroid?.requestDriveAccessToken) {
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("No se obtuvo autorización de Google Drive")), 30000);
+        window.onToolStockDriveToken = (value, error, accountEmail) => {
+          clearTimeout(timeout);
+          if (error) reject(new Error(error));
+          else {
+            if (accountEmail) setDriveAccountStatus(accountEmail, true);
+            resolve(value);
+          }
+        };
+        const value = window.ToolStockAndroid.requestDriveAccessToken();
+        if (typeof value === "string" && value) { clearTimeout(timeout); resolve(value); }
+      });
+    }
+    if (window.ToolStockPC?.getDriveAccessToken) {
+      const value = await window.ToolStockPC.getDriveAccessToken();
+      setDriveAccountStatus("vinculada en este PC", true);
+      return value;
+    }
+    throw new Error("Vincula tu cuenta de Google en el PC o en el móvil");
+  },
+  onStatus: state => {
+    const status = document.querySelector("#driveSyncStatus");
+    if (status) status.textContent = state.message || "Sincronización lista";
+    if (state.state === "working") setDriveAccountStatus("comprobando…", true);
+    if (state.state === "ready" && state.message) toast(state.message);
+  }
+});
+window.ToolStockDrive = driveSync;
+window.onToolStockDriveSync = () => driveSync.sync();
+document.querySelector("#driveLogout")?.addEventListener("click", async () => {
+  if (!confirm("Esto cerrará la vinculación de Google Drive en este dispositivo. Los datos de Drive no se borrarán. ¿Continuar?")) return;
+  try {
+    if (window.ToolStockAndroid?.signOutDrive) {
+      window.ToolStockAndroid.signOutDrive();
+    } else if (window.ToolStockPC?.logout) {
+      await window.ToolStockPC.logout();
+    } else {
+      throw new Error("Este dispositivo no tiene una vinculación de Google Drive activa");
+    }
+    setDriveAccountStatus("", false);
+    const status = document.querySelector("#driveSyncStatus");
+    if (status) status.textContent = "Cuenta desvinculada en este dispositivo. Los datos de Drive no se han borrado.";
+    toast("Cuenta de Google desvinculada");
+  } catch (error) {
+    toast(error.message || "No se pudo desvincular la cuenta");
+  }
+});
+document.querySelector("#syncNow")?.addEventListener("click", async () => {
+  try { await driveSync.sync(); }
+  catch (error) {
+    const status = document.querySelector("#driveSyncStatus");
+    if (status) status.textContent = error.message;
+    toast(error.message || "No se pudo sincronizar");
+  }
+});
+if (window.ToolStockPC?.getStatus && ["127.0.0.1", "localhost"].includes(window.location.hostname)) {
+  window.ToolStockPC.getStatus().then(state => {
+    if (state.linked) setDriveAccountStatus("vinculada en este PC", true);
+  }).catch(() => {});
+}
+if (window.ToolStockAndroid?.driveAccountEmail) {
+  try {
+    const email = window.ToolStockAndroid.driveAccountEmail();
+    if (email) setDriveAccountStatus(email, true);
+  } catch {}
+}
+initLupa();
 applySettings();renderEmployeeSummary();renderMetrics();go("home",false);

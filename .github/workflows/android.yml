@@ -3,7 +3,7 @@ name: Build Android
 on:
   workflow_dispatch:
   push:
-    branches: [main, toolstock-industrial]
+    branches: [main, toolstock-industrial, codex/toolstock-pc-drive-lupa-20261023]
   pull_request:
     branches: [main]
 
@@ -34,6 +34,26 @@ jobs:
           mkdir -p android/app/src/main/assets
           cp -f dist/* android/app/src/main/assets/
 
+      - name: Package source snapshot
+        if: github.event_name != 'pull_request'
+        run: git archive --format=zip --output="$RUNNER_TEMP/ToolStock-Pro-PC-Lupa-source-${GITHUB_SHA}.zip" HEAD
+
+      - name: Upload source snapshot
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ToolStock-Pro-PC-Lupa-source
+          path: ${{ runner.temp }}/ToolStock-Pro-PC-Lupa-source-${{ github.sha }}.zip
+          if-no-files-found: error
+      - name: Install browser for web regression
+        run: npx playwright install chromium
+
+      - name: Run web regression
+        run: npm test
+
+      - name: Verify release metadata and PC package inputs
+        run: npm run release:verify
+
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
@@ -54,7 +74,7 @@ jobs:
 
       - name: Compile debug APK and release bundle
         working-directory: android
-        run: gradle --no-daemon clean assembleDebug bundleRelease
+        run: gradle --no-daemon clean testDebugUnitTest assembleDebug bundleRelease
 
       - name: Sign Play release with existing upload key
         id: signing

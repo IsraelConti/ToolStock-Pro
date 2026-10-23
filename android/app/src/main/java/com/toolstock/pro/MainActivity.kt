@@ -35,10 +35,20 @@ import com.android.billingclient.api.QueryPurchasesParams
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.android.gms.auth.GoogleAuthUtil
+import com.google.android.gms.auth.UserRecoverableAuthException
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.Scope
 
 class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     companion object {
         private const val PRODUCT_MONTHLY = "toolstock_pro_premium_monthly"
+        private const val DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
+        private const val REQUEST_DRIVE_SIGN_IN = 4601
+        private const val REQUEST_DRIVE_AUTH = 4602
     }
 
     private lateinit var webView: WebView
@@ -50,6 +60,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingSaveBytes: ByteArray? = null
     private var pendingSaveName = ""
+    private val driveHttp = DriveHttp()
+    private val driveRequests = java.util.concurrent.ThreadPoolExecutor(
+        1, 1, 0L, java.util.concurrent.TimeUnit.MILLISECONDS,
+        java.util.concurrent.ArrayBlockingQueue<Runnable>(8)
+    )
 
     private val folderPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri ?: return@registerForActivityResult
@@ -116,7 +131,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 }
                 override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
                     val uri = request?.url ?: return null
-                    val allowed = uri.scheme == "file" && uri.path in listOf("/android_asset/index.html", "/android_asset/app.js", "/android_asset/styles.css", "/android_asset/app-icon.png", "/android_asset/manifest.webmanifest")
+                    val allowed = uri.scheme == "file" && uri.path in listOf("/android_asset/index.html", "/android_asset/app.js", "/android_asset/pc-config.js", "/android_asset/styles.css", "/android_asset/app-icon.png", "/android_asset/manifest.webmanifest")
                     return if (allowed || uri.scheme == "data") null else WebResourceResponse("text/plain", "UTF-8", java.io.ByteArrayInputStream(ByteArray(0)))
                 }
                 override fun onPageFinished(view: WebView?, url: String?) {
@@ -333,12 +348,89 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private fun subscriptionResult(active: Boolean, price: String, message: String) =
         js("window.onToolStockSubscription && window.onToolStockSubscription(" + active + "," + quote(price) + "," + quote(message) + ")")
 
-    private fun js(code: String) = runOnUiThread { webView.evaluateJavascript(code, null) }
+    private fun js(code: String) = runOnUiThread {
+        if (!isDestroyed && !isFinishing) webView.evaluateJavascript(code, null)
+    }
 
     private fun quote(value: String): String =
         org.json.JSONObject.quote(value)
 
+    private fun driveSignInOptions(): GoogleSignInOptions =
+        GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail().requestScopes(Scope(DRIVE_SCOPE)).build()
+
+    private fun driveTokenResult(token: String?, error: String?, accountEmail: String? = null) = runOnUiThread {
+        js("window.onToolStockDriveToken && window.onToolStockDriveToken(" + quote(token.orEmpty()) + "," + quote(error.orEmpty()) + "," + quote(accountEmail.orEmpty()) + ")")
+    }
+
+    private fun requestDriveAccessToken() {
+        val account = GoogleSignIn.getLastSignedInAccount(this)
+        if (account == null) {
+            startActivityForResult(GoogleSignIn.getClient(this, driveSignInOptions()).signInIntent, REQUEST_DRIVE_SIGN_IN)
+            return
+        }
+        fetchDriveToken(account)
+    }
+
+    private fun fetchDriveToken(account: GoogleSignInAccount) {
+        Thread {
+            try {
+                val token = GoogleAuthUtil.getToken(this, account.account!!, "oauth2:$DRIVE_SCOPE")
+                driveTokenResult(token, null, account.email)
+            } catch (recoverable: UserRecoverableAuthException) {
+                runOnUiThread {
+                    val intent = recoverable.intent ?: return@runOnUiThread driveTokenResult(null, "No se pudo abrir la autorización de Google Drive")
+                    startActivityForResult(intent, REQUEST_DRIVE_AUTH)
+                }
+            } catch (_: Exception) {
+                driveTokenResult(null, "No se pudo autorizar Google Drive")
+            }
+        }.start()
+    }
+
+    @Deprecated("Activity result bridge for Google Sign-In")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_DRIVE_SIGN_IN) {
+            if (resultCode != Activity.RESULT_OK) {
+                driveTokenResult(null, "Inicio de sesión de Google cancelado")
+                return
+            }
+            try {
+                val signInIntent = data ?: throw IllegalStateException("Falta el resultado de Google Sign-In")
+                val account = GoogleSignIn.getSignedInAccountFromIntent(signInIntent).getResult(ApiException::class.java)
+                fetchDriveToken(account)
+            } catch (_: Exception) {
+                driveTokenResult(null, "No se pudo iniciar sesión en Google Drive")
+            }
+        } else if (requestCode == REQUEST_DRIVE_AUTH) {
+            if (resultCode == Activity.RESULT_OK) requestDriveAccessToken()
+            else driveTokenResult(null, "Autorización de Google Drive cancelada")
+        }
+    }
+
     inner class AndroidBridge {
+        @JavascriptInterface
+        fun driveRequest(requestId: String, url: String, method: String, token: String, contentType: String, body: String) {
+            if (!requestId.matches(Regex("[A-Za-z0-9-]{1,100}"))) return
+            fun respond(payload: org.json.JSONObject) {
+                js("window.onToolStockDriveResponse && window.onToolStockDriveResponse(" + quote(requestId) + "," + quote(payload.toString()) + ")")
+            }
+            try {
+                driveRequests.execute {
+                    try {
+                        val result = driveHttp.execute(url, method, token, contentType, body)
+                        respond(org.json.JSONObject().put("status", result.status).put("body", result.body))
+                    } catch (invalid: SecurityException) {
+                        respond(org.json.JSONObject().put("error", invalid.message ?: "Petición de Drive no permitida"))
+                    } catch (_: Exception) {
+                        respond(org.json.JSONObject().put("error", "No se pudo conectar con Google Drive. Revisa la conexión y vuelve a sincronizar."))
+                    }
+                }
+            } catch (_: java.util.concurrent.RejectedExecutionException) {
+                respond(org.json.JSONObject().put("error", "Hay una sincronización en curso. Espera y vuelve a intentarlo."))
+            }
+        }
         @JavascriptInterface fun printHtml(html: String) = runOnUiThread {
             val printView = WebView(this@MainActivity)
             printView.webViewClient = object : WebViewClient() {
@@ -351,6 +443,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         }
         @JavascriptInterface fun appVersion(): String = BuildConfig.VERSION_NAME
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
+        @JavascriptInterface fun requestDriveAccessToken() = runOnUiThread { this@MainActivity.requestDriveAccessToken() }
+        @JavascriptInterface fun driveAccountEmail(): String = GoogleSignIn.getLastSignedInAccount(this@MainActivity)?.email.orEmpty()
+        @JavascriptInterface fun signOutDrive() = runOnUiThread {
+            GoogleSignIn.getClient(this@MainActivity, driveSignInOptions()).signOut()
+        }
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread {
@@ -408,6 +505,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     override fun onDestroy() {
+        driveRequests.shutdownNow()
         if (::billingClient.isInitialized) billingClient.endConnection()
         webView.removeJavascriptInterface("ToolStockAndroid")
         webView.destroy()

@@ -14,8 +14,8 @@ android {
         minSdk = 29
         targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 10
-        versionName = "1.4.4"
+        versionCode = 11
+        versionName = "1.5.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -35,6 +35,7 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test:core:1.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
@@ -44,4 +45,5 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.10.0")
     implementation("com.android.billingclient:billing-ktx:9.1.0")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
 }

@@ -54,6 +54,17 @@ class ToolStockSmokeTest {
 
     @After fun finish() { scenario.close() }
 
+    @Test fun nativeDriveTransportRespondsAndRejectsExternalHosts() {
+        js("""
+            window.onToolStockDriveResponse=function(id,payload){window.__driveReply={id:id,payload:JSON.parse(payload)};};
+            window.ToolStockAndroid.driveRequest('drive-security-test','https://example.com/drive/v3/files','GET','test-token','','');
+            return true;
+        """.trimIndent())
+        waitFor("window.__driveReply && window.__driveReply.payload.error")
+        assertEquals("drive-security-test", js("return window.__driveReply.id;"))
+        assertEquals(true, js("return window.__driveReply.payload.error.indexOf('Solo se permite')>=0;"))
+    }
+
     @Test fun ownerEmailIsOptional() {
         js("document.getElementById('continueAsGuest').click(); return true;")
         assertEquals(false, js("return document.body.classList.contains('owner-registration-required');"))
