@@ -62,7 +62,7 @@ function mergeSnapshots(local, remote) {
   };
 }
 
-function equalSnapshot(a, b) {
+function equalData(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
@@ -133,9 +133,13 @@ export function createDriveSync({ getSnapshot, setSnapshot, getAccessToken, onSt
       revision: (Number(local.revision) || 0) + 1,
       data: asObject(local.data)
     };
-    await setSnapshot(merged);
-    if (!file || !equalSnapshot(merged, remote)) await writeRemote(merged, file, accessToken);
-    const result = { state: "ready", message: file ? "Móvil y PC sincronizados" : "Copia privada creada en Google Drive", fileId: file?.id || null, revision: merged.revision };
+    const changed = !remote || !equalData(merged.data, remote.data);
+    const finalSnapshot = remote && !changed
+      ? { ...remote, clientId: local.clientId || remote.clientId, data: remote.data }
+      : merged;
+    await setSnapshot(finalSnapshot);
+    if (changed) await writeRemote(finalSnapshot, file, accessToken);
+    const result = { state: "ready", message: file ? "Móvil y PC sincronizados" : "Copia privada creada en Google Drive", fileId: file?.id || null, revision: finalSnapshot.revision };
     onStatus(result);
     return result;
   }
