@@ -93,7 +93,7 @@ export function createDriveSync({ getSnapshot, setSnapshot, getAccessToken, onSt
     const metadata = JSON.stringify(file ? { name: FILE_NAME, mimeType: "application/json" } : {
       name: FILE_NAME, parents: ["appDataFolder"], mimeType: "application/json"
     });
-    const body = JSON.stringify(snapshot);
+    const payload = JSON.stringify(snapshot);
     const multipart = [
       `--${boundary}`,
       "Content-Type: application/json; charset=UTF-8",
@@ -102,7 +102,7 @@ export function createDriveSync({ getSnapshot, setSnapshot, getAccessToken, onSt
       `--${boundary}`,
       "Content-Type: application/json",
       "",
-      body,
+      payload,
       `--${boundary}--`,
       ""
     ].join("\r\n");
