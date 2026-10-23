@@ -6,8 +6,14 @@ const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 const outputDir = "release";
 await mkdir(outputDir, { recursive: true });
 const output = join(outputDir, `ToolStock-PC-${packageJson.version}-portable.zip`);
+const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const build = spawnSync(npm, ["run", "build"], { stdio: "inherit" });
+if (build.error || build.status !== 0) {
+  console.error("No se pudo construir dist antes de crear el paquete portable.");
+  process.exit(1);
+}
 const entries = [
-  "src", "windows", "scripts", "package.json", "package-lock.json", "README.md",
+  "dist", "src", "windows", "scripts", "package.json", "package-lock.json", "README.md",
   "PRIVACY_POLICY.md", "TOOLSTOCK_PRIVACY_POLICY.md"
 ];
 const result = spawnSync("zip", ["-r", "-q", output, ...entries], { stdio: "inherit" });

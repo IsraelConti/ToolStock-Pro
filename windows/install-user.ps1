@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 $sourceRoot = Split-Path -Parent $PSScriptRoot
 $targetRoot = [Environment]::ExpandEnvironmentVariables($InstallRoot)
 New-Item -ItemType Directory -Path $targetRoot -Force | Out-Null
-Copy-Item -Path (Join-Path $sourceRoot "src"), (Join-Path $sourceRoot "windows"), (Join-Path $sourceRoot "scripts"), (Join-Path $sourceRoot "package.json"), (Join-Path $sourceRoot "package-lock.json") -Destination $targetRoot -Recurse -Force
+Copy-Item -Path (Join-Path $sourceRoot "dist"), (Join-Path $sourceRoot "src"), (Join-Path $sourceRoot "windows"), (Join-Path $sourceRoot "scripts"), (Join-Path $sourceRoot "package.json"), (Join-Path $sourceRoot "package-lock.json") -Destination $targetRoot -Recurse -Force
 
 $shortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "ToolStock Pro.lnk"
 $launcher = Join-Path $targetRoot "windows\start-toolstock.cmd"
