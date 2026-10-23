@@ -34,6 +34,12 @@ jobs:
           mkdir -p android/app/src/main/assets
           cp -f dist/* android/app/src/main/assets/
 
+      - name: Install browser for web regression
+        run: npx playwright install chromium
+
+      - name: Run web regression
+        run: npm test
+
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
