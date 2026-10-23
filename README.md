@@ -34,6 +34,6 @@ Los documentos se preparan como una orden, ficha o informe antes de abrir el di�
 
 ## Estado antes de entregar
 
-El AAB Android 1.2.9 (código 12) está firmado con la clave de subida existente y aceptado como borrador de actualización en Google Play. El servicio de licencias está desplegado y su acceso real a Google Play está comprobado. El instalador Windows revisado 1.2.9.1 pasó la instalación y el arranque reales en un runner Windows. La conexión Google desde el PC también se comprobó en Windows. Siguen pendientes la compra/restauración real, el recorrido móvil-PC-móvil, las declaraciones actualizadas de Play Console y el envío a revisión. La versión Android 1.2.7 ya publicada permanece disponible. Véase `docs/ESTADO_2026-10-22.md`.
+El candidato Android actual es 1.2.9.1 (código 13, compilación R3), firmado y aceptado en Play Console como actualización. Privacidad y Seguridad de los datos están guardadas. Sigue sin enviarse a revisión: faltan el recorrido nativo de la compilación final, compra/restauración y sincronización reales, y acceso completo del revisor. La versión publicada 1.2.7 sigue disponible. Véase `docs/ESTADO_2026-10-23.md`.
 
 Código y entregables se respaldan en la carpeta MaintenPro del Drive del propietario. Los archivos de avance no deben presentarse como una versión final.

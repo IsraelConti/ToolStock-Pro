@@ -1,6 +1,6 @@
 # Preparación de Seguridad de los datos · actualización 1.2.9
 
-Pendiente de completar y guardar en Play Console. Este documento sustituye la nota antigua de copias manuales sin sincronización; no acredita el envío del cuestionario.
+Completada y guardada en Play Console el 23 de octubre de 2026. Incluye OAuth, enlaces de eliminación y nueve tipos de datos: nombre, correo, ID de usuario, historial de compras, fotografías, contactos, archivos/documentos, otro contenido generado por el usuario e identificadores del dispositivo. Recogida, sin compartición declarada bajo las excepciones de proveedor y acciones del usuario; no efímera, opcional salvo historial de compras. CSV verificado conservado en Drive. Todavía no está enviada a revisión. Véase `../docs/ESTADO_2026-10-23.md`.
 
 ## Comportamiento comprobado en el código
 

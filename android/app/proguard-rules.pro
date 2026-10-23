@@ -1,1 +1,0 @@
--keepclassmembers class com.maintenpro.app.MainActivity$AndroidBridge { *; }
