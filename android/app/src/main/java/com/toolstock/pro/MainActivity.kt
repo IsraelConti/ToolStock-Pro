@@ -410,7 +410,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             printView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
         }
         @JavascriptInterface fun appVersion(): String = BuildConfig.VERSION_NAME
-        @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }\n        @JavascriptInterface fun requestDriveAccessToken() = runOnUiThread { requestDriveAccessToken() }
+        @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
+        @JavascriptInterface fun requestDriveAccessToken() = runOnUiThread { requestDriveAccessToken() }
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread {
