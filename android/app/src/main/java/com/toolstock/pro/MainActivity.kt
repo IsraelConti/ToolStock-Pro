@@ -411,7 +411,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         }
         @JavascriptInterface fun appVersion(): String = BuildConfig.VERSION_NAME
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
-        @JavascriptInterface fun requestDriveAccessToken() = runOnUiThread { requestDriveAccessToken() }
+        @JavascriptInterface fun requestDriveAccessToken() = runOnUiThread { this@MainActivity.requestDriveAccessToken() }
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread {
