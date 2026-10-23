@@ -158,6 +158,9 @@ export function initLupa() {
       panel.classList.add("open");
       question.focus();
       show(findAnswers(""));
+      return;
     }
+    const navigation = event.target.closest("[data-go],[data-industrial-go]");
+    if (navigation) panel.classList.remove("open");
   });
 }
