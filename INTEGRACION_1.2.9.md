@@ -14,11 +14,11 @@
 
 El resultado exacto se actualiza en el informe de entrega. Las simulaciones no sustituyen las pruebas reales con Google Play, dos dispositivos, la cuenta del cliente y una impresora física.
 
-## Configuración pendiente de producción
+## Estado de preparación
 
 `config/release.json` contiene los valores públicos. Las entradas vacías mantienen la conexión cerrada y el verificador bloquea la publicación. La clave privada de Google Play solo puede estar en el servicio de licencias, nunca en los paquetes, informes ni Drive de distribución.
 
-La app publicada 1.2.7 permanece activa. Este candidato no se ha enviado a revisión. Se exige configuración real de Google OAuth, Drive API, producto de Play, servicio de licencias y descarga HTTPS, y después la prueba completa Android–PC–Android antes de subir el AAB firmado.
+En la última comprobación de Play Console, la 1.2.7 seguía publicada y el AAB 1.2.9 (12) ya estaba firmado y aceptado como borrador de actualización. Google OAuth, Drive API, producto de Play, servicio de licencias y descarga HTTPS están configurados. El instalador revisado pasó la instalación y el arranque reales en Windows. Siguen pendientes compra/restauración, recorrido Android–PC–Android, declaraciones actualizadas y envío a revisión; no hay que volver a firmar ni subir el mismo AAB. Véase `docs/ESTADO_2026-10-22.md`.
 
 ## Migración sin pérdida de datos
 

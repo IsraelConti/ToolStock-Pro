@@ -1,32 +1,16 @@
 # Suscripción de MaintenPro
 
-- ID del producto: `maintenpro_premium_monthly`
-- Tipo: suscripción con renovación automática
-- ID del plan base: `mensual-499`
-- Periodo del plan base: mensual (P1M)
-- Precio en España: 4,99 € al mes
-- ID sugerido de la oferta: `prueba-3-dias`
-- Prueba gratuita: 3 días (P3D)
-- Elegibilidad: adquisición de clientes nuevos; nunca han tenido una suscripción de esta aplicación
-- Periodo de gracia recomendado para pagos rechazados: 3 días
-- Pausa de suscripción: activada
-- Recuperación de cuenta: activada
-- Nombre visible: MaintenPro Premium mensual
-- Descripción: acceso completo para un propietario y hasta tres técnicos
+- Aplicación existente: `com.icapps.maintenpro`.
+- Producto: `maintenpro_premium_monthly`.
+- Plan base mensual: `mensual-499`, activo en la comprobación real del 22 de octubre de 2026.
+- Precio de referencia configurado para España: 4,99 € al mes. La aplicación muestra el precio y los términos devueltos por Google Play para cada cuenta y región.
+- El acceso de Windows se incluye con la suscripción Android activa. No se crea una segunda compra para el PC.
+- Sr. Alicate es una guía local incluida.
 
-Los clientes nuevos elegibles no pagan durante los primeros 3 días. Al finalizar la prueba, la suscripción se renueva automáticamente por 4,99 € al mes, salvo cancelación desde Google Play. Si el cliente cancela durante la prueba, no se realiza ningún cobro. Las cuentas que ya hayan usado la oferta podrán adquirir el plan base sin prueba.
+La propuesta antigua de una oferta de tres días no acredita que esa oferta exista o sea elegible. No anunciar una prueba gratuita hasta comprobarla en la respuesta real de Google Play. La aplicación solo muestra «Prueba gratuita» cuando la oferta recibida tiene una fase gratuita; en los demás casos muestra la mensualidad.
 
-La aplicación consulta las ofertas que Google Play considera elegibles. Prioriza exactamente la prueba P3D y, si no está disponible para esa cuenta, muestra el plan mensual normal.
+El pago y la cancelación los gestiona Google Play. Descargar el instalador Windows no cobra ni abre el acceso premium. Para el PC se conecta la misma cuenta Google vinculada a la compra desde «Móvil y PC» en Android.
 
-## Configuración obligatoria en Play Console
+## Validación pendiente
 
-1. Crea la suscripción con el ID exacto `maintenpro_premium_monthly`.
-2. Crea el plan base `mensual-499`, con renovación automática, periodo mensual (P1M) y precio de 4,99 € en España.
-3. Activa el plan base.
-4. Dentro de ese plan base, crea la oferta `prueba-3-dias`.
-5. Selecciona la elegibilidad «Adquisición de clientes nuevos» y «Nunca han tenido ninguna suscripción de esta aplicación».
-6. Añade una fase de prueba gratuita de 3 días (P3D).
-7. Activa la oferta y comprueba que España está incluida.
-8. Prueba la compra con una cuenta de prueba que nunca haya usado la suscripción.
-
-El plan base y la oferta deben estar activos antes de probar la compra. Google Play mostrará sus propios términos finales en la pantalla de confirmación.
+La lista de pruebas de licencia del propietario está guardada. Falta completar una compra real de prueba, restaurarla y comprobar la activación y sincronización del PC. El acceso a la API y el rechazo de un recibo sintético inválido ya se comprobaron; no equivalen a una compra/restauración válidas. Confirmar que el diálogo indica una compra de prueba y utilizar únicamente la tarjeta de prueba de Google, sin efectuar un cobro real.
