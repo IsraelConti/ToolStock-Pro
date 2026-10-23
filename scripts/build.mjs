@@ -11,7 +11,7 @@ await build({
   outfile: "dist/app.js",
   target: ["chrome74"]
 });
-for (const file of ["index.html", "styles.css", "manifest.webmanifest", "app-icon.png"]) {
+for (const file of ["index.html", "styles.css", "manifest.webmanifest", "app-icon.png", "pc-config.js"]) {
   await cp(`src/${file}`, `dist/${file}`);
 }
 console.log("ToolStock Pro web assets built.");
