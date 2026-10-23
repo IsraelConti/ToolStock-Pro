@@ -371,7 +371,10 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 val token = GoogleAuthUtil.getToken(this, account.account!!, "oauth2:$DRIVE_SCOPE")
                 driveTokenResult(token, null)
             } catch (recoverable: UserRecoverableAuthException) {
-                runOnUiThread { startActivityForResult(recoverable.intent, REQUEST_DRIVE_AUTH) }
+                runOnUiThread {
+                    val intent = recoverable.intent ?: return@runOnUiThread driveTokenResult(null, "No se pudo abrir la autorización de Google Drive")
+                    startActivityForResult(intent, REQUEST_DRIVE_AUTH)
+                }
             } catch (_: Exception) {
                 driveTokenResult(null, "No se pudo autorizar Google Drive")
             }
