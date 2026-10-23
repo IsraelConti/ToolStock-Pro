@@ -184,13 +184,14 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     loadBillingState()
                 } else {
-                    offerResult("El precio y la moneda se mostrarán en Google Play")
-                    subscriptionResult(false, "El precio y la moneda se mostrarán en Google Play", "Suscripción necesaria para usar todas las funciones")
+                    offerResult("")
+                    subscriptionResult(false, "", "Suscripción necesaria para usar todas las funciones")
                 }
             }
 
             override fun onBillingServiceDisconnected() {
-                subscriptionResult(false, "El precio y la moneda se mostrarán en Google Play", "No se pudo conectar con Google Play. Puedes revisar la app en modo limitado.")
+                offerResult("")
+                subscriptionResult(false, "", "No se pudo conectar con Google Play. Puedes revisar la app en modo limitado.")
             }
         })
     }
@@ -298,7 +299,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         val phases = selectedOffer(product)?.pricingPhases?.pricingPhaseList.orEmpty()
         return phases.lastOrNull { it.priceAmountMicros > 0L }?.formattedPrice
             ?: phases.lastOrNull()?.formattedPrice
-            ?: "El precio y la moneda se mostrarán en Google Play"
+            ?: ""
     }
 
     private fun offerResult(price: String, hasTrial: Boolean = false) =
