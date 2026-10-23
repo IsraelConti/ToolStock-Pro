@@ -153,8 +153,7 @@ export function initLupa() {
   });
   document.addEventListener("click", event => {
     const openButton = event.target.closest("[data-lupa-open]");
-    if (openButton) {
-      event.preventDefault();
+    if (openButton) {\n      if (openButton.dataset.industrialGo && event.detail === 0) { panel.classList.remove("open"); return; }\n      event.preventDefault();
       panel.classList.add("open");
       question.focus();
       show(findAnswers(""));
