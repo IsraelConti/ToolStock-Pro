@@ -226,6 +226,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
         ) { result, purchases ->
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                if (demoActive()) subscriptionResult(true, "", "Demostración Premium temporal (sin suscripción)")
                 js("window.onToolStockPurchaseError?.(" + quote("No se pudo comprobar la compra. Revisa tu conexión y pulsa Restaurar.") + ")")
                 return@queryPurchasesAsync
             }
@@ -370,7 +371,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     override fun onResume() {
         super.onResume()
-        if (::billingClient.isInitialized && !BuildConfig.DEBUG) connectBilling()
+        if (::billingClient.isInitialized && !BuildConfig.DEBUG) {
+            if (demoActive()) subscriptionResult(true, "", "Demostración Premium temporal (sin suscripción)")
+            connectBilling()
+            if (billingClient.isReady) querySubscription()
+        }
     }
 
     override fun onDestroy() {
