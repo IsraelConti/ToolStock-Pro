@@ -387,7 +387,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 return
             }
             try {
-                val account = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException::class.java)
+                val signInIntent = data ?: throw IllegalStateException("Falta el resultado de Google Sign-In")
+                val account = GoogleSignIn.getSignedInAccountFromIntent(signInIntent).getResult(ApiException::class.java)
                 fetchDriveToken(account)
             } catch (_: Exception) {
                 driveTokenResult(null, "No se pudo iniciar sesión en Google Drive")
