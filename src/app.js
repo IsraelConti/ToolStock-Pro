@@ -451,7 +451,7 @@ document.querySelector("#syncNow")?.addEventListener("click", async () => {
     toast(error.message || "No se pudo sincronizar");
   }
 });
-if (window.ToolStockPC?.getStatus) {
+if (window.ToolStockPC?.getStatus && ["127.0.0.1", "localhost"].includes(window.location.hostname)) {
   window.ToolStockPC.getStatus().then(state => {
     if (state.linked) setDriveAccountStatus("vinculada en este PC", true);
   }).catch(() => {});
