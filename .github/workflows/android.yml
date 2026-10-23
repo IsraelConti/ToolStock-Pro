@@ -74,7 +74,7 @@ jobs:
 
       - name: Compile debug APK and release bundle
         working-directory: android
-        run: gradle --no-daemon clean assembleDebug bundleRelease
+        run: gradle --no-daemon clean testDebugUnitTest assembleDebug bundleRelease
 
       - name: Sign Play release with existing upload key
         id: signing

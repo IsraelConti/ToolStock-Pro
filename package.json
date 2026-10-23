@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "serve": "npx http-server dist -p 4173 -c-1",
-    "test": "node audit/browser-regression.cjs && node audit/fault-regression.cjs && node audit/sync-regression.cjs",
+    "test": "node audit/browser-regression.cjs && node audit/fault-regression.cjs && node audit/sync-regression.cjs && node audit/drive-transport-regression.cjs",
     "pc:serve": "npm run build && node windows/desktop-session.mjs",
     "pc:health": "node -e \"fetch('http://127.0.0.1:'+(process.env.TOOLSTOCK_PC_PORT||4173)+'/health').then(r=>{if(!r.ok)process.exit(1);return r.json()}).then(console.log)\"",
     "pc:package": "node scripts/pc-package.mjs",

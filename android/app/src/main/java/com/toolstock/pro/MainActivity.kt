@@ -60,6 +60,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingSaveBytes: ByteArray? = null
     private var pendingSaveName = ""
+    private val driveHttp = DriveHttp()
+    private val driveRequests = java.util.concurrent.ThreadPoolExecutor(
+        1, 1, 0L, java.util.concurrent.TimeUnit.MILLISECONDS,
+        java.util.concurrent.ArrayBlockingQueue<Runnable>(8)
+    )
 
     private val folderPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri ?: return@registerForActivityResult
@@ -343,7 +348,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private fun subscriptionResult(active: Boolean, price: String, message: String) =
         js("window.onToolStockSubscription && window.onToolStockSubscription(" + active + "," + quote(price) + "," + quote(message) + ")")
 
-    private fun js(code: String) = runOnUiThread { webView.evaluateJavascript(code, null) }
+    private fun js(code: String) = runOnUiThread {
+        if (!isDestroyed && !isFinishing) webView.evaluateJavascript(code, null)
+    }
 
     private fun quote(value: String): String =
         org.json.JSONObject.quote(value)
@@ -403,6 +410,27 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     inner class AndroidBridge {
+        @JavascriptInterface
+        fun driveRequest(requestId: String, url: String, method: String, token: String, contentType: String, body: String) {
+            if (!requestId.matches(Regex("[A-Za-z0-9-]{1,100}"))) return
+            fun respond(payload: org.json.JSONObject) {
+                js("window.onToolStockDriveResponse && window.onToolStockDriveResponse(" + quote(requestId) + "," + quote(payload.toString()) + ")")
+            }
+            try {
+                driveRequests.execute {
+                    try {
+                        val result = driveHttp.execute(url, method, token, contentType, body)
+                        respond(org.json.JSONObject().put("status", result.status).put("body", result.body))
+                    } catch (invalid: SecurityException) {
+                        respond(org.json.JSONObject().put("error", invalid.message ?: "Petición de Drive no permitida"))
+                    } catch (_: Exception) {
+                        respond(org.json.JSONObject().put("error", "No se pudo conectar con Google Drive. Revisa la conexión y vuelve a sincronizar."))
+                    }
+                }
+            } catch (_: java.util.concurrent.RejectedExecutionException) {
+                respond(org.json.JSONObject().put("error", "Hay una sincronización en curso. Espera y vuelve a intentarlo."))
+            }
+        }
         @JavascriptInterface fun printHtml(html: String) = runOnUiThread {
             val printView = WebView(this@MainActivity)
             printView.webViewClient = object : WebViewClient() {
@@ -477,6 +505,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     override fun onDestroy() {
+        driveRequests.shutdownNow()
         if (::billingClient.isInitialized) billingClient.endConnection()
         webView.removeJavascriptInterface("ToolStockAndroid")
         webView.destroy()

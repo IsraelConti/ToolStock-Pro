@@ -1,3 +1,5 @@
+import { driveFetch } from "./drive-http.js";
+
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 const DRIVE_UPLOAD = "https://www.googleapis.com/upload/drive/v3";
 const FILE_NAME = "toolstock-sync-v1.json";
@@ -24,7 +26,7 @@ async function driveRequest(path, token, options = {}) {
   const headers = new Headers(options.headers || {});
   headers.set("Authorization", `Bearer ${token}`);
   if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  return jsonResponse(await fetch(`${DRIVE_API}${path}`, { ...options, headers }));
+  return jsonResponse(await driveFetch(`${DRIVE_API}${path}`, { ...options, headers }));
 }
 
 function mergeById(local, remote) {
@@ -109,7 +111,7 @@ export function createDriveSync({ getSnapshot, setSnapshot, getAccessToken, onSt
     const path = file
       ? `/files/${encodeURIComponent(file.id)}?uploadType=multipart&fields=id,name,modifiedTime,size`
       : "/files?uploadType=multipart&fields=id,name,modifiedTime,size";
-    const response = await fetch(`${DRIVE_UPLOAD}${path}`, {
+    const response = await driveFetch(`${DRIVE_UPLOAD}${path}`, {
       method: file ? "PATCH" : "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,

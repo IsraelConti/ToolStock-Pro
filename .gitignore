@@ -7,6 +7,7 @@ android/**/build/
 android/app/src/main/assets/
 *.jks
 *.keystore
+*.p12
 *.apk
 *.aab
 .DS_Store
