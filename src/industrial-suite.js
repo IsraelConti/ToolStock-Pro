@@ -36,6 +36,7 @@ export function initIndustrialSuite(ctx) {
         <small>La compra se comprueba mediante Google Play. ToolStock Pro no puede leer el correo de compra de Google.</small>
         <button class="btn primary wide" type="submit">Guardar correo y entrar</button>
         <button id="continueAsGuest" class="btn wide" type="button">Continuar sin iniciar sesión</button>
+        <button id="continuePremiumDemo" class="btn wide" type="button">Probar Premium (demostración temporal)</button>
         <p id="ownerOnboardingError" class="owner-error" aria-live="polite"></p>
       </form>
     </div>`);
@@ -47,6 +48,12 @@ export function initIndustrialSuite(ctx) {
     document.body.classList.remove("owner-registration-required");
     const display = document.querySelector("#ownerEmailDisplay");
     if (display) display.textContent = "Sin registrar";
+  });
+  document.querySelector("#continuePremiumDemo").addEventListener("click", () => {
+    ownerOverlay.classList.add("hidden");
+    document.body.classList.remove("owner-registration-required");
+    if (window.ToolStockAndroid?.startPremiumDemo) window.ToolStockAndroid.startPremiumDemo();
+    else toast("La demostración Premium solo está disponible en Android.");
   });
   document.querySelector("#ownerOnboardingForm").addEventListener("submit", e => {
     e.preventDefault();
@@ -104,7 +111,7 @@ export function initIndustrialSuite(ctx) {
         <details><summary>Privacidad</summary><p>El inventario y los movimientos permanecen localmente salvo las exportaciones o carpetas que el usuario elija. Google Play procesa la suscripción. La app no vende datos ni incluye publicidad o analítica.</p></details>
         <details><summary>Limitaciones</summary><p>ToolStock Pro ayuda a controlar repuestos, pero no sustituye inspecciones técnicas, evaluación de riesgos, LOTO, normativa, homologación del fabricante ni decisiones de seguridad.</p></details>
       </div>
-      <div class="card owner-identity-card"><h3>Propietario de esta instalación</h3><p id="ownerEmailDisplay">${esc(owner && owner.email ? owner.email : "Sin registrar")}</p><button id="changeOwnerEmail" class="btn">Cambiar correo del propietario</button></div>\n      <div class="card subscription-card"><h3>ToolStock Pro Premium</h3><p id="toolStockSubscriptionStatus">Comprobando Google Play…</p><p id="toolStockOfferConditions">Consulta el precio y las condiciones de tu cuenta en Google Play. La suscripción se renueva automáticamente; puedes cancelarla en Google Play.</p><div class="subscription-actions"><button id="toolStockSubscribe" class="btn primary">Suscribirme</button><button id="toolStockRestore" class="btn">Restaurar compra</button><button id="toolStockManage" class="btn">Gestionar</button></div></div>
+      <div class="card owner-identity-card"><h3>Propietario de esta instalación</h3><p id="ownerEmailDisplay">${esc(owner && owner.email ? owner.email : "Sin registrar")}</p><button id="changeOwnerEmail" class="btn">Cambiar correo del propietario</button></div>\n      <div class="card subscription-card"><h3>ToolStock Pro Premium</h3><p id="toolStockSubscriptionStatus">Comprobando Google Play…</p><p id="toolStockOfferConditions">Consulta el precio y las condiciones de tu cuenta en Google Play. La suscripción se renueva automáticamente; puedes cancelarla en Google Play.</p><div class="subscription-actions"><button id="toolStockPremiumDemo" class="btn">Probar Premium temporalmente</button><button id="toolStockSubscribe" class="btn primary">Suscribirme</button><button id="toolStockRestore" class="btn">Restaurar compra</button><button id="toolStockManage" class="btn">Gestionar</button></div></div>
       <button class="btn wide" data-industrial-back>← Volver</button>
     </section>
   `);
@@ -235,6 +242,7 @@ export function initIndustrialSuite(ctx) {
     localStorage.removeItem(OWNER_KEY);
     location.reload();
   });
+  document.querySelector("#toolStockPremiumDemo")?.addEventListener("click", () => window.ToolStockAndroid?.startPremiumDemo?.());
   document.querySelector("#toolStockSubscribe")?.addEventListener("click", () => window.ToolStockAndroid?.subscribeMonthly?.());
   document.querySelector("#toolStockRestore")?.addEventListener("click", () => window.ToolStockAndroid?.restorePurchases?.());
   document.querySelector("#toolStockManage")?.addEventListener("click", () => window.ToolStockAndroid?.manageSubscription?.());
