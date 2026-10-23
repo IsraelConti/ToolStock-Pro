@@ -16,8 +16,8 @@ android {
         applicationId = "com.icapps.maintenpro"
         minSdk = 24
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.2.9"
+        versionCode = 13
+        versionName = "1.2.9.1"
         val webClientId = ((project.findProperty("GOOGLE_WEB_CLIENT_ID") as String?) ?: releaseConfig["googleWebClientId"]?.toString() ?: "").replace("\\", "").replace("\"", "")
         val syncApiBase = ((project.findProperty("SYNC_API_BASE") as String?) ?: releaseConfig["entitlementBase"]?.toString() ?: "").replace("\\", "").replace("\"", "")
         val pcDownloadUrl = ((project.findProperty("PC_DOWNLOAD_URL") as String?) ?: releaseConfig["pcDownloadUrl"]?.toString() ?: "").replace("\\", "").replace("\"", "")

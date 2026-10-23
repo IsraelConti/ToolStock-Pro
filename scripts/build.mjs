@@ -6,13 +6,13 @@ import { releaseConfig } from './release-config.mjs';
 await rm("dist", { recursive: true, force: true });
 await mkdir("dist", { recursive: true });
 await build({
-  entryPoints: ["src/app.js"],
+  entryPoints: ["android/web-bootstrap.js"],
   bundle: true,
   minify: true,
   sourcemap: true,
   format: "iife",
   outfile: "dist/app.js",
-  target: ["es2020"]
+  target: ["chrome83"]
 });
 for (const file of ["index.html", "styles.css", "premium.css", "manifest.webmanifest", "preguntalicates.svg"]) {
   await cp(`src/${file}`, `dist/${file}`);
