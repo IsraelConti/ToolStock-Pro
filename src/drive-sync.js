@@ -115,7 +115,7 @@ export function createDriveSync({ getSnapshot, setSnapshot, getAccessToken, onSt
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": `multipart/related; boundary=${boundary}`
       },
-      body
+      body: multipart
     });
     return jsonResponse(response);
   }
