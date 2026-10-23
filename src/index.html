@@ -39,7 +39,7 @@
         <button class="action" data-go="reports"><span>▥</span><b>Informes</b><small>Excel profesional</small></button>
         <button class="action" data-go="qr"><span>▦</span><b>Etiquetas QR</b><small>Crear e imprimir</small></button>
         <button class="action industrial" data-industrial-go="assistant"><span>✦</span><b>ToolStock IA</b><small>Diagnóstico local</small></button>
-        <button class="action" data-industrial-go="help"><span>ⓘ</span><b>Información</b><small>Ayuda y privacidad</small></button>
+        <button class="action" data-lupa-open><span>⌕</span><b>Lupa</b><small>Guía local de ToolStock</small></button>
       </div>
     </section>
 
@@ -146,15 +146,15 @@
       <form id="settingsForm" class="form">
         <div class="form-section"><h3>Empresa</h3><label>Nombre comercial<input name="companyName" placeholder="Nombre del taller"></label><label>Nombre de la aplicación<input name="appName" value="ToolStock Pro"></label></div>
         <div class="form-section"><h3>Copias de seguridad</h3>
-          <p class="lead">Exporta una copia completa del inventario, movimientos, configuración y equipo. Guárdala en Google Drive o en una carpeta elegida. Para recuperarla en otro dispositivo, restaura el archivo JSON. No hay sincronización automática.</p>
+          <p class="lead">Exporta una copia completa del inventario, movimientos, configuración y equipo. Guárdala en Google Drive o en una carpeta elegida. Para recuperarla manualmente, restaura el archivo JSON. La sincronización automática usa el espacio privado de tu cuenta.</p>
           <button id="exportBackup" class="btn primary" type="button">Exportar copia completa</button>
           <label class="btn" for="restoreBackup">Restaurar copia JSON</label>
           <input id="restoreBackup" type="file" accept=".json,application/json">
           <button id="chooseDriveFolder" class="btn primary" type="button">Elegir carpeta para exportaciones</button>
-          <small id="driveFolderStatus" class="hint">Todavía no hay una carpeta vinculada.</small>
+          <small id="driveFolderStatus" class="hint">Todavía no hay una carpeta vinculada.</small>\n          <button id="syncNow" class="btn primary wide" type="button">Sincronizar móvil y PC ahora</button>\n          <small id="driveSyncStatus" class="hint">La sincronización se activa al vincular la cuenta de Google.</small>
         </div>
         <div class="form-section"><h3>Equipo de trabajo</h3>
-          <p class="lead">Guarda hasta 3 contactos y su función en el equipo. Estos datos no crean cuentas ni restringen el acceso; cada instalación conserva su inventario local.</p>
+          <p class="lead">Guarda hasta 3 contactos y su función en el equipo. Estos datos no crean cuentas ni restringen el acceso; la copia sincronizada pertenece a la cuenta de Google del propietario.</p>
           <div id="employeeSummary" class="employee-summary"></div>
           <button class="btn primary wide" type="button" data-go="employees">Gestionar empleados</button>
         </div>
