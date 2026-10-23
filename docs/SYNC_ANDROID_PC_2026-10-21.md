@@ -1,5 +1,7 @@
 # Auditoría Android ↔ PC — 21 de octubre de 2026
 
+> Registro histórico de la arquitectura inicial. Fue sustituida por la sincronización en el Drive de cada cliente y el servicio de licencias Floot. Los bloqueos de firma, despliegue y configuración aquí descritos ya no representan el estado actual. Consultar `ESTADO_2026-10-22.md` y el README antes de continuar.
+
 El ZIP `MaintenPro_PC_Guia_Local_2026-10-20.zip` instala la app en el perfil del usuario y abre Chrome con `file:///`. No es un MSI ni un EXE firmado. Esa instalación no llama al backend. Floot Cloud Sync `932e217f-d8a7-47fb-9d77-cb68a9754e9d` no está publicado. Esta nota describe el código de este repositorio, no un servicio en producción.
 
 ## Contrato que sí está en el código

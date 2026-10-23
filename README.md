@@ -34,6 +34,6 @@ Los documentos se preparan como una orden, ficha o informe antes de abrir el di�
 
 ## Estado antes de entregar
 
-Las pruebas automáticas y el empaquetado de PC han pasado. La compilación Android se comprobó en una revisión anterior de esta integración; los últimos cambios nativos necesitan una compilación nueva. Siguen pendientes la conexión segura de la clave de Play, la prueba real de compra/restauración, el recorrido móvil-PC-móvil y el AAB firmado de esta actualización. No se ha enviado la 1.2.9 a revisión. La versión ya publicada de Google Play permanece disponible.
+El AAB Android 1.2.9 (código 12) está firmado con la clave de subida existente y aceptado como borrador de actualización en Google Play. El servicio de licencias está desplegado y su acceso real a Google Play está comprobado. El instalador Windows revisado 1.2.9.1 pasó la instalación y el arranque reales en un runner Windows. La conexión Google desde el PC también se comprobó en Windows. Siguen pendientes la compra/restauración real, el recorrido móvil-PC-móvil, las declaraciones actualizadas de Play Console y el envío a revisión. La versión Android 1.2.7 ya publicada permanece disponible. Véase `docs/ESTADO_2026-10-22.md`.
 
 Código y entregables se respaldan en la carpeta MaintenPro del Drive del propietario. Los archivos de avance no deben presentarse como una versión final.
