@@ -390,7 +390,6 @@ const driveSync = createDriveSync({
   },
   getAccessToken: async () => {
     if (demoMode) throw new Error("La demo no puede sincronizar datos reales");
-    if (window.ToolStockPC?.getDriveAccessToken) return window.ToolStockPC.getDriveAccessToken();
     if (window.ToolStockAndroid?.requestDriveAccessToken) {
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error("No se obtuvo autorización de Google Drive")), 30000);
@@ -403,6 +402,7 @@ const driveSync = createDriveSync({
         if (typeof value === "string" && value) { clearTimeout(timeout); resolve(value); }
       });
     }
+    if (window.ToolStockPC?.getDriveAccessToken) return window.ToolStockPC.getDriveAccessToken();
     throw new Error("Vincula tu cuenta de Google en el PC o en el móvil");
   },
   onStatus: state => {
