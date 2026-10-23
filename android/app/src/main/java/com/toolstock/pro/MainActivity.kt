@@ -44,6 +44,25 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingSaveBytes: ByteArray? = null
     private var pendingSaveName = ""
+    // One-time, time-limited demo access for Play review and prospective users.
+    // This does not create or acknowledge a Google Play subscription.
+    private val demoPrefs by lazy { getSharedPreferences("toolstock_demo", MODE_PRIVATE) }
+    private val demoDurationMs = 60L * 60L * 1000L
+    private fun demoExpiry(): Long = demoPrefs.getLong("expires_at", 0L)
+    private fun demoActive(): Boolean = System.currentTimeMillis() < demoExpiry()
+    private fun startDemo() {
+        val now = System.currentTimeMillis()
+        val expiry = demoExpiry()
+        if (expiry == 0L) {
+            demoPrefs.edit().putLong("expires_at", now + demoDurationMs).apply()
+        }
+        if (demoActive()) {
+            subscriptionResult(true, "", "Demostración Premium temporal (sin suscripción)")
+        } else {
+            subscriptionResult(false, "", "Demostración finalizada; se requiere suscripción")
+        }
+    }
+
 
     private val folderPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri ?: return@registerForActivityResult
@@ -213,7 +232,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             val relevant = purchases.filter { it.products.contains(PRODUCT_MONTHLY) }
             val active = relevant.any { it.purchaseState == Purchase.PurchaseState.PURCHASED }
             val pending = relevant.any { it.purchaseState == Purchase.PurchaseState.PENDING }
-            subscriptionResult(active, "", when {
+            subscriptionResult(active || demoActive(), "", when {
+                !active && demoActive() -> "Demostración Premium temporal (sin suscripción)"
                 active -> "Suscripción activa"
                 pending -> "Pago pendiente: Google Play todavía no ha confirmado la compra"
                 else -> "Sin suscripción activa"
@@ -308,6 +328,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
+        @JavascriptInterface fun startPremiumDemo() = runOnUiThread { startDemo() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread {
             purchaseRequested = true
             if (billingClient.isReady) loadProduct() else connectBilling()
