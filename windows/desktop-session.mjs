@@ -6,6 +6,7 @@ import { randomBytes } from "node:crypto";
 
 const port = Number(process.env.TOOLSTOCK_PC_PORT || 4173);
 const root = resolve(process.env.TOOLSTOCK_PC_DIST || "dist");
+const appVersion = process.env.TOOLSTOCK_PC_VERSION || "1.5.0";
 const clientId = process.env.TOOLSTOCK_GOOGLE_CLIENT_ID || "";
 const clientSecret = process.env.TOOLSTOCK_GOOGLE_CLIENT_SECRET || "";
 const redirectUri = `http://127.0.0.1:${port}/oauth/callback`;
@@ -14,6 +15,7 @@ let oauthState = "";
 let accessToken = "";
 let refreshToken = "";
 let expiresAt = 0;
+let linkedAt = 0;
 
 const json = (response, status, value) => {
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
@@ -40,6 +42,7 @@ async function exchange(params) {
   accessToken = result.access_token;
   if (result.refresh_token) refreshToken = result.refresh_token;
   expiresAt = Date.now() + (Number(result.expires_in) || 3600) * 1000;
+  linkedAt = Date.now();
 }
 
 async function ensureToken() {
@@ -96,7 +99,20 @@ async function serveFile(requestPath, response) {
 
 const server = createServer(async (request, response) => {
   const url = new URL(request.url || "/", `http://127.0.0.1:${port}`);
-  if (url.pathname === "/health") return json(response, 200, { ok: true, app: "ToolStock PC", version: "1.0" });
+  if (url.pathname === "/health") return json(response, 200, {
+    ok: true,
+    app: "ToolStock PC",
+    version: appVersion,
+    oauthConfigured: Boolean(clientId),
+    driveLinked: Boolean(accessToken && Date.now() < expiresAt)
+  });
+  if (url.pathname === "/oauth/status") return json(response, 200, {
+    configured: Boolean(clientId),
+    linked: Boolean(accessToken && Date.now() < expiresAt),
+    linkedAt: linkedAt || null,
+    expiresAt: expiresAt || null,
+    scope
+  });
   if (url.pathname === "/oauth/start") return startOAuth(response);
   if (url.pathname === "/oauth/callback") return callback(request.url || "/", response);
   if (url.pathname === "/oauth/access-token") {
@@ -108,7 +124,7 @@ const server = createServer(async (request, response) => {
     }
   }
   if (url.pathname === "/oauth/logout") {
-    accessToken = ""; refreshToken = ""; expiresAt = 0;
+    accessToken = ""; refreshToken = ""; expiresAt = 0; linkedAt = 0;
     return json(response, 200, { ok: true });
   }
   return serveFile(url.pathname, response);
@@ -119,7 +135,7 @@ server.listen(port, "127.0.0.1", () => {
   console.log(`ToolStock PC disponible en ${address}`);
   if (process.platform === "win32") {
     const browser = process.env.TOOLSTOCK_PC_BROWSER || "chrome.exe";
-    spawn("cmd.exe", ["/d", "/c", "start", "", browser, `--app=${address}`], { detached: true, stdio: "ignore" }).unref();
+    spawn("cmd.exe", ["/d", "/c", "start", "", browser, "--new-window", `--app=${address}`], { detached: true, stdio: "ignore" }).unref();
   }
 });
 

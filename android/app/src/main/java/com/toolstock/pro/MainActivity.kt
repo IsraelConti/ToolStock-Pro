@@ -352,8 +352,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail().requestScopes(Scope(DRIVE_SCOPE)).build()
 
-    private fun driveTokenResult(token: String?, error: String?) = runOnUiThread {
-        js("window.onToolStockDriveToken && window.onToolStockDriveToken(" + quote(token.orEmpty()) + "," + quote(error.orEmpty()) + ")")
+    private fun driveTokenResult(token: String?, error: String?, accountEmail: String? = null) = runOnUiThread {
+        js("window.onToolStockDriveToken && window.onToolStockDriveToken(" + quote(token.orEmpty()) + "," + quote(error.orEmpty()) + "," + quote(accountEmail.orEmpty()) + ")")
     }
 
     private fun requestDriveAccessToken() {
@@ -369,7 +369,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         Thread {
             try {
                 val token = GoogleAuthUtil.getToken(this, account.account!!, "oauth2:$DRIVE_SCOPE")
-                driveTokenResult(token, null)
+                driveTokenResult(token, null, account.email)
             } catch (recoverable: UserRecoverableAuthException) {
                 runOnUiThread {
                     val intent = recoverable.intent ?: return@runOnUiThread driveTokenResult(null, "No se pudo abrir la autorización de Google Drive")
@@ -416,6 +416,10 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         @JavascriptInterface fun appVersion(): String = BuildConfig.VERSION_NAME
         @JavascriptInterface fun chooseDriveFolder() = runOnUiThread { folderPicker.launch(null) }
         @JavascriptInterface fun requestDriveAccessToken() = runOnUiThread { this@MainActivity.requestDriveAccessToken() }
+        @JavascriptInterface fun driveAccountEmail(): String = GoogleSignIn.getLastSignedInAccount(this@MainActivity)?.email.orEmpty()
+        @JavascriptInterface fun signOutDrive() = runOnUiThread {
+            GoogleSignIn.getClient(this@MainActivity, driveSignInOptions()).signOut()
+        }
         @JavascriptInterface fun scanCode() = runOnUiThread { this@MainActivity.scanCode() }
         @JavascriptInterface fun checkSubscription() = runOnUiThread { connectBilling() }
         @JavascriptInterface fun subscribeMonthly() = runOnUiThread {

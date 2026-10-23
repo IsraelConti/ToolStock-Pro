@@ -361,6 +361,10 @@ initIndustrialSuite({
   getSettings:()=>settings,
   go,toast,esc
 });
+const setDriveAccountStatus = (label, linked = Boolean(label)) => {
+  const element = document.querySelector("#driveAccountStatus");
+  if (element) element.textContent = linked ? `Cuenta de Google: ${label || "vinculada"}` : "Cuenta de Google: no vinculada en este dispositivo.";
+};
 const driveSync = createDriveSync({
   getSnapshot: () => ({
     schemaVersion: 1,
@@ -393,26 +397,52 @@ const driveSync = createDriveSync({
     if (window.ToolStockAndroid?.requestDriveAccessToken) {
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error("No se obtuvo autorización de Google Drive")), 30000);
-        window.onToolStockDriveToken = (value, error) => {
+        window.onToolStockDriveToken = (value, error, accountEmail) => {
           clearTimeout(timeout);
           if (error) reject(new Error(error));
-          else resolve(value);
+          else {
+            if (accountEmail) setDriveAccountStatus(accountEmail, true);
+            resolve(value);
+          }
         };
         const value = window.ToolStockAndroid.requestDriveAccessToken();
         if (typeof value === "string" && value) { clearTimeout(timeout); resolve(value); }
       });
     }
-    if (window.ToolStockPC?.getDriveAccessToken) return window.ToolStockPC.getDriveAccessToken();
+    if (window.ToolStockPC?.getDriveAccessToken) {
+      const value = await window.ToolStockPC.getDriveAccessToken();
+      setDriveAccountStatus("vinculada en este PC", true);
+      return value;
+    }
     throw new Error("Vincula tu cuenta de Google en el PC o en el móvil");
   },
   onStatus: state => {
     const status = document.querySelector("#driveSyncStatus");
     if (status) status.textContent = state.message || "Sincronización lista";
+    if (state.state === "working") setDriveAccountStatus("comprobando…", true);
     if (state.state === "ready" && state.message) toast(state.message);
   }
 });
 window.ToolStockDrive = driveSync;
 window.onToolStockDriveSync = () => driveSync.sync();
+document.querySelector("#driveLogout")?.addEventListener("click", async () => {
+  if (!confirm("Esto cerrará la vinculación de Google Drive en este dispositivo. Los datos de Drive no se borrarán. ¿Continuar?")) return;
+  try {
+    if (window.ToolStockAndroid?.signOutDrive) {
+      window.ToolStockAndroid.signOutDrive();
+    } else if (window.ToolStockPC?.logout) {
+      await window.ToolStockPC.logout();
+    } else {
+      throw new Error("Este dispositivo no tiene una vinculación de Google Drive activa");
+    }
+    setDriveAccountStatus("", false);
+    const status = document.querySelector("#driveSyncStatus");
+    if (status) status.textContent = "Cuenta desvinculada en este dispositivo. Los datos de Drive no se han borrado.";
+    toast("Cuenta de Google desvinculada");
+  } catch (error) {
+    toast(error.message || "No se pudo desvincular la cuenta");
+  }
+});
 document.querySelector("#syncNow")?.addEventListener("click", async () => {
   try { await driveSync.sync(); }
   catch (error) {
@@ -421,5 +451,16 @@ document.querySelector("#syncNow")?.addEventListener("click", async () => {
     toast(error.message || "No se pudo sincronizar");
   }
 });
+if (window.ToolStockPC?.getStatus) {
+  window.ToolStockPC.getStatus().then(state => {
+    if (state.linked) setDriveAccountStatus("vinculada en este PC", true);
+  }).catch(() => {});
+}
+if (window.ToolStockAndroid?.driveAccountEmail) {
+  try {
+    const email = window.ToolStockAndroid.driveAccountEmail();
+    if (email) setDriveAccountStatus(email, true);
+  } catch {}
+}
 initLupa();
 applySettings();renderEmployeeSummary();renderMetrics();go("home",false);

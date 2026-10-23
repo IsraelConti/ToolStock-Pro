@@ -1,12 +1,12 @@
 # ToolStock Pro: Repuestos
 
-Aplicación Android de inventario industrial local. Paquete existente `com.toolstock.pro`; versión de reparación **1.4.4 (10)**, Android 10 o posterior, target SDK 36.
+Aplicación Android de inventario industrial local. Paquete existente `com.toolstock.pro`; actualización **1.5.0 (11)**, Android 10 o posterior, target SDK 36. La versión publicada 1.4.4 (10) permanece intacta hasta completar la revisión.
 
 - Crear, editar y eliminar repuestos conservando el historial.
 - Entradas, consumos, préstamos, devoluciones y ajustes al stock contado.
 - Fabricante, OEM, criticidad, plazo de entrega, compatibilidad y ubicación.
 - Importar Excel/CSV, exportar Excel y generar etiquetas QR.
-- Copia JSON completa y restauración manual en otro dispositivo.
+- Copia JSON completa, restauración manual y sincronización privada móvil-PC por cuenta de Google Drive.
 - Análisis local de riesgo, reposición, consumo e inmovilizado.
 - Tres contactos de equipo. No hay cuentas compartidas ni permisos por empleado.
 - Formatos regionales, monedas, impuestos y tema. Interfaz en español.
@@ -22,7 +22,7 @@ La demo no valida el proceso real de compra. Este debe comprobarse con un paquet
 
 ## Copias y privacidad
 
-Exportar copia JSON desde Configuración y elegir el destino. Restaurar copia JSON para recuperar o transferir los datos. No hay sincronización automática. Los datos de empleados son contactos informativos; su función no restringe el acceso. No anunciar autenticación, fotografías o sincronización que esta versión no implementa.
+Exportar copia JSON desde Configuración y elegir el destino. Restaurar copia JSON para recuperar o transferir los datos. La sincronización automática usa exclusivamente el espacio privado `appDataFolder` de la cuenta de Google del cliente; no existe un servidor central de inventarios. Los datos de empleados son contactos informativos; su función no restringe el acceso.
 
 Un JSON local dañado se conserva y bloquea nuevas escrituras hasta restaurar una copia válida. Hay exportación de datos para recuperación. Stock e historial se guardan con un diario de recuperación de transacciones.
 

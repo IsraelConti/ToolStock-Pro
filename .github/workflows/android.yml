@@ -51,6 +51,9 @@ jobs:
       - name: Run web regression
         run: npm test
 
+      - name: Verify release metadata and PC package inputs
+        run: npm run release:verify
+
       - name: Setup Java
         uses: actions/setup-java@v5
         with:

@@ -151,7 +151,11 @@
           <label class="btn" for="restoreBackup">Restaurar copia JSON</label>
           <input id="restoreBackup" type="file" accept=".json,application/json">
           <button id="chooseDriveFolder" class="btn primary" type="button">Elegir carpeta para exportaciones</button>
-          <small id="driveFolderStatus" class="hint">Todavía no hay una carpeta vinculada.</small>\n          <button id="syncNow" class="btn primary wide" type="button">Sincronizar móvil y PC ahora</button>\n          <small id="driveSyncStatus" class="hint">La sincronización se activa al vincular la cuenta de Google.</small>
+          <small id="driveFolderStatus" class="hint">Todavía no hay una carpeta vinculada.</small>
+          <small id="driveAccountStatus" class="hint">Cuenta de Google: no vinculada en este dispositivo.</small>
+          <button id="syncNow" class="btn primary wide" type="button">Sincronizar móvil y PC ahora</button>
+          <button id="driveLogout" class="btn wide" type="button">Desvincular cuenta de Google en este dispositivo</button>
+          <small id="driveSyncStatus" class="hint">La sincronización se activa al vincular la cuenta de Google.</small>
         </div>
         <div class="form-section"><h3>Equipo de trabajo</h3>
           <p class="lead">Guarda hasta 3 contactos y su función en el equipo. Estos datos no crean cuentas ni restringen el acceso; la copia sincronizada pertenece a la cuenta de Google del propietario.</p>

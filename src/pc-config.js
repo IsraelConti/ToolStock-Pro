@@ -1,5 +1,11 @@
 (() => {
   let pending;
+  async function getStatus() {
+    const response = await fetch("/oauth/status", { credentials: "same-origin", cache: "no-store" });
+    if (!response.ok) throw new Error("No se pudo consultar el estado de Google Drive");
+    return response.json();
+  }
+
   async function getDriveAccessToken() {
     if (pending) return pending;
     pending = (async () => {
@@ -15,6 +21,7 @@
           await new Promise(resolve => setTimeout(resolve, 1200));
           const next = await fetch("/oauth/access-token", { credentials: "same-origin" });
           if (next.ok) return (await next.json()).accessToken;
+          if (popup.closed) throw new Error("La autorización de Google se canceló o se cerró antes de terminar");
         }
         throw new Error("La autorización de Google ha tardado demasiado");
       };
@@ -22,5 +29,11 @@
     })();
     return pending;
   }
-  window.ToolStockPC = { getDriveAccessToken };
+
+  async function logout() {
+    await fetch("/oauth/logout", { method: "POST", credentials: "same-origin", cache: "no-store" });
+    return getStatus();
+  }
+
+  window.ToolStockPC = { getDriveAccessToken, getStatus, logout };
 })();
