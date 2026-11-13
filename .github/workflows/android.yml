@@ -3,7 +3,7 @@ name: Build Android
 on:
   workflow_dispatch:
   push:
-    branches: [main, foodstock-control, maintenpro, codex/maintenpro-full-review-20261013]
+    branches: [main, foodstock-control, maintenpro, codex/maintenpro-full-review-20261013, feature/maintenpro-freemium-15]
   pull_request:
     branches: [main]
 
@@ -14,6 +14,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      ADMOB_APP_ID: ${{ secrets.MAINTENPRO_ADMOB_APP_ID }}
+      ADMOB_BANNER_UNIT_ID: ${{ secrets.MAINTENPRO_ADMOB_BANNER_UNIT_ID }}
 
     steps:
       - name: Checkout
@@ -70,11 +73,17 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Compile debug APK, release APK and release bundle
+      - name: Compile and test debug APK (test AdMob IDs only)
         working-directory: android
-        run: gradle --no-daemon clean assembleDebug assembleRelease bundleRelease
+        run: gradle --no-daemon clean testDebugUnitTest assembleDebug
+
+      - name: Compile production APK and bundle only with REAL AdMob IDs
+        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
+        working-directory: android
+        run: gradle --no-daemon assembleRelease bundleRelease
 
       - name: Sign MaintenPro Play bundle and Uptodown APK
+        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
         env:
           KEYSTORE_B64: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_B64 }}
           STORE_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_PASSWORD }}
@@ -167,6 +176,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload MaintenPro upload certificate
+        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: MaintenPro-upload-certificate-PEM
@@ -174,6 +184,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload unsigned fallback bundle
+        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: MaintenPro-AAB-unsigned-fallback
