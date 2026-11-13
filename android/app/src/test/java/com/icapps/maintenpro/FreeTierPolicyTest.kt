@@ -6,24 +6,29 @@ import org.junit.Test
 
 class FreeTierPolicyTest {
     @Test fun freeUserCanRegisterUntilFifteen() {
-        assertTrue(FreeTierPolicy.canCreateEquipment(0, false))
-        assertTrue(FreeTierPolicy.canCreateEquipment(14, false))
-        assertFalse(FreeTierPolicy.canCreateEquipment(15, false))
-        assertFalse(FreeTierPolicy.canCreateEquipment(20, false))
+        assertTrue(FreeTierPolicy.canCreateEquipment(0, MaintenProTier.FREE))
+        assertTrue(FreeTierPolicy.canCreateEquipment(14, MaintenProTier.FREE))
+        assertFalse(FreeTierPolicy.canCreateEquipment(15, MaintenProTier.FREE))
+        assertFalse(FreeTierPolicy.canCreateEquipment(20, MaintenProTier.FREE))
     }
 
-    @Test fun activeProHasNoEquipmentLimit() {
-        assertTrue(FreeTierPolicy.canCreateEquipment(15, true))
-        assertTrue(FreeTierPolicy.canCreateEquipment(10000, true))
+    @Test fun trialHasUnlimitedEquipmentButStillShowsAds() {
+        assertTrue(FreeTierPolicy.canCreateEquipment(15, MaintenProTier.TRIAL))
+        assertTrue(FreeTierPolicy.canCreateEquipment(10000, MaintenProTier.TRIAL))
+        assertTrue(FreeTierPolicy.shouldShowAds(MaintenProTier.TRIAL))
+        assertFalse(FreeTierPolicy.canUseAdFreeExperience(MaintenProTier.TRIAL))
     }
 
-    @Test fun onlyFreeUsersSeeAds() {
-        assertTrue(FreeTierPolicy.shouldShowAds(false))
-        assertFalse(FreeTierPolicy.shouldShowAds(true))
+    @Test fun paidProHasUnlimitedEquipmentAndNoAds() {
+        assertTrue(FreeTierPolicy.canCreateEquipment(10000, MaintenProTier.PAID))
+        assertFalse(FreeTierPolicy.shouldShowAds(MaintenProTier.PAID))
+        assertTrue(FreeTierPolicy.canUseAdFreeExperience(MaintenProTier.PAID))
     }
 
-    @Test fun downgradeDoesNotRequireDeletingRecords() {
-        assertTrue(FreeTierPolicy.requiresUpgrade(16, false))
-        assertFalse(FreeTierPolicy.requiresUpgrade(16, true))
+    @Test fun freeTierShowsAdsAndDowngradeDoesNotDeleteData() {
+        assertTrue(FreeTierPolicy.shouldShowAds(MaintenProTier.FREE))
+        assertTrue(FreeTierPolicy.requiresUpgrade(16, MaintenProTier.FREE))
+        assertFalse(FreeTierPolicy.requiresUpgrade(16, MaintenProTier.TRIAL))
+        assertFalse(FreeTierPolicy.requiresUpgrade(16, MaintenProTier.PAID))
     }
 }
