@@ -47,6 +47,15 @@ window.onMaintenProTrialState=(active,daysRemaining)=>{
   const wasActive=trialActive;trialActive=!!active;
   trialDaysRemaining=Math.max(0,Math.ceil(Number(daysRemaining)||0));
   updateAccessUI();
+  if(trialActive){try{localStorage.setItem("maintenpro.trialEverUsed","1");}catch{}}
+  if(!trialActive){
+    try{
+      if(localStorage.getItem("maintenpro.trialEverUsed")==="1" && localStorage.getItem("maintenpro.trialEndNotified")!=="1"){
+        localStorage.setItem("maintenpro.trialEndNotified","1");
+        toast("Han terminado tus 7 días. Puedes seguir gratis con 15 equipos y anuncios, sin pagar.");
+      }
+    }catch{}
+  }
   if(wasActive&&!trialActive)toast("Terminó la prueba. Sigues gratis con anuncios y 15 equipos.");
 };
 window.onMaintenProSubscription=(active,price,message)=>{premiumAccess=!!active;if(price)$("#subscriptionPrice").textContent=price;$("#paywall").classList.add("hidden");updateAccessUI();if(active&&!settings.ownerEmail&&!hasReviewerAccess())$("#onboarding").classList.remove("hidden");};
