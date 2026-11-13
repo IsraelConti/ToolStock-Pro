@@ -14,7 +14,9 @@ correctivo de máquinas, instalaciones y equipos.
 - Informes Excel, copias JSON y personalización de empresa.
 - Registro local del propietario y hasta tres contactos técnicos (sin cuentas ni permisos por usuario).
 - Funcionamiento local sin conexión; no hay sincronización automática entre dispositivos.
-- 3 días gratuitos para clientes nuevos elegibles y después 4,99 € al mes mediante Google Play Billing 9.1.0 (`maintenpro_premium_monthly`).
+- **Primeros 7 días desde la primera apertura:** equipo ilimitados, **con anuncios discretos**, sin pedir tarjeta ni generar cargos automáticos.
+- **A partir del día 8, sin pagar:** modalidad gratuita permanente con anuncios y un máximo de 15 equipos nuevos; todos los equipos y mantenimientos existentes se conservan.
+- **Pro pagada:** 4,99 € al mes mediante Google Play Billing 9.1.0 (`maintenpro_premium_monthly`), equipos ilimitados y **sin anuncios**. Es una suscripción opcional con renovación mensual.
 - Configuración opcional de una carpeta de Drive y copias JSON manuales; los cambios operativos se guardan localmente.
 - Centro de ayuda y política de privacidad.
 
@@ -22,6 +24,6 @@ correctivo de máquinas, instalaciones y equipos.
 
 La acción `Build Android` compila los paquetes Android y, cuando están configurados los secretos de firma, genera un AAB firmado para Google Play y un APK firmado para distribución directa.
 
-La APK debug permite revisar la aplicación sin compra y no consume la oferta comercial. La variante release consulta Google Play: ofrece 3 días gratis a las cuentas elegibles y el plan mensual normal a las demás.
+La APK debug muestra anuncios de prueba de AdMob. La variante release requiere IDs reales ADMOB_APP_ID y ADMOB_BANNER_UNIT_ID, declaraciones de privacidad/consentimiento y validación de Play Console antes de publicarse. Los siete días gratis son de uso de la aplicación, NO una prueba de suscripción que cobre al terminar. Solo las personas que confirman expresamente una compra de Pro en Google Play pasan al plan de pago.
 
-La versión candidata siguiente es 1.2.6 (versionCode 8), compilada con Android 16 (API 36).
+La versión en rama es 1.2.6 (versionCode 9) y utiliza Android API 36. No está publicada. La compilación y pruebas finales deben confirmarse en GitHub Actions.
