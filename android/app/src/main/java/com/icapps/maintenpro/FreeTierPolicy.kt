@@ -1,24 +1,26 @@
 package com.icapps.maintenpro
 
 /**
- * Commercial access rules for MaintenPro.
- * Never delete existing equipment or maintenance records when an entitlement changes.
- * The UI must consult canCreateEquipment before saving a NEW equipment record.
- * Existing equipment can always be viewed/edited and maintenance history remains usable.
+ * FREE: 15 equipos con anuncios.
+ * TRIAL: 7 días con todas las funciones, equipos ilimitados y anuncios.
+ * PAID: 4,99 EUR/mes, equipos ilimitados y sin anuncios.
+ * Nunca se eliminan equipos, órdenes ni historiales por perder una suscripción.
  */
+enum class MaintenProTier { FREE, TRIAL, PAID }
+
 object FreeTierPolicy {
     const val MAX_FREE_EQUIPMENT = 15
     const val PREMIUM_MONTHLY_PRODUCT_ID = "maintenpro_premium_monthly"
 
-    fun canCreateEquipment(existingEquipmentCount: Int, hasActivePro: Boolean): Boolean {
+    fun canCreateEquipment(existingEquipmentCount: Int, tier: MaintenProTier): Boolean {
         require(existingEquipmentCount >= 0) { "Equipment count cannot be negative" }
-        return hasActivePro || existingEquipmentCount < MAX_FREE_EQUIPMENT
+        return tier != MaintenProTier.FREE || existingEquipmentCount < MAX_FREE_EQUIPMENT
     }
 
-    fun canUseAdFreeExperience(hasActivePro: Boolean): Boolean = hasActivePro
+    fun shouldShowAds(tier: MaintenProTier): Boolean = tier != MaintenProTier.PAID
 
-    fun shouldShowAds(hasActivePro: Boolean): Boolean = !hasActivePro
+    fun canUseAdFreeExperience(tier: MaintenProTier): Boolean = tier == MaintenProTier.PAID
 
-    fun requiresUpgrade(existingEquipmentCount: Int, hasActivePro: Boolean): Boolean =
-        !canCreateEquipment(existingEquipmentCount, hasActivePro)
+    fun requiresUpgrade(existingEquipmentCount: Int, tier: MaintenProTier): Boolean =
+        !canCreateEquipment(existingEquipmentCount, tier)
 }
