@@ -128,6 +128,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     notifyTrialState()
+                    if (::consentInformation.isInitialized) updatePrivacyButton()
                     connectBilling()
                 }
             }
