@@ -59,6 +59,9 @@ $("#dismissPaywall").onclick=()=>{limitedModeDismissed=true;$("#paywall").classL
 $("#restorePurchase").onclick=()=>android()?.restorePurchases?android().restorePurchases():toast("Abre la app instalada desde Google Play");
 $("#showReviewerAccess").onclick=()=>$("#reviewerAccessForm").classList.toggle("hidden");
 $("#reviewerAccessForm").onsubmit=e=>{e.preventDefault();const code=String(new FormData(e.currentTarget).get("reviewerCode")||"").trim().toUpperCase();if(code!=="MP-REVIEW-122")return toast("Código de revisión no válido");sessionStorage.setItem("maintenpro.reviewAccess","1");$("#paywall").classList.add("hidden");$("#onboarding").classList.add("hidden");$("#subscriptionStatus").textContent="Acceso temporal de revisión de Google Play";toast("Modo revisión activado");};
+$("#openPro").onclick=()=>$("#paywall").classList.remove("hidden");
+window.onMaintenProPrivacyOptions=required=>$("#privacyOptions").classList.toggle("hidden",!required);
+$("#privacyOptions").onclick=()=>android()?.showPrivacyChoices?android().showPrivacyChoices():toast("Las opciones de privacidad se administran desde la app Android");
 $("#manageSubscription").onclick=()=>android()?.manageSubscription?android().manageSubscription():toast("Gestiona la suscripción desde Google Play");
 $("#connectDrive").onclick=connectDrive;
 function go(screen,push=true){if(push&&screen!==currentScreen)historyStack.push(currentScreen);currentScreen=screen;$$(".screen").forEach(x=>x.classList.toggle("active",x.dataset.screen===screen));$("#screenTitle").textContent=titles[screen]||"MaintenPro";$("#backBtn").classList.toggle("hidden",screen==="home");$$(".bottom-nav button").forEach(x=>x.classList.toggle("active",x.dataset.go===screen));renderAll();scrollTo(0,0);}
