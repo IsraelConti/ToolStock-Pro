@@ -6,6 +6,17 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Base64
 import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -42,6 +53,12 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private lateinit var webView: WebView
     private lateinit var billingClient: BillingClient
     private var monthlyProduct: ProductDetails? = null
+    private lateinit var adContainer: FrameLayout
+    private lateinit var consentInformation: ConsentInformation
+    private var adView: AdView? = null
+    private var adSdkReady = false
+    private var adSdkStarted = false
+    private var paidEntitlement = false
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingFileName = ""
     private var pendingFileBytes: ByteArray? = null
@@ -110,6 +127,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
+                    notifyTrialState()
                     connectBilling()
                 }
             }
@@ -126,7 +144,18 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             addJavascriptInterface(AndroidBridge(), "MaintenProAndroid")
             loadUrl("file:///android_asset/index.html")
         }
-        setContentView(webView)
+        // Banner anclado: no tapa la navegación ni la lectura de los equipos.
+        val rootLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        rootLayout.addView(webView, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+        ))
+        adContainer = FrameLayout(this).apply { visibility = View.GONE }
+        rootLayout.addView(adContainer, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+        setContentView(rootLayout)
+        paidEntitlement = getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean("last_verified_pro", false)
+        setupPrivacyAndAds()
         billingClient = BillingClient.newBuilder(this)
             .setListener(this)
             .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
@@ -139,6 +168,91 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 ) { result -> if (result.contains("exit")) { isEnabled = false; onBackPressedDispatcher.onBackPressed() } }
             }
         })
+    }
+
+    /** Prueba GRATUITA de uso. No crea ninguna suscripción ni inicia Google Play Billing. */
+    private fun notifyTrialState() {
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val now = System.currentTimeMillis()
+        val start = prefs.getLong("trial_start_millis", 0L).takeIf { it > 0L } ?: now
+        val seen = prefs.getLong("trial_last_seen_millis", 0L)
+        // Evita prolongar la prueba retrocediendo el reloj dentro de la misma instalación.
+        val effectiveNow = maxOf(now, seen, start)
+        prefs.edit()
+            .putLong("trial_start_millis", start)
+            .putLong("trial_last_seen_millis", effectiveNow)
+            .apply()
+        val expiry = start + 7L * 24L * 60L * 60L * 1000L
+        val remainingMillis = (expiry - effectiveNow).coerceAtLeast(0L)
+        val remainingDays = (remainingMillis + 86_399_999L) / 86_400_000L
+        js("window.onMaintenProTrialState(${remainingMillis > 0L},$remainingDays)")
+    }
+
+    private fun setPaidEntitlement(active: Boolean) {
+        paidEntitlement = active
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+            .putBoolean("last_verified_pro", active).apply()
+        runOnUiThread { updateAdBanner() }
+    }
+
+    private fun setupPrivacyAndAds() {
+        consentInformation = UserMessagingPlatform.getConsentInformation(this)
+        val params = ConsentRequestParameters.Builder().build()
+        consentInformation.requestConsentInfoUpdate(
+            this, params,
+            {
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) {
+                    updatePrivacyButton()
+                    startAdsIfAllowed()
+                }
+                updatePrivacyButton()
+                startAdsIfAllowed()
+            },
+            {
+                updatePrivacyButton()
+                startAdsIfAllowed()
+            }
+        )
+    }
+
+    private fun updatePrivacyButton() {
+        val required = consentInformation.privacyOptionsRequirementStatus ==
+            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+        js("window.onMaintenProPrivacyOptions($required)")
+    }
+
+    private fun startAdsIfAllowed() {
+        if (!consentInformation.canRequestAds()) return
+        if (adSdkStarted) { updateAdBanner(); return }
+        adSdkStarted = true
+        Thread {
+            MobileAds.initialize(this) {
+                runOnUiThread { adSdkReady = true; updateAdBanner() }
+            }
+        }.start()
+    }
+
+    private fun updateAdBanner() {
+        if (!::adContainer.isInitialized) return
+        val shouldDisplay = !paidEntitlement && adSdkReady &&
+            ::consentInformation.isInitialized && consentInformation.canRequestAds()
+        if (!shouldDisplay) {
+            adContainer.visibility = View.GONE
+            adView?.pause()
+            return
+        }
+        if (adView == null) {
+            val bannerId = BuildConfig.ADMOB_BANNER_UNIT_ID
+            if (bannerId.isBlank()) return
+            val banner = AdView(this)
+            banner.adUnitId = bannerId
+            banner.setAdSize(AdSize.BANNER)
+            adContainer.addView(banner)
+            adView = banner
+            banner.loadAd(AdRequest.Builder().build())
+        }
+        adContainer.visibility = View.VISIBLE
+        adView?.resume()
     }
 
     private fun connectBilling() {
@@ -202,7 +316,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             val active = purchases.any { purchase ->
                 purchase.products.contains(PRODUCT_MONTHLY) && purchase.purchaseState == Purchase.PurchaseState.PURCHASED
             }
-            subscriptionResult(active, displayPrice(monthlyProduct), if (active) "Suscripción mensual activa" else "Suscripción necesaria para usar todas las funciones")
+            setPaidEntitlement(active)
+            subscriptionResult(active, displayPrice(monthlyProduct), if (active) "Pro de pago activa" else "Gratis con anuncios")
         }
     }
 
@@ -217,7 +332,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 queryPurchases()
             }
             BillingClient.BillingResponseCode.USER_CANCELED ->
-                subscriptionResult(false, displayPrice(monthlyProduct), "Compra cancelada. Puedes revisar la app en modo limitado.")
+                queryPurchases()
             else ->
                 js("window.onMaintenProPurchaseError('No se pudo completar la compra en Google Play')")
         }
@@ -249,10 +364,15 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         )
     }
 
+    // El acceso inicial de 7 días NO es una oferta de Play que cobre automáticamente.
+    // Solo usar la tarifa base de pago sin fases de prueba de facturación.
     private fun selectedOffer(product: ProductDetails?) =
         product?.subscriptionOfferDetails?.firstOrNull { offer ->
-            offer.pricingPhases.pricingPhaseList.any { it.priceAmountMicros == 0L }
-        } ?: product?.subscriptionOfferDetails?.firstOrNull()
+            offer.offerId == null &&
+            offer.basePlanId == "mensual-499" &&
+            offer.pricingPhases.pricingPhaseList.any { it.priceAmountMicros > 0L } &&
+            offer.pricingPhases.pricingPhaseList.none { it.priceAmountMicros == 0L }
+        }
 
     private fun hasFreeTrial(product: ProductDetails?): Boolean =
         selectedOffer(product)?.pricingPhases?.pricingPhaseList?.any { it.priceAmountMicros == 0L } == true
@@ -312,6 +432,16 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             }
         }
 
+        @JavascriptInterface fun showPrivacyChoices() = runOnUiThread {
+            if (::consentInformation.isInitialized &&
+                consentInformation.privacyOptionsRequirementStatus ==
+                ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED) {
+                UserMessagingPlatform.showPrivacyOptionsForm(this@MainActivity) {
+                    startAdsIfAllowed()
+                }
+            }
+        }
+
         @JavascriptInterface fun manageSubscription() = runOnUiThread {
             val url = "https://play.google.com/store/account/subscriptions?sku=$PRODUCT_MONTHLY&package=$packageName"
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
@@ -333,11 +463,19 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     override fun onResume() {
         super.onResume()
+        if (::webView.isInitialized) notifyTrialState()
         if (::billingClient.isInitialized) connectBilling()
+        adView?.resume()
+    }
+
+    override fun onPause() {
+        adView?.pause()
+        super.onPause()
     }
 
     override fun onDestroy() {
         if (::billingClient.isInitialized) billingClient.endConnection()
+        adView?.destroy()
         super.onDestroy()
     }
 }
