@@ -36,4 +36,14 @@ assert.ok(gradle.includes("minSdk = 24"), "La versión nueva debe conservar Andr
 assert.ok(gradle.includes("versionCode = 9") && gradle.includes('versionName = "1.2.6"'), "Versión Android inesperada");
 assert.ok(native.includes('PRODUCT_MONTHLY = "maintenpro_premium_monthly"') && subscription.includes("maintenpro_premium_monthly"), "El ID de suscripción no coincide");
 
+
+assert.ok(html.includes('id="trialNotice"') && app.includes("window.onMaintenProTrialState"), "Falta aviso de 7 días de uso gratuito");
+assert.ok(html.includes('id="openPro"') && app.includes('$("#openPro").onclick='), "Pro no es accesible desde ajustes");
+assert.ok(app.includes('equipment.length<15') && app.includes('if(!canCreateEquipment())return showUpgrade()'), "Los usuarios gratuitos deben poder trabajar con 15 equipos");
+assert.ok(native.includes('trial_start_millis') && native.includes('7L * 24L'), "Falta prueba local de siete días");
+assert.ok(native.includes('offer.offerId == null') && native.includes('basePlanId == "mensual-499"'), "El plan de pago no debe activar prueba de Google Play con cobro automático");
+assert.ok(native.includes('!paidEntitlement && adSdkReady') && native.includes('consentInformation.canRequestAds()'), "Anuncios requieren suscripción no pagada y consentimiento");
+assert.ok(gradle.includes("play-services-ads:25.5.0") && gradle.includes("user-messaging-platform:4.0.0"), "Faltan las dependencias de anuncios y consentimiento");
+assert.ok(subscription.includes("no se cobra automáticamente") && subscription.includes("15 equipos nuevos"), "Documentación comercial no coincide con el acuerdo");
+
 console.log(`MaintenPro review smoke OK: ${ids.length} IDs, ${screens.size} pantallas y ${bridgeMethods.length} métodos Android.`);
