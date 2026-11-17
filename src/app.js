@@ -69,7 +69,9 @@ function updateFreeTierUI(){
       ?`Prueba gratuita sin anuncios: ${trialDaysRemaining} día(s) restante(s), equipos ilimitados`
       :`Gratis permanente: ${freeEquipmentCount()}/15 equipos, con anuncios`;
     if($("#freeTierStatus"))$("#freeTierStatus").textContent=msg;
-    if($("#trialNotice"))$("#trialNotice").textContent=trialActive
+    if($("#trialNotice"))$("#trialNotice").textContent=premiumAccess
+      ?"Premium activa: equipos ilimitados y sin anuncios."
+      :trialActive
       ?"Durante los 7 días iniciales tienes equipos ilimitados y sin anuncios. Al terminar seguirás gratis con 15 equipos y anuncios, sin cargos automáticos."
       :"Puedes seguir trabajando gratis con tus equipos, órdenes y preventivos. Si tienes 15 o más equipos, solo necesitas Pro para registrar más.";
     if($("#subscriptionStatus"))$("#subscriptionStatus").textContent=msg;
