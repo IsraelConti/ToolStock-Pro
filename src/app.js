@@ -59,10 +59,10 @@ window.onMaintenProDriveError=message=>toast(message||"No se pudo preparar Drive
 let premiumAccess=false;
 const hasFullAccess=()=>premiumAccess;
 const isAndroidApp=()=>window.MaintenProDesktop!==true&&!!android();
-let trialActive=false,trialDaysRemaining=0;
+let trialActive=false,trialDaysRemaining=0,upgradePromptVisible=false;
 const freeEquipmentCount=()=>visibleRecords(equipment).length;
 const canCreateEquipment=()=>!isAndroidApp()?hasFullAccess():premiumAccess||trialActive||freeEquipmentCount()<15;
-const showUpgrade=()=>{$("#paywall").classList.remove("hidden");toast("Has alcanzado los 15 equipos del plan gratuito. Tus datos se conservan.");};
+const showUpgrade=()=>{upgradePromptVisible=true;$("#paywall").classList.remove("hidden");toast("Has alcanzado los 15 equipos del plan gratuito. Tus datos se conservan.");};
 function updateFreeTierUI(){
     if(!isAndroidApp())return;
     const msg=premiumAccess?"Pro activa: equipos ilimitados y sin anuncios":trialActive
@@ -84,7 +84,7 @@ window.onMaintenProTrialState=(active,days)=>{
 const requireFullAccess=()=>{if(isAndroidApp()||hasFullAccess())return true;toast("Esta función requiere suscripción para Windows.");$("#paywall").classList.remove("hidden");return false;};
 window.onMaintenProSubscription=(active,price,message)=>{premiumAccess=!!active;if(price)$("#subscriptionPrice").textContent=price;
   const status=$("#subscriptionStatus");
-  if(isAndroidApp()){$("#paywall").classList.add("hidden");updateFreeTierUI();}
+  if(isAndroidApp()){if(active)upgradePromptVisible=false;$("#paywall").classList.toggle("hidden",!upgradePromptVisible);updateFreeTierUI();}
   else {if(status)status.textContent=active?"Compra del móvil confirmada. PC incluido.":(message||"Suscripción necesaria para usar todas las funciones");$("#paywall").classList.toggle("hidden",active||limitedModeDismissed);}
   if(active&&window.MaintenProDesktop!==true&&!settings.ownerEmail)$("#onboarding").classList.remove("hidden");
 };
@@ -93,9 +93,9 @@ window.onMaintenProPurchaseError=message=>toast(message||"No se pudo completar l
 window.onMaintenProFileSaved=name=>toast(`Archivo guardado: ${name}`);
 window.onMaintenProFileSaveError=message=>toast(message||"No se pudo guardar el archivo");
 $("#subscribeBtn").onclick=()=>{if(window.MaintenProDesktop){limitedModeDismissed=true;$("#paywall").classList.add("hidden");go("pc");return connectDrive();}return android()?.subscribeMonthly?android().subscribeMonthly():toast("La suscripción se activa desde Google Play");};
-$("#dismissPaywall").onclick=()=>{limitedModeDismissed=true;$("#paywall").classList.add("hidden");if(isAndroidApp()){updateFreeTierUI();toast("Puedes seguir gratis con tus equipos y anuncios después de los siete días.");}else{const status=$("#subscriptionStatus");if(status)status.textContent="Modo limitado sin suscripción";toast("Modo limitado: puedes consultar la app; para registrar datos necesitas suscripción.");}};
+$("#dismissPaywall").onclick=()=>{limitedModeDismissed=true;upgradePromptVisible=false;$("#paywall").classList.add("hidden");if(isAndroidApp()){updateFreeTierUI();toast("Puedes seguir gratis con tus equipos y anuncios después de los siete días.");}else{const status=$("#subscriptionStatus");if(status)status.textContent="Modo limitado sin suscripción";toast("Modo limitado: puedes consultar la app; para registrar datos necesitas suscripción.");}};
 $("#restorePurchase").onclick=()=>window.MaintenProDesktop?driveUi?.refresh(true):(android()?.restorePurchases?android().restorePurchases():toast("Abre la app instalada desde Google Play"));
-$("#openPro")?.addEventListener("click",()=>$("#paywall").classList.remove("hidden"));
+$("#openPro")?.addEventListener("click",()=>{upgradePromptVisible=true;$("#paywall").classList.remove("hidden");});
 $("#privacyOptions")?.addEventListener("click",()=>android()?.showPrivacyChoices?.());
 window.onMaintenProPrivacyOptions=required=>$("#privacyOptions")?.classList.toggle("hidden",!required);
 $("#manageSubscription")?.addEventListener("click",()=>android()?.manageSubscription?android().manageSubscription():toast("Gestiona la suscripción desde Google Play"));
