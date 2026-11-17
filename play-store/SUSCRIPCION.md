@@ -2,11 +2,11 @@
 
 ## Modelo aprobado (13 de noviembre de 2026)
 
-1. **Primeros 7 días desde la primera apertura:** acceso funcional completo, equipos ilimitados, **con anuncios discretos**. Esta es una prueba local de la app, **NO** una prueba de la suscripción Google Play; no se solicita pago y **no se cobra automáticamente** al vencer.
+1. **Primeros 7 días desde la primera apertura:** acceso funcional completo, equipos ilimitados, **sin anuncios**. Esta es una prueba local de la app, **NO** una prueba de la suscripción Google Play; no se solicita pago y **no se cobra automáticamente** al vencer.
 2. **Después del séptimo día, sin suscripción:** versión **gratuita permanente**, hasta **15 equipos nuevos**, **con anuncios**. Se mantienen todos los equipos ya creados, sus averías, preventivos, fotos e históricos, incluidos los que superen 15. No se pueden crear nuevos equipos cuando ya hay 15 o más, pero se puede seguir trabajando sobre los existentes.
 3. **Suscripción Pro pagada:** **4,99 € al mes** en España, sin anuncios y sin límite de equipos.
 4. **Al cancelar Pro:** se conserva todo. Tras finalizar el periodo de pago, vuelve a la modalidad gratuita (si todavía está en los primeros 7 días de uso, prevalece la prueba inicial).
-5. **Aviso obligatorio:** mostrar los días restantes durante la prueba y avisar antes de caducar de que desde el día 8 habrá máximo de 15 nuevos equipos, con anuncios; **sin cargos** si no contrata Pro.
+5. **Aviso obligatorio:** mostrar los días restantes durante la prueba sin anuncios y avisar antes de caducar de que desde el día 8 habrá máximo de 15 nuevos equipos, con anuncios; **sin cargos** si no contrata Pro.
 
 ## Google Play Billing
 
@@ -19,7 +19,7 @@
 
 ## Publicidad y privacidad
 
-- Los anuncios aparecen en FREE y TRIAL, pero **jamás** en PAID.
+- Los anuncios aparecen solo en FREE, **nunca** durante los 7 días TRIAL ni en PAID.
 - Integrar Google Mobile Ads con identificadores **de prueba solo en depuración**. Para generar la versión de producción deben configurarse los IDs reales de la cuenta AdMob y actualizar las declaraciones de Play Console.
 - Añadir declaración de uso de anuncios, consentimiento aplicable y política de privacidad adecuada antes de publicar.
 - Las pruebas no deben borrar datos locales ni obligar a contratar Pro.
