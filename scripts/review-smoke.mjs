@@ -36,7 +36,7 @@ const qrFunction = app.match(/async function showQr\([^\n]+/)[0];
 assert.ok(!/\bwindow\.open\s*\(/.test(qrFunction), "El QR no debe depender de ventanas emergentes");
 assert.ok(gradle.includes("minSdk = 24"), "La versión nueva debe conservar Android 7/API 24 como mínimo");
 assert.ok(manifest.includes('android:name="android.hardware.camera" android:required="false"'), "La cámara debe ser opcional para no excluir dispositivos sin cámara");
-assert.ok(gradle.includes("versionCode = 14") && gradle.includes('versionName = "1.2.9.2"'), "Versión Android inesperada");
+assert.ok(gradle.includes("versionCode = 15") && gradle.includes('versionName = "1.2.9.3"'), "Versión Android inesperada");
 assert.ok(app.includes('const canCreateEquipment=') && app.includes('freeEquipmentCount()<15'), "Falta límite gratuito de 15 equipos");
 assert.ok(app.includes('if(!canCreateEquipment())return showUpgrade()'), "Añadir equipo no respeta plan gratuito");
 assert.ok(app.includes('const requireFullAccess=()=>{if(isAndroidApp()||hasFullAccess())'), "Las operaciones de mantenimiento no deben bloquearse en Android gratis");
