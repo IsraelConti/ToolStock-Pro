@@ -8,6 +8,8 @@ on:
     paths:
       - .github/workflows/maintenpro-emulator-qa.yml
       - qa/android-emulator-smoke.sh
+      - android/app/src/androidTest/**
+      - android/app/build.gradle.kts
 
 permissions:
   contents: read
@@ -59,4 +61,80 @@ jobs:
         with:
           name: MaintenPro-v14-emulator-qa-evidence
           path: emulator-report
+          if-no-files-found: warn
+
+  qa-freemium-android35:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout MaintenPro v14
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build the actual embedded HTML/JS
+        run: |
+          npm ci
+          base64 --decode src/app-icon.b64 > src/app-icon.png
+          npm run build
+          mkdir -p android/app/src/main/assets
+          cp -f dist/* android/app/src/main/assets/
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK 36
+        uses: android-actions/setup-android@v3
+
+      - name: Install target platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+      - name: Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Compile native app and instrumentation tests
+        working-directory: android
+        run: gradle --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+
+      - name: KVM acceleration
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+
+      - name: Android 15 integrated UI, 15/16, day 8, work orders
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          cores: 2
+          ram-size: 3072M
+          heap-size: 512M
+          disk-size: 4096M
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot-save
+          script: |
+            set -o pipefail
+            mkdir -p qa-functional
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb shell am instrument -w -r com.icapps.maintenpro.test/androidx.test.runner.AndroidJUnitRunner 2>&1 | tee qa-functional/instrumentation.log
+            grep -q "OK (1 test)" qa-functional/instrumentation.log
+            adb pull /sdcard/Android/data/com.icapps.maintenpro/files/qa-evidence qa-functional/screenshots || true
+            adb logcat -d -t 4000 -v time > qa-functional/logcat.txt
+            echo "Prueba funcional real completada; UI Premium simulada, NO compra Google Play."
+
+      - name: Evidence also on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaintenPro-v14-functional-evidence
+          path: qa-functional
           if-no-files-found: warn
