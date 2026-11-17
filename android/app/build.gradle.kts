@@ -22,6 +22,7 @@ android {
         targetSdk = 36
         versionCode = 14
         versionName = "1.2.9.2"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         val webClientId = ((project.findProperty("GOOGLE_WEB_CLIENT_ID") as String?) ?: releaseConfig["googleWebClientId"]?.toString() ?: "").replace("\\", "").replace("\"", "")
         val syncApiBase = ((project.findProperty("SYNC_API_BASE") as String?) ?: releaseConfig["entitlementBase"]?.toString() ?: "").replace("\\", "").replace("\"", "")
         val pcDownloadUrl = ((project.findProperty("PC_DOWNLOAD_URL") as String?) ?: releaseConfig["pcDownloadUrl"]?.toString() ?: "").replace("\\", "").replace("\"", "")
@@ -61,6 +62,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:25.5.0")
     implementation("com.google.android.ump:user-messaging-platform:4.0.0")
     testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 }
 
 // Deshabilita compilaciones publicables sin identificadores AdMob reales.
