@@ -33,3 +33,28 @@
 - Producción aún en MaintenPro 1.2.9.1 / código 13.
 
 **NOTA:** Este informe no afirma que los 7 días, el límite ni las compras hayan sido probados de extremo a extremo. Las dos capturas verifican el texto/UI y ausencia visible de banners durante el primer inicio, no la lógica de monetización después de siete días.
+
+
+## Segundo pase: QA funcional instrumentada — RESULTADO PASS
+
+- CI: https://github.com/IsraelConti/ToolStock-Pro/actions/runs/44188261523
+- Job: `qa-freemium-android35`, GitHub Actions `conclusion=success`, instrumentación `OK (1 test)`, 18 segundos de prueba.
+- Evidencia completa (seis capturas PNG y registros): artifact `MaintenPro-v14-functional-evidence`, ID `14374294675`.
+- Compilación: paquete Android debug y APK de instrumentación AndroidJUnitRunner compilados sin errores en la rama de desarrollo. Corresponde a la lógica Android v14 con el **fix en código** del paywall incluido.
+- Primeros 7 días sin anuncios: UI y estado `Prueba gratuita` comprobados.
+- Alta de 15 equipos persistidos en `maintenpro.state.v3`: PASS.
+- Inicio forzado de día 8 modificando solamente las preferencias del reloj local en el emulador: PASS (pantalla `Gratis permanente: 15/15 equipos`).
+- Intento equipo 16 en modo Gratis: el contador continúa en 15, se muestra paywall Premium: PASS.
+- Avería correctiva creada en modo Gratis y almacenada: PASS.
+- Llamada de prueba a la interfaz web `window.onMaintenProSubscription(true)`: habilita alta del 16.º equipo; al volver a modo Gratis los 16 datos siguen almacenados: PASS. **No es una compra verdadera, ni valida pagos o licencias externas**.
+- **Bug real encontrado** en primer pase 44187244696: la consulta de compras podía ocultar el paywall del equipo 16. Se corrigió `upgradePromptVisible` en `src/app.js`, commit `66cd2990c9a1a5a840e2fc0f61f429f02b08e9d3`, y se volvió a ejecutar el mismo test completo con éxito.
+- Última doble instalación/reinicio del APK firmado ORIGINAL de v14 también volvió a pasar (job `qa-android-35`).
+
+### Bloqueos de comercialización que siguen siendo reales
+
+1. **AdMob**: se publicó `https://israelconti.github.io/app-ads.txt` y aparece el sitio correcto en Google Play. Se solicitó manualmente de nuevo «Buscar actualizaciones», pero AdMob respondió que todavía **no puede verificar la aplicación**. Depende del rastreo/revisión de Google; no afirmar anuncios reales ni ingresos.
+2. **Billing**: falta compra/restauración/cancelación de prueba en Google Play con un dispositivo y cuenta habilitada. La instrumentación solo simula la UI Premium.
+3. **Drive**: pruebas automáticas de contratos y sincronización en Node pasan, pero falta autenticación real en Google Drive y prueba de ida/vuelta con la instalación Windows.
+4. **Play**: la versión **14 de pruebas internas** es el AAB subido ANTES de corregir el paywall. La corrección está verificada en GitHub y aún NO está en esa AAB interna: generar nueva versión código 15 o superior tras QA final y antes de distribuirla, sin reutilizar 14.
+5. **Ads**: día 8 deja habilitado el estado «con anuncios», pero no se pudo verificar visualización e ingresos del banner de producción mientras AdMob rechaza el app-ads.
+6. **Producción**: código 13 permanece publicado, y **no se ha enviado a producción** la monetización nueva.
