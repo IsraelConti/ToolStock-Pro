@@ -12,11 +12,11 @@ class FreeTierPolicyTest {
         assertFalse(FreeTierPolicy.canCreateEquipment(20, MaintenProTier.FREE))
     }
 
-    @Test fun trialHasUnlimitedEquipmentButStillShowsAds() {
+    @Test fun trialHasUnlimitedEquipmentAndNoAds() {
         assertTrue(FreeTierPolicy.canCreateEquipment(15, MaintenProTier.TRIAL))
         assertTrue(FreeTierPolicy.canCreateEquipment(10000, MaintenProTier.TRIAL))
-        assertTrue(FreeTierPolicy.shouldShowAds(MaintenProTier.TRIAL))
-        assertFalse(FreeTierPolicy.canUseAdFreeExperience(MaintenProTier.TRIAL))
+        assertFalse(FreeTierPolicy.shouldShowAds(MaintenProTier.TRIAL))
+        assertTrue(FreeTierPolicy.canUseAdFreeExperience(MaintenProTier.TRIAL))
     }
 
     @Test fun paidProHasUnlimitedEquipmentAndNoAds() {
