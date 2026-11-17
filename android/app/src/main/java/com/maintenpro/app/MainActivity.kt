@@ -59,6 +59,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private var adSdkReady = false
     private var adSdkStarted = false
     private var paidEntitlement = false
+    // No solicitar anuncios hasta saber si terminó el periodo gratuito de 7 días.
+    private var trialStateReady = false
+    private var trialAccessActive = true
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingFileName = ""
     private var pendingFileBytes: ByteArray? = null
@@ -186,7 +189,10 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         val expiry = start + 7L * 24L * 60L * 60L * 1000L
         val remainingMillis = (expiry - effectiveNow).coerceAtLeast(0L)
         val remainingDays = (remainingMillis + 86_399_999L) / 86_400_000L
-        js("window.onMaintenProTrialState(${remainingMillis > 0L},$remainingDays)")
+        trialAccessActive = remainingMillis > 0L
+        trialStateReady = true
+        updateAdBanner()
+        js("window.onMaintenProTrialState($trialAccessActive,$remainingDays)")
     }
 
     private fun setPaidEntitlement(active: Boolean) {
@@ -235,7 +241,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     private fun updateAdBanner() {
         if (!::adContainer.isInitialized) return
-        val shouldDisplay = !paidEntitlement && adSdkReady &&
+        val shouldDisplay = trialStateReady && !trialAccessActive && !paidEntitlement && adSdkReady &&
             ::consentInformation.isInitialized && consentInformation.canRequestAds()
         if (!shouldDisplay) {
             adContainer.visibility = View.GONE
