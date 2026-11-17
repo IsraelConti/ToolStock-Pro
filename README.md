@@ -1,4 +1,8 @@
-# MaintenPro 1.2.9 · Android y Windows
+# MaintenPro 1.2.9.2 (14) · Propuesta freemium Android y Windows
+
+> **Rama de desarrollo, no publicada**. Basada en el código 1.2.9.1 (13) realmente subido a Play el 23 de octubre. La suscripción existente no se altera: `maintenpro_premium_monthly`, plan `mensual-499`, 4,99 €/mes en España.
+> Android: siete días iniciales completos sin anuncios ni cargos; después gratis con anuncios y hasta 15 equipos; Pro opcional sin anuncios e ilimitado. Windows mantiene la validación Premium y la sincronización anterior.
+> Antes de publicar: AdMob registrado e IDs reales, política y declaración de anuncios actualizadas, QA Android + licencia/sincronización y AAB firmado. Sin estos elementos, **no distribuir ni sustituir la versión vigente**.
 
 Actualización de la aplicación existente `com.icapps.maintenpro`. El programa de Windows utiliza la misma suscripción de Google Play y la misma cuenta Google conectada en el móvil. Sr. Alicate es una guía local incluida, sin proveedor de IA externo.
 
@@ -34,6 +38,6 @@ Los documentos se preparan como una orden, ficha o informe antes de abrir el di�
 
 ## Estado antes de entregar
 
-El AAB Android 1.2.9 (código 12) está firmado con la clave de subida existente y aceptado como borrador de actualización en Google Play. El servicio de licencias está desplegado y su acceso real a Google Play está comprobado. El instalador Windows revisado 1.2.9.1 pasó la instalación y el arranque reales en un runner Windows. La conexión Google desde el PC también se comprobó en Windows. Siguen pendientes la compra/restauración real, el recorrido móvil-PC-móvil, las declaraciones actualizadas de Play Console y el envío a revisión. La versión Android 1.2.7 ya publicada permanece disponible. Véase `docs/ESTADO_2026-10-22.md`.
+La versión 1.2.9.1 (código 13) aparece en producción desde el 23 de octubre de 2026. La versión 1.2.9.2 (código 14) de esta rama no está publicada; requiere finalizar AdMob y sus pruebas antes de generar el AAB de producción. El servicio de licencias está desplegado y su acceso real a Google Play está comprobado. El instalador Windows revisado 1.2.9.1 pasó la instalación y el arranque reales en un runner Windows. La conexión Google desde el PC también se comprobó en Windows. Siguen pendientes la compra/restauración real, el recorrido móvil-PC-móvil, las declaraciones actualizadas de Play Console y el envío a revisión. La versión Android 1.2.7 ya publicada permanece disponible. Véase `docs/ESTADO_2026-10-22.md`.
 
 Código y entregables se respaldan en la carpeta MaintenPro del Drive del propietario. Los archivos de avance no deben presentarse como una versión final.
