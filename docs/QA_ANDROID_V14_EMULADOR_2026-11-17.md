@@ -58,3 +58,23 @@
 4. **Play**: la versión **14 de pruebas internas** es el AAB subido ANTES de corregir el paywall. La corrección está verificada en GitHub y aún NO está en esa AAB interna: generar nueva versión código 15 o superior tras QA final y antes de distribuirla, sin reutilizar 14.
 5. **Ads**: día 8 deja habilitado el estado «con anuncios», pero no se pudo verificar visualización e ingresos del banner de producción mientras AdMob rechaza el app-ads.
 6. **Producción**: código 13 permanece publicado, y **no se ha enviado a producción** la monetización nueva.
+
+
+## Tercer pase: versión 15 publicada en pruebas internas — 17/11/2026
+
+**Esta sección actualiza el punto 4 del apartado anterior**, que ya no está pendiente.
+
+- Fuente corregida: `src/app.js` con aviso Premium del equipo 16 persistente.
+- Versión: **MaintenPro 1.2.9.3, versionCode 15**, mismo package `com.icapps.maintenpro`.
+- GitHub Actions `44189262558`: `conclusion=success`, compilación, tests automáticos, generación de AAB y APK firmados; artefacto AAB `MaintenPro-AAB-signed` (ID `14374779705`).
+- Archivo `MaintenPro-Play-signed.aab` extraído desde GitHub y cargado mediante Visor1 en Google Play Console. Play lo reconoció como `15 (1.2.9.3)` con min API 24 y target API 36.
+- Canal **pruebas internas**: `Activo`, última versión `MaintenPro 1.2.9.3 - Freemium corregido`, estado oficial **Disponible para testers internos**.
+- URL: https://play.google.com/console/u/0/developers/7335200555192928739/app/4974124882139009226/tracks/internal-testing
+- Solo se mantiene la lista privada previa `MaintenPro prueba propietario`. No se amplió a testers externos.
+- El aviso de Play Console `AD_ID` se ignoró **únicamente para esta entrega de pruebas**, ya que había un artefacto antiguo activo sin permiso; en v14 el permiso aparecía en el APK firmado instalado. **Antes de producción** comprobar también el manifest fusionado del AAB 15 y las declaraciones de Play.
+- **Producción permanece en código 13 / 1.2.9.1**, no se promocionó el código 15 a usuarios públicos.
+
+**Todavía pendiente y no atribuible a este pase automatizado:** verificación app-ads.txt en AdMob, banner real/consentimiento UMP de usuarios UE, prueba auténtica de compra/restauración/cancelación Google Play, y sincronización real de Google Drive entre Android y Windows.
+
+### Nota técnica
+El test funcional que aprobó el cambio de paywall se ejecutó con una compilación de depuración de la fuente corregida; Play Console contiene un AAB firmado generado de esa misma rama después del incremento a código 15. No afirmar todavía que el código 15 fue instalado desde Google Play por un usuario real y sometido a una compra de prueba.
