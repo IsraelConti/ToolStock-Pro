@@ -36,7 +36,17 @@ const qrFunction = app.match(/async function showQr\([^\n]+/)[0];
 assert.ok(!/\bwindow\.open\s*\(/.test(qrFunction), "El QR no debe depender de ventanas emergentes");
 assert.ok(gradle.includes("minSdk = 24"), "La versión nueva debe conservar Android 7/API 24 como mínimo");
 assert.ok(manifest.includes('android:name="android.hardware.camera" android:required="false"'), "La cámara debe ser opcional para no excluir dispositivos sin cámara");
-assert.ok(gradle.includes("versionCode = 13") && gradle.includes('versionName = "1.2.9.1"'), "Versión Android inesperada");
+assert.ok(gradle.includes("versionCode = 14") && gradle.includes('versionName = "1.2.9.2"'), "Versión Android inesperada");
+assert.ok(app.includes('const canCreateEquipment=') && app.includes('freeEquipmentCount()<15'), "Falta límite gratuito de 15 equipos");
+assert.ok(app.includes('if(!canCreateEquipment())return showUpgrade()'), "Añadir equipo no respeta plan gratuito");
+assert.ok(app.includes('const requireFullAccess=()=>{if(isAndroidApp()||hasFullAccess())'), "Las operaciones de mantenimiento no deben bloquearse en Android gratis");
+assert.ok(html.includes('id="trialNotice"') && app.includes('window.onMaintenProTrialState='), "Faltan avisos de los siete días");
+assert.ok(native.includes('7L * 24L * 60L * 60L * 1000L') && native.includes('trial_last_seen_millis'), "Falta periodo inicial de siete días");
+assert.ok(native.includes('trialStateReady && !trialAccessActive && !paidEntitlement'), "Los anuncios no deben mostrarse en prueba o Premium");
+assert.ok(gradle.includes("play-services-ads:25.5.0") && gradle.includes("user-messaging-platform:4.0.0"), "Faltan Ads SDK o consentimiento");
+assert.ok(manifest.includes('com.google.android.gms.ads.APPLICATION_ID'), "Falta ID de AdMob en manifest");
+assert.ok(subscription.includes("sin cargo o renovación automática"), "No prometer cobro automático en prueba inicial");
+assert.ok(!app.includes("MP-REVIEW-122"), "No publicar un código local de bypass Premium");
 assert.ok(native.includes('PRODUCT_MONTHLY = "maintenpro_premium_monthly"') && subscription.includes("maintenpro_premium_monthly"), "El ID de suscripción no coincide");
 
 console.log(`MaintenPro review smoke OK: ${ids.length} IDs, ${screens.size} pantallas y ${bridgeMethods.length} métodos Android.`);
