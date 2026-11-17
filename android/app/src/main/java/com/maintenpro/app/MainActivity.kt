@@ -7,6 +7,16 @@ import android.net.Uri
 import android.util.Base64
 import android.os.Bundle
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.view.View
+import android.view.ViewGroup
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -47,6 +57,14 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     private lateinit var webView: WebView
     private lateinit var billingClient: BillingClient
     private var monthlyProduct: ProductDetails? = null
+    private lateinit var adContainer: FrameLayout
+    private lateinit var consentInformation: ConsentInformation
+    private var adView: AdView? = null
+    private var adSdkStarted = false
+    private var adSdkReady = false
+    private var paidEntitlement = false
+    private var trialAccessActive = true
+    private var trialStateReady = false
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingFileName = ""
     private var pendingFileBytes: ByteArray? = null
@@ -123,6 +141,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
+                    notifyTrialState()
+                    if (::consentInformation.isInitialized) updatePrivacyButton()
                     connectBilling()
                 }
             }
@@ -142,9 +162,15 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         // Keep every WebView control outside system bars and display cutouts,
         // including Android 15/16 where edge-to-edge is enforced.
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        val column = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(webView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+            adContainer = FrameLayout(this@MainActivity).apply { visibility = View.GONE }
+            addView(adContainer, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
         val content = FrameLayout(this).apply {
             setBackgroundColor(0xFF0B1823.toInt())
-            addView(webView, FrameLayout.LayoutParams(
+            addView(column, FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
             ))
         }
@@ -154,6 +180,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             insets
         }
         setContentView(content)
+        paidEntitlement = getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean("last_verified_pro", false)
+        setupPrivacyAndAds()
         WindowCompat.getInsetsController(window, content).apply {
             isAppearanceLightStatusBars = false
             isAppearanceLightNavigationBars = false
@@ -171,6 +199,88 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 ) { result -> if (result.contains("exit")) { isEnabled = false; onBackPressedDispatcher.onBackPressed() } }
             }
         })
+    }
+
+    /** Siete días de uso completo sin anuncios ni alta de suscripción. */
+    private fun notifyTrialState() {
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val now = System.currentTimeMillis()
+        val start = prefs.getLong("trial_start_millis", 0L).takeIf { it > 0L } ?: now
+        val seen = prefs.getLong("trial_last_seen_millis", 0L)
+        val effectiveNow = maxOf(now, seen, start)
+        prefs.edit().putLong("trial_start_millis", start)
+            .putLong("trial_last_seen_millis", effectiveNow).apply()
+        val remaining = (start + 7L * 24L * 60L * 60L * 1000L - effectiveNow).coerceAtLeast(0L)
+        val days = (remaining + 86_399_999L) / 86_400_000L
+        trialAccessActive = remaining > 0L
+        trialStateReady = true
+        updateAdBanner()
+        js("window.onMaintenProTrialState($trialAccessActive,$days)")
+    }
+
+    private fun setPaidEntitlement(active: Boolean) {
+        paidEntitlement = active
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean("last_verified_pro", active).apply()
+        runOnUiThread { updateAdBanner() }
+    }
+
+    private fun setupPrivacyAndAds() {
+        consentInformation = UserMessagingPlatform.getConsentInformation(this)
+        consentInformation.requestConsentInfoUpdate(
+            this, ConsentRequestParameters.Builder().build(),
+            {
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) {
+                    updatePrivacyButton()
+                    startAdsIfAllowed()
+                }
+                updatePrivacyButton()
+                startAdsIfAllowed()
+            },
+            {
+                updatePrivacyButton()
+                startAdsIfAllowed()
+            }
+        )
+    }
+
+    private fun updatePrivacyButton() {
+        val required = consentInformation.privacyOptionsRequirementStatus ==
+            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+        js("window.onMaintenProPrivacyOptions($required)")
+    }
+
+    private fun startAdsIfAllowed() {
+        if (!consentInformation.canRequestAds()) return
+        if (adSdkStarted) { updateAdBanner(); return }
+        adSdkStarted = true
+        Thread {
+            MobileAds.initialize(this) {
+                runOnUiThread { adSdkReady = true; updateAdBanner() }
+            }
+        }.start()
+    }
+
+    private fun updateAdBanner() {
+        if (!::adContainer.isInitialized) return
+        val shouldDisplay = trialStateReady && !trialAccessActive && !paidEntitlement && adSdkReady &&
+            ::consentInformation.isInitialized && consentInformation.canRequestAds()
+        if (!shouldDisplay) {
+            adContainer.visibility = View.GONE
+            adView?.pause()
+            return
+        }
+        if (adView == null) {
+            val bannerId = BuildConfig.ADMOB_BANNER_UNIT_ID
+            if (bannerId.isBlank()) return
+            val banner = AdView(this)
+            banner.adUnitId = bannerId
+            banner.setAdSize(AdSize.BANNER)
+            adContainer.addView(banner)
+            adView = banner
+            banner.loadAd(AdRequest.Builder().build())
+        }
+        adContainer.visibility = View.VISIBLE
+        adView?.resume()
     }
 
     private fun connectBilling() {
@@ -239,7 +349,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             val active = purchases.any { purchase ->
                 purchase.products.contains(PRODUCT_MONTHLY) && purchase.purchaseState == Purchase.PurchaseState.PURCHASED
             }
-            subscriptionResult(active, displayPrice(monthlyProduct), if (active) "Suscripción mensual activa" else "Suscripción necesaria para usar todas las funciones")
+            setPaidEntitlement(active)
+            subscriptionResult(active, displayPrice(monthlyProduct), if (active) "Suscripción mensual activa" else "Gratis con anuncios y 15 equipos")
             driveConnection.refreshPurchase()
         }
     }
@@ -287,10 +398,13 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         )
     }
 
+    // La prueba local no activa renovaciones; solo se ofrece el plan de pago aprobado.
     private fun selectedOffer(product: ProductDetails?) =
         product?.subscriptionOfferDetails?.firstOrNull { offer ->
-            offer.pricingPhases.pricingPhaseList.any { it.priceAmountMicros == 0L }
-        } ?: product?.subscriptionOfferDetails?.firstOrNull()
+            offer.offerId == null && offer.basePlanId == "mensual-499" &&
+            offer.pricingPhases.pricingPhaseList.any { it.priceAmountMicros > 0L } &&
+            offer.pricingPhases.pricingPhaseList.none { it.priceAmountMicros == 0L }
+        }
 
     private fun hasFreeTrial(product: ProductDetails?): Boolean =
         selectedOffer(product)?.pricingPhases?.pricingPhaseList?.any { it.priceAmountMicros == 0L } == true
@@ -379,6 +493,16 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             }
         }
 
+        @JavascriptInterface fun showPrivacyChoices() = runOnUiThread {
+            if (::consentInformation.isInitialized &&
+                consentInformation.privacyOptionsRequirementStatus ==
+                ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED) {
+                UserMessagingPlatform.showPrivacyOptionsForm(this@MainActivity) {
+                    startAdsIfAllowed()
+                }
+            }
+        }
+
         @JavascriptInterface fun manageSubscription() = runOnUiThread {
             val url = "https://play.google.com/store/account/subscriptions?sku=$PRODUCT_MONTHLY&package=$packageName"
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
@@ -401,11 +525,19 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     override fun onResume() {
         super.onResume()
+        if (::webView.isInitialized) notifyTrialState()
         if (::billingClient.isInitialized) connectBilling()
         if (::driveConnection.isInitialized) driveConnection.connect(false)
+        adView?.resume()
+    }
+
+    override fun onPause() {
+        adView?.pause()
+        super.onPause()
     }
 
     override fun onDestroy() {
+        adView?.destroy()
         if (::billingClient.isInitialized) billingClient.endConnection()
         if (::driveConnection.isInitialized) driveConnection.close()
         if (::webView.isInitialized) {
