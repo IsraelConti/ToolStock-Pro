@@ -22,8 +22,7 @@ function connectDrive(){if(!requireFullAccess())return;if(android()?.chooseDrive
 window.onMaintenProDriveReady=name=>{const old=settings;settings={...settings,driveName:name||"MaintenPro"};if(!saveSettings()){settings=old;return;}$("#onboarding").classList.add("hidden");applySettings();toast("Carpetas creadas correctamente");};
 window.onMaintenProDriveError=message=>toast(message||"No se pudo preparar Drive");
 let premiumAccess=false;
-const hasReviewerAccess=()=>sessionStorage.getItem("maintenpro.reviewAccess")==="1";
-const hasFullAccess=()=>premiumAccess||hasReviewerAccess();
+const hasFullAccess=()=>premiumAccess;
 // FREE y TRIAL incluyen averías, preventivos, QR, informes, copias y técnicos.
 const requireFullAccess=()=>true;
 let trialActive=false, trialDaysRemaining=0;
@@ -58,7 +57,7 @@ window.onMaintenProTrialState=(active,daysRemaining)=>{
   }
   if(wasActive&&!trialActive)toast("Terminó la prueba. Sigues gratis con anuncios y 15 equipos.");
 };
-window.onMaintenProSubscription=(active,price,message)=>{premiumAccess=!!active;if(price)$("#subscriptionPrice").textContent=price;$("#paywall").classList.add("hidden");updateAccessUI();if(active&&!settings.ownerEmail&&!hasReviewerAccess())$("#onboarding").classList.remove("hidden");};
+window.onMaintenProSubscription=(active,price,message)=>{premiumAccess=!!active;if(price)$("#subscriptionPrice").textContent=price;$("#paywall").classList.add("hidden");updateAccessUI();if(active&&!settings.ownerEmail)$("#onboarding").classList.remove("hidden");};
 window.onMaintenProOffer=(price,hasTrial=false)=>{const value=String(price||"").trim();$("#planHeadline").textContent="Pro de pago: sin anuncios y sin límite de equipos";$("#subscriptionPrice").textContent=value||"El precio y la moneda se mostrarán en Google Play";$("#subscriptionTerms").textContent="Los primeros 7 días de uso de la app son gratis, sin anuncios y sin obligación de pago. Pro es una suscripción mensual opcional que se renueva hasta que se cancele en Google Play. Consulta las condiciones antes de confirmar.";$("#subscribeBtn").textContent=value?`Contratar Pro por ${value}/mes`:"Contratar Pro en Google Play";};
 window.onMaintenProPurchaseError=message=>toast(message||"No se pudo completar la compra");
 window.onMaintenProFileSaved=name=>toast(`Archivo guardado: ${name}`);
@@ -66,8 +65,6 @@ window.onMaintenProFileSaveError=message=>toast(message||"No se pudo guardar el 
 $("#subscribeBtn").onclick=()=>android()?.subscribeMonthly?android().subscribeMonthly():toast("La suscripción se activa desde Google Play");
 $("#dismissPaywall").onclick=()=>{limitedModeDismissed=true;$("#paywall").classList.add("hidden");toast("Puedes seguir usando MaintenPro gratis con anuncios.");};
 $("#restorePurchase").onclick=()=>android()?.restorePurchases?android().restorePurchases():toast("Abre la app instalada desde Google Play");
-$("#showReviewerAccess").onclick=()=>$("#reviewerAccessForm").classList.toggle("hidden");
-$("#reviewerAccessForm").onsubmit=e=>{e.preventDefault();const code=String(new FormData(e.currentTarget).get("reviewerCode")||"").trim().toUpperCase();if(code!=="MP-REVIEW-122")return toast("Código de revisión no válido");sessionStorage.setItem("maintenpro.reviewAccess","1");$("#paywall").classList.add("hidden");$("#onboarding").classList.add("hidden");$("#subscriptionStatus").textContent="Acceso temporal de revisión de Google Play";toast("Modo revisión activado");};
 $("#openPro").onclick=()=>$("#paywall").classList.remove("hidden");
 window.onMaintenProPrivacyOptions=required=>$("#privacyOptions").classList.toggle("hidden",!required);
 $("#privacyOptions").onclick=()=>android()?.showPrivacyChoices?android().showPrivacyChoices():toast("Las opciones de privacidad se administran desde la app Android");
@@ -127,4 +124,4 @@ $("#backup").onclick=()=>{if(!requireFullAccess())return;const content=JSON.stri
 $("#restoreBackup").onclick=()=>{if(requireFullAccess())$("#restoreBackupFile").click();};
 $("#restoreBackupFile").onchange=e=>{if(!requireFullAccess()){e.currentTarget.value="";return;}const file=e.currentTarget.files?.[0];e.currentTarget.value="";if(!file)return;if(file.size>12000000)return toast("La copia supera el límite de 12 MB");const reader=new FileReader();reader.onerror=()=>toast("No se pudo leer la copia");reader.onload=()=>{let data;try{data=JSON.parse(String(reader.result||""));}catch{return toast("El archivo no contiene un JSON válido");}const validRows=value=>Array.isArray(value)&&value.every(x=>x&&typeof x==="object"&&!Array.isArray(x));if(data?.version!==2||!validRows(data.equipment)||!validRows(data.orders)||!validRows(data.plans)||!validRows(data.team))return toast("La copia no tiene un formato de MaintenPro válido");if(!confirm("Restaurar esta copia reemplazará los registros actuales del dispositivo. ¿Continuar?"))return;const cleanRows=rows=>rows.map(x=>({...x,id:/^[A-Za-z0-9_-]{1,80}$/.test(String(x.id||""))?String(x.id):uid()}));equipment=cleanRows(data.equipment);orders=cleanRows(data.orders);plans=cleanRows(data.plans);team=cleanRows(data.team);const previousSettings=settings;if(data.settings&&typeof data.settings==="object"&&!Array.isArray(data.settings)){const allowed={};for(const k of ["appName","companyName","ownerEmail","language","currency","tax","alertDays","urgentDays","notifications"])if(k in data.settings)allowed[k]=data.settings[k];settings={...settings,...allowed,driveName:settings.driveName||""};if(!["es","en","fr","de","it","pt"].includes(settings.language))settings.language="es";if(!["EUR","USD","GBP","MXN"].includes(settings.currency))settings.currency="EUR";}if(!save())return;if(!saveSettings()){settings=previousSettings;applySettings();renderAll();return;}applySettings();toast("Copia restaurada");};reader.readAsText(file);};
 $("#clearLocalData").onclick=()=>{if(!confirm("Se borrarán todos los equipos, órdenes, preventivos y técnicos guardados en este dispositivo. Las copias de Drive no se borrarán. ¿Continuar?"))return;equipment=[];orders=[];plans=[];team=[];if(save())toast("Registros locales borrados");};
-applySettings();renderAll();go("home",false);if(sessionStorage.getItem("maintenpro.reviewAccess")==="1"){$("#onboarding").classList.add("hidden");}if(android()?.checkSubscription){android().checkSubscription();}else{window.onMaintenProOffer("");}updateAccessUI();
+applySettings();renderAll();go("home",false);if(android()?.checkSubscription){android().checkSubscription();}else{window.onMaintenProOffer("");}updateAccessUI();
