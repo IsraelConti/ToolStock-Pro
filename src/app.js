@@ -6,8 +6,8 @@ import { stampChanges } from "./drive-state.js";
 import { setupDriveUi } from "./drive-ui.js";
 
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const reviewMode=sessionStorage.getItem("maintenpro.reviewAccess")==="1";
-const appStore=reviewMode?sessionStorage:localStorage;
+const reviewMode=false; // Sin códigos estáticos para saltar la suscripción.
+const appStore=localStorage;
 const load=(k,d)=>{try{const raw=appStore.getItem(k);if(raw===null)return d;const value=JSON.parse(raw);if(Array.isArray(d))return Array.isArray(value)?value.filter(x=>x&&typeof x==="object"&&!Array.isArray(x)):d;if(d&&typeof d==="object")return value&&typeof value==="object"&&!Array.isArray(value)?{...d,...value}:d;return value??d;}catch{return d;}};
 const DEFAULT_SETTINGS={appName:"MaintenPro",companyName:"",ownerEmail:"",driveName:"",language:"es",currency:"EUR",tax:21,alertDays:7,urgentDays:2,notifications:true};
 const aggregate=load("maintenpro.state.v3",null);
@@ -57,19 +57,45 @@ function connectDrive(){driveUi?.connect().catch(()=>toast("No se pudo conectar 
 window.onMaintenProDriveReady=name=>{const old=settings;settings={...settings,driveName:name||"MaintenPro"};if(!saveSettings()){settings=old;return;}$("#onboarding").classList.add("hidden");applySettings();toast("Carpetas creadas correctamente");};
 window.onMaintenProDriveError=message=>toast(message||"No se pudo preparar Drive");
 let premiumAccess=false;
-const hasReviewerAccess=()=>sessionStorage.getItem("maintenpro.reviewAccess")==="1";
-const hasFullAccess=()=>premiumAccess||hasReviewerAccess();
-const requireFullAccess=()=>{if(hasFullAccess())return true;toast("Esta función requiere suscripción. El modo limitado permite consultar la aplicación.");$("#paywall").classList.remove("hidden");return false;};
-window.onMaintenProSubscription=(active,price,message)=>{premiumAccess=!!active;if(price)$("#subscriptionPrice").textContent=price;const status=$("#subscriptionStatus");if(status)status.textContent=active?(window.MaintenProDesktop?"Compra del móvil confirmada. PC incluido.":"Suscripción mensual activa"):(message||"Suscripción necesaria para usar todas las funciones");if(active){limitedModeDismissed=false;$("#paywall").classList.add("hidden");}else{$("#paywall").classList.toggle("hidden",limitedModeDismissed||hasReviewerAccess());}if(active&&window.MaintenProDesktop!==true&&!settings.ownerEmail&&!hasReviewerAccess())$("#onboarding").classList.remove("hidden");};
-window.onMaintenProOffer=(price,hasTrial=false)=>{const value=String(price||"").trim(),available=!!hasTrial;$("#planHeadline").textContent=available?"Prueba gratuita":"Suscripción mensual";$("#subscriptionPrice").textContent=available?`Después, ${value} al mes`:value||"El precio y la moneda se mostrarán en Google Play";$("#subscriptionTerms").textContent=available?"La oferta de prueba solo está disponible para cuentas que cumplan los requisitos de Google Play. Después, se renueva automáticamente cada mes; puedes cancelar desde Google Play.":`Google Play muestra el precio y la moneda aplicables a tu país antes de confirmar el pago. La suscripción se renueva mensualmente y se puede cancelar desde Google Play.`;$("#subscribeBtn").textContent=available?"Ver prueba en Google Play":value?`Suscribirme por ${value}`:"Continuar con Google Play";};
+const hasFullAccess=()=>premiumAccess;
+const isAndroidApp=()=>window.MaintenProDesktop!==true&&!!android();
+let trialActive=false,trialDaysRemaining=0;
+const freeEquipmentCount=()=>visibleRecords(equipment).length;
+const canCreateEquipment=()=>!isAndroidApp()?hasFullAccess():premiumAccess||trialActive||freeEquipmentCount()<15;
+const showUpgrade=()=>{$("#paywall").classList.remove("hidden");toast("Has alcanzado los 15 equipos del plan gratuito. Tus datos se conservan.");};
+function updateFreeTierUI(){
+    if(!isAndroidApp())return;
+    const msg=premiumAccess?"Pro activa: equipos ilimitados y sin anuncios":trialActive
+      ?`Prueba gratuita sin anuncios: ${trialDaysRemaining} día(s) restante(s), equipos ilimitados`
+      :`Gratis permanente: ${freeEquipmentCount()}/15 equipos, con anuncios`;
+    if($("#freeTierStatus"))$("#freeTierStatus").textContent=msg;
+    if($("#trialNotice"))$("#trialNotice").textContent=trialActive
+      ?"Durante los 7 días iniciales tienes equipos ilimitados y sin anuncios. Al terminar seguirás gratis con 15 equipos y anuncios, sin cargos automáticos."
+      :"Puedes seguir trabajando gratis con tus equipos, órdenes y preventivos. Si tienes 15 o más equipos, solo necesitas Pro para registrar más.";
+    if($("#subscriptionStatus"))$("#subscriptionStatus").textContent=msg;
+}
+window.onMaintenProTrialState=(active,days)=>{
+    const before=trialActive;trialActive=!!active;trialDaysRemaining=Math.max(0,Math.ceil(Number(days)||0));updateFreeTierUI();
+    if(before&&!trialActive)toast("Finalizaron tus 7 días: sigues gratis con anuncios y hasta 15 equipos.");
+};
+
+const requireFullAccess=()=>{if(isAndroidApp()||hasFullAccess())return true;toast("Esta función requiere suscripción para Windows.");$("#paywall").classList.remove("hidden");return false;};
+window.onMaintenProSubscription=(active,price,message)=>{premiumAccess=!!active;if(price)$("#subscriptionPrice").textContent=price;
+  const status=$("#subscriptionStatus");
+  if(isAndroidApp()){$("#paywall").classList.add("hidden");updateFreeTierUI();}
+  else {if(status)status.textContent=active?"Compra del móvil confirmada. PC incluido.":(message||"Suscripción necesaria para usar todas las funciones");$("#paywall").classList.toggle("hidden",active||limitedModeDismissed);}
+  if(active&&window.MaintenProDesktop!==true&&!settings.ownerEmail)$("#onboarding").classList.remove("hidden");
+};
+window.onMaintenProOffer=(price,hasTrial=false)=>{const value=String(price||"").trim();$("#planHeadline").textContent="Pro de pago: sin anuncios y sin límites";$("#subscriptionPrice").textContent=value||"Consulta el precio en Google Play";$("#subscriptionTerms").textContent="7 días iniciales de uso completo gratis, sin anuncios y sin tarjeta. Después continúas gratis con anuncios y hasta 15 equipos. Pro es opcional y se renueva mensualmente hasta su cancelación en Google Play.";$("#subscribeBtn").textContent=value?`Contratar Pro por ${value}/mes`:"Contratar Pro en Google Play";};
 window.onMaintenProPurchaseError=message=>toast(message||"No se pudo completar la compra");
 window.onMaintenProFileSaved=name=>toast(`Archivo guardado: ${name}`);
 window.onMaintenProFileSaveError=message=>toast(message||"No se pudo guardar el archivo");
 $("#subscribeBtn").onclick=()=>{if(window.MaintenProDesktop){limitedModeDismissed=true;$("#paywall").classList.add("hidden");go("pc");return connectDrive();}return android()?.subscribeMonthly?android().subscribeMonthly():toast("La suscripción se activa desde Google Play");};
-$("#dismissPaywall").onclick=()=>{limitedModeDismissed=true;$("#paywall").classList.add("hidden");const status=$("#subscriptionStatus");if(status)status.textContent="Modo limitado sin suscripción";toast("Modo limitado: puedes consultar la app; para registrar datos necesitas suscripción.");};
+$("#dismissPaywall").onclick=()=>{limitedModeDismissed=true;$("#paywall").classList.add("hidden");if(isAndroidApp()){updateFreeTierUI();toast("Puedes seguir gratis con tus equipos y anuncios después de los siete días.");}else{const status=$("#subscriptionStatus");if(status)status.textContent="Modo limitado sin suscripción";toast("Modo limitado: puedes consultar la app; para registrar datos necesitas suscripción.");}};
 $("#restorePurchase").onclick=()=>window.MaintenProDesktop?driveUi?.refresh(true):(android()?.restorePurchases?android().restorePurchases():toast("Abre la app instalada desde Google Play"));
-$("#showReviewerAccess").onclick=()=>$("#reviewerAccessForm").classList.toggle("hidden");
-$("#reviewerAccessForm").onsubmit=e=>{e.preventDefault();const code=String(new FormData(e.currentTarget).get("reviewerCode")||"").trim().toUpperCase();if(code!=="MP-REVIEW-122")return toast("Código de revisión no válido");sessionStorage.setItem("maintenpro.reviewAccess","1");location.reload();};
+$("#openPro")?.addEventListener("click",()=>$("#paywall").classList.remove("hidden"));
+$("#privacyOptions")?.addEventListener("click",()=>android()?.showPrivacyChoices?.());
+window.onMaintenProPrivacyOptions=required=>$("#privacyOptions")?.classList.toggle("hidden",!required);
 $("#manageSubscription")?.addEventListener("click",()=>android()?.manageSubscription?android().manageSubscription():toast("Gestiona la suscripción desde Google Play"));
 
 function go(screen,push=true){if(push&&screen!==currentScreen)historyStack.push(currentScreen);currentScreen=screen;$$(".screen").forEach(x=>x.classList.toggle("active",x.dataset.screen===screen));$("#screenTitle").textContent=titles[screen]||"MaintenPro";$("#backBtn").classList.toggle("hidden",screen==="home");$$(".bottom-nav button").forEach(x=>x.classList.toggle("active",x.dataset.go===screen));renderAll();scrollTo(0,0);if(screen==="pc")driveUi?.refresh();}
@@ -94,7 +120,7 @@ function renderAlicateGuide(){if(!guideOutput)return;const norm=v=>String(v||"")
 guideInput?.addEventListener("input",renderAlicateGuide);renderAlicateGuide();
 
 async function fileData(input){const f=input?.files?.[0];if(!f)return"";if(f.size>1200000){toast("La imagen es demasiado grande; usa una fotografía más pequeña");return"";}return new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>{toast("No se pudo leer la fotografía");resolve("");};r.onabort=()=>resolve("");r.readAsDataURL(f);});}
-$("#equipmentForm").onsubmit=async e=>{e.preventDefault();if(!requireFullAccess())return;const form=e.currentTarget,d=Object.fromEntries(new FormData(form));delete d.photo;d.photo=await fileData(form.elements.photo);if(visibleRecords(equipment).some(x=>String(x.code||"").trim().toLowerCase()===d.code.trim().toLowerCase()))return toast("Ese código ya existe");equipment.unshift({...d,code:d.code.trim(),name:d.name.trim(),id:uid(),...createdStamp()});if(!save())return;form.reset();toast("Equipo guardado");go("equipment");};
+$("#equipmentForm").onsubmit=async e=>{e.preventDefault();if(!canCreateEquipment())return showUpgrade();const form=e.currentTarget,d=Object.fromEntries(new FormData(form));delete d.photo;d.photo=await fileData(form.elements.photo);if(visibleRecords(equipment).some(x=>String(x.code||"").trim().toLowerCase()===d.code.trim().toLowerCase()))return toast("Ese código ya existe");equipment.unshift({...d,code:d.code.trim(),name:d.name.trim(),id:uid(),...createdStamp()});if(!save())return;form.reset();toast("Equipo guardado");go("equipment");};
 $("#workForm").onsubmit=async e=>{e.preventDefault();if(!requireFullAccess())return;const form=e.currentTarget,d=Object.fromEntries(new FormData(form));delete d.photo;d.photo=await fileData(form.elements.photo);if(!d.equipmentId||!equip(d.equipmentId))return toast("Selecciona un equipo registrado");orders.unshift({...d,id:uid(),type:"Correctivo",...createdStamp(),closedAt:"",resolution:"",parts:"",laborCost:0,laborHours:0,partsCost:0});if(!save())return;form.reset();toast("Orden correctiva creada");go("orders");};
 $("#planForm").onsubmit=e=>{e.preventDefault();if(!requireFullAccess())return;const d=Object.fromEntries(new FormData(e.currentTarget));if(!d.equipmentId||!equip(d.equipmentId))return toast("Selecciona un equipo registrado");plans.unshift({...d,id:uid(),...createdStamp(),lastCompletedAt:""});if(!save())return;e.currentTarget.reset();toast("Plan preventivo creado");};
 $("#teamForm").onsubmit=e=>{e.preventDefault();if(!requireFullAccess())return;if(visibleRecords(team).length>=3)return toast("Ya hay tres técnicos invitados");const d=Object.fromEntries(new FormData(e.currentTarget));d.email=String(d.email||"").trim().toLowerCase();d.name=String(d.name||"").trim();if(visibleRecords(team).some(x=>String(x.email||"").trim().toLowerCase()===d.email))return toast("Ese correo ya está añadido");team.push({...d,id:uid(),...createdStamp()});if(!save())return;e.currentTarget.reset();toast("Técnico añadido");};
@@ -149,4 +175,4 @@ try{persistDrive(driveConfig);}catch{}
 for(const [id,page] of [["openPrivacyPolicy","privacy"],["openAccountDeletion","deletion"]])$("#"+id).onclick=()=>{if(android()?.openPrivacyPage){android().openPrivacyPage(page);return;}const base=window.MaintenProRelease?.publicSiteUrl||"https://israelconti.github.io";window.open(base.replace(/\/$/,"")+(page==="privacy"?"/privacidad.html":"/eliminar-datos.html"),"_blank","noopener");};
 $("#openPcDownload").onclick=()=>{if(!hasFullAccess())return requireFullAccess();if(android()?.openPcDownload){android().openPcDownload();return;}const url=window.MaintenProRelease?.pcDownloadUrl;if(url&&url.startsWith("https://"))location.assign(url);else toast("La descarga para PC todavía no está publicada por el editor.");};
 driveUi=setupDriveUi({demo:reviewMode,config:driveConfig,readState:snapshot,applyState:applyDriveState,persist:persistDrive,toast,onEntitlement:active=>{if(window.MaintenProDesktop===true)window.onMaintenProSubscription(active,"",active?"Compra del móvil confirmada. PC incluido.":"Conecta Google y vincula tu compra desde el móvil para activar el PC.");},onResolved:()=>{applySettings();renderAll();}});
-applySettings();renderAll();go("home",false);if(window.MaintenProDesktop===true){window.onMaintenProSubscription(false,"","Acceso cerrado. El servicio no ha confirmado la compra.");$("#onboarding").classList.add("hidden");}else if(sessionStorage.getItem("maintenpro.reviewAccess")==="1"){window.onMaintenProSubscription(true,"","Acceso temporal de revisión de Google Play");}else if(android()?.checkSubscription){android().checkSubscription();}else{window.onMaintenProOffer("");$("#paywall").classList.remove("hidden");}
+applySettings();renderAll();go("home",false);if(window.MaintenProDesktop===true){window.onMaintenProSubscription(false,"","Acceso cerrado. El servicio no ha confirmado la compra.");$("#onboarding").classList.add("hidden");}else if(android()?.checkSubscription){android().checkSubscription();}else{window.onMaintenProOffer("");$("#paywall").classList.remove("hidden");}
