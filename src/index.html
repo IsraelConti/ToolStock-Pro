@@ -15,19 +15,12 @@
       <img src="app-icon.png" alt="MaintenPro">
       <p class="eyebrow">MAINTENPRO PREMIUM</p>
       <h1>Mantenimiento profesional para tu empresa</h1>
-      <p class="lead">Para usar todas las funciones de MaintenPro se requiere una suscripción mensual. Puedes cerrar esta pantalla y consultar la app en modo limitado. Para registrar o modificar datos necesitas una suscripción.</p>
+      <p class="lead">MaintenPro tiene una versión gratuita permanente con anuncios y hasta 15 equipos. Los primeros 7 días disfrutarás de equipos ilimitados y sin anuncios, sin tarjeta ni cobros automáticos. Si deseas más, Premium cuesta 4,99 €/mes en España, sin anuncios y sin límites.</p>
       <div class="plan-box"><b id="planHeadline">Suscripción mensual</b><strong id="subscriptionPrice">El precio y la moneda se mostrarán en Google Play</strong><small id="subscriptionTerms">El precio se confirma siempre en Google Play antes del pago. La suscripción se renueva automáticamente cada mes y puedes cancelarla desde Google Play.</small></div>
       <button id="subscribeBtn" class="btn primary wide">Continuar con Google Play</button>
-      <button id="dismissPaywall" class="btn wide dismiss-btn" type="button">Cerrar y ver modo limitado</button>
+      <button id="dismissPaywall" class="btn wide dismiss-btn" type="button">Seguir gratis</button>
       <button id="restorePurchase" class="btn wide">Restaurar compra</button>
-      <button id="showReviewerAccess" class="btn wide reviewer-link">Acceso para revisión de Google Play</button>
-      <form id="reviewerAccessForm" class="form hidden" autocomplete="off">
-        <label>Código de acceso del revisor
-          <input id="reviewerAccessCode" name="reviewerCode" type="text" inputmode="text" placeholder="Introduce el código facilitado" required>
-        </label>
-        <button class="btn primary wide">Entrar en modo revisión</button>
-      </form>
-      <small class="privacy-note">El pago se gestiona de forma segura mediante Google Play. El acceso de revisión es exclusivamente para el equipo de Google Play.</small>
+      <small class="privacy-note">Solo se cobra si contratas expresamente Premium en Google Play; la versión gratuita no requiere tarjeta.</small>
     </div>
   </section>
   <section id="onboarding" class="onboarding hidden" aria-modal="true">
@@ -68,6 +61,8 @@
         <h1>Equipos disponibles. Averías bajo control.</h1>
         <p>Preventivos, correctivos, técnicos, repuestos, costes y trazabilidad desde el móvil.</p>
         <span id="todayStatus" class="status">Datos locales protegidos</span>
+        <p id="freeTierStatus" class="lead" role="status">Comprobando tu modalidad…</p>
+        <p id="trialNotice" class="lead" role="status">Primeros siete días sin anuncios. Después podrás seguir gratis con anuncios y hasta 15 equipos sin perder tus registros.</p>
       </div>
       <div class="metrics">
         <article><small>Equipos</small><b id="mEquipment">0</b></article>
@@ -205,7 +200,7 @@
         <div class="card"><h3>Formato de fechas e importes</h3><div class="two"><label>Formato de fechas<select name="language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option></select></label><label>Moneda<select name="currency"><option value="EUR">EUR — €</option><option value="USD">USD — $</option><option value="GBP">GBP — £</option><option value="MXN">MXN — $</option></select></label></div><label>IVA / impuesto (%)<input name="tax" type="number" min="0" step=".01" value="21"></label></div>
         <div class="card"><h3>Avisos</h3><div class="two"><label>Primer aviso (días)<input name="alertDays" type="number" value="7"></label><label>Aviso urgente (días)<input name="urgentDays" type="number" value="2"></label></div><label class="toggle"><input name="notifications" type="checkbox" checked> Resaltar avisos de fecha en la aplicación</label></div>
         <div class="card"><h3>Equipo de trabajo</h3><p class="lead">Registro local del propietario y hasta tres técnicos. Añadirlos aquí no crea cuentas ni envía invitaciones.</p><div id="teamSummary"></div><button type="button" class="btn" data-go="team">Gestionar técnicos</button></div>
-        <div class="card"><h3>Suscripción</h3><p id="subscriptionStatus" class="lead">Comprobando en Google Play…</p><button id="manageSubscription" type="button" class="btn">Gestionar suscripción</button></div>
+        <div class="card"><h3>Suscripción y anuncios</h3><p id="subscriptionStatus" class="lead">Comprobando modalidad…</p><p>Android: siete días sin anuncios y equipos ilimitados; después gratis con anuncios y hasta 15 equipos. Las órdenes, averías y preventivos de esos equipos no tienen límite. Premium: 4,99 €/mes, sin anuncios ni límite de equipos. El acceso a Windows requiere Premium.</p><button id="openPro" type="button" class="btn primary">Contratar Premium</button> <button id="manageSubscription" type="button" class="btn">Gestionar suscripción</button> <button id="privacyOptions" type="button" class="btn hidden">Privacidad de anuncios</button></div>
         <div class="card"><h3>Móvil y PC</h3><p class="lead">Usa la misma cuenta de Google en los dos dispositivos. El acceso al PC está incluido en tu compra activa.</p><button class="btn primary" type="button" data-go="pc">Abrir conexión móvil–PC</button></div>
         <div class="card"><h3>Copia de seguridad</h3><p class="lead">Incluye equipos, órdenes, preventivos, técnicos y configuración. Al restaurarla se unen los registros con los de este dispositivo y se conserva lo que solo está aquí. Puedes guardarla en Drive o como archivo JSON.</p><button id="backup" type="button" class="btn">Guardar copia completa</button><button id="restoreBackup" type="button" class="btn">Restaurar copia JSON</button><input id="restoreBackupFile" type="file" accept="application/json,.json" class="hidden"></div>
         <div class="sticky"><button type="button" class="btn" data-back>Cancelar</button><button class="btn primary">Guardar</button></div>
@@ -233,7 +228,7 @@
         <details open><summary>Datos tratados</summary><p>MaintenPro puede guardar el correo indicado por el propietario, nombre de empresa, fichas de equipos, órdenes, contactos técnicos, fotografías y la configuración que el usuario introduce voluntariamente.</p></details>
         <details><summary>Dónde se guardan</summary><p>Los datos operativos se guardan en el dispositivo y, si conectas Google, en el espacio privado de MaintenPro de tu propio Drive. Cada dispositivo mantiene su copia y los cambios se unen mientras se utiliza la aplicación. La aplicación no solicita la contraseña de Google. El servicio de licencias del editor conserva el identificador y correo verificado de tu cuenta Google, el estado y vencimiento del acceso y un recibo de compra cifrado. Lo utiliza para comprobar tu suscripción y permitir el acceso desde PC; no recibe las fichas de mantenimiento.</p></details>
         <details><summary>Pagos</summary><p>La suscripción mensual se procesa mediante Google Play Billing. MaintenPro no recibe ni almacena números de tarjeta ni datos bancarios. Google Play gestiona el cobro, la renovación y la cancelación.</p></details>
-        <details><summary>Compartición</summary><p>MaintenPro no vende datos personales ni incluye publicidad. Google presta el servicio de identidad, Drive y pagos; Floot aloja el servicio de licencias. Los informes y las copias exportadas solo se comparten cuando el propietario utiliza las funciones de exportar o compartir.</p></details>
+        <details><summary>Compartición</summary><p>MaintenPro no vende datos personales. La modalidad gratuita de Android puede mostrar anuncios después de los primeros siete días, con el consentimiento y las opciones de privacidad que correspondan. Premium y la prueba inicial no muestran anuncios. Google presta el servicio de identidad, Drive y pagos; Floot aloja el servicio de licencias. Los informes y las copias exportadas solo se comparten cuando el propietario utiliza las funciones de exportar o compartir.</p></details>
         <details><summary>Conservación y eliminación</summary><p>El usuario puede borrar todos los registros locales desde el botón de esta pantalla. Desconectar la cuenta no elimina los registros. Los datos privados de la aplicación en Drive se pueden eliminar desde la configuración de aplicaciones de Google Drive. Las copias JSON exportadas son archivos independientes.</p></details><button id="clearLocalData" type="button" class="btn danger-btn">Borrar todos los registros locales</button>
         <details><summary>Permisos y seguridad</summary><p>La aplicación puede usar la cámara o el selector de archivos cuando el usuario decide añadir una fotografía, restaurar una copia o elegir una carpeta de Drive.</p></details>
         <details><summary>Contacto</summary><p>Puedes solicitar la eliminación de la vinculación de cuenta y sus datos escribiendo a contini1976@gmail.com desde el correo vinculado. Borrar los datos o desconectar Google no cancela la suscripción: la cancelación se realiza en Google Play. No envíes contraseñas ni datos bancarios.</p></details>
@@ -253,7 +248,7 @@
         <details><summary>Asistente técnico guiado</summary><p>Describe los síntomas y el sistema propondrá causas probables y comprobaciones generales usando reglas locales; no utiliza un modelo de IA. Confirma siempre el diagnóstico con personal cualificado.</p></details>
         <details><summary>Seguridad antes de intervenir</summary><p>Detén el equipo cuando exista riesgo. Aplica bloqueo y etiquetado, verifica ausencia de energía y libera presión o temperatura residual siguiendo los procedimientos de la empresa y del fabricante.</p></details>
         <details><summary>Técnicos</summary><p>Registra hasta tres técnicos con correo y etiqueta de rol. El registro de técnicos no envía invitaciones ni concede acceso a otra cuenta. La sincronización móvil–PC une únicamente los dispositivos de la misma cuenta de Google conectada.</p></details>
-        <details><summary>Suscripción</summary><p>El precio y la moneda aplicables se muestran en Google Play antes del pago. La suscripción se renueva automáticamente cada mes y puedes cancelarla desde Google Play. Si cambias de móvil, usa la misma cuenta de Google Play y pulsa Restaurar compra.</p></details>
+        <details><summary>Suscripción</summary><p>Android incluye 7 días completos sin anuncios ni cobros automáticos; después puedes continuar gratis, con anuncios y hasta 15 equipos. Premium cuesta 4,99 €/mes en España y permite equipos ilimitados sin anuncios y acceso a PC. Solo se inicia la suscripción cuando la confirmas en Google Play; después se renueva mensualmente hasta que la canceles. Si cambias de móvil, usa la misma cuenta de Google Play y pulsa Restaurar compra.</p></details>
         <details><summary>Privacidad</summary><p>Los registros permanecen en el dispositivo y, al conectar Google, se unen en el espacio privado de MaintenPro de su propio Drive. MaintenPro no solicita contraseñas ni vende datos personales.</p><button class="btn" data-go="privacy">Ver política completa</button></details>
       </div><button class="btn wide" data-back>← Volver</button>
     </section>
