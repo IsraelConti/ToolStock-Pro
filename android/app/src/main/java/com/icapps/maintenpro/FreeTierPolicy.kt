@@ -2,7 +2,7 @@ package com.icapps.maintenpro
 
 /**
  * FREE: 15 equipos con anuncios.
- * TRIAL: 7 días con todas las funciones, equipos ilimitados y anuncios.
+ * TRIAL: 7 días con todas las funciones, equipos ilimitados y sin anuncios.
  * PAID: 4,99 EUR/mes, equipos ilimitados y sin anuncios.
  * Nunca se eliminan equipos, órdenes ni historiales por perder una suscripción.
  */
@@ -17,9 +17,9 @@ object FreeTierPolicy {
         return tier != MaintenProTier.FREE || existingEquipmentCount < MAX_FREE_EQUIPMENT
     }
 
-    fun shouldShowAds(tier: MaintenProTier): Boolean = tier != MaintenProTier.PAID
+    fun shouldShowAds(tier: MaintenProTier): Boolean = tier == MaintenProTier.FREE
 
-    fun canUseAdFreeExperience(tier: MaintenProTier): Boolean = tier == MaintenProTier.PAID
+    fun canUseAdFreeExperience(tier: MaintenProTier): Boolean = tier != MaintenProTier.FREE
 
     fun requiresUpgrade(existingEquipmentCount: Int, tier: MaintenProTier): Boolean =
         !canCreateEquipment(existingEquipmentCount, tier)
