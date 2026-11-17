@@ -4,6 +4,10 @@ plugins {
 }
 
 val releaseConfig = groovy.json.JsonSlurper().parse(rootProject.file("../config/release.json")) as Map<*, *>
+val admobAppId = providers.gradleProperty("ADMOB_APP_ID").orNull ?: System.getenv("ADMOB_APP_ID").orEmpty()
+val admobBannerId = providers.gradleProperty("ADMOB_BANNER_UNIT_ID").orNull ?: System.getenv("ADMOB_BANNER_UNIT_ID").orEmpty()
+val demoAppId = "ca-app-pub-3940256099942544~3347511713"
+val demoBannerId = "ca-app-pub-3940256099942544/6300978111"
 
 android {
     namespace = "com.icapps.maintenpro"
@@ -16,8 +20,8 @@ android {
         applicationId = "com.icapps.maintenpro"
         minSdk = 24
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.2.9.1"
+        versionCode = 14
+        versionName = "1.2.9.2"
         val webClientId = ((project.findProperty("GOOGLE_WEB_CLIENT_ID") as String?) ?: releaseConfig["googleWebClientId"]?.toString() ?: "").replace("\\", "").replace("\"", "")
         val syncApiBase = ((project.findProperty("SYNC_API_BASE") as String?) ?: releaseConfig["entitlementBase"]?.toString() ?: "").replace("\\", "").replace("\"", "")
         val pcDownloadUrl = ((project.findProperty("PC_DOWNLOAD_URL") as String?) ?: releaseConfig["pcDownloadUrl"]?.toString() ?: "").replace("\\", "").replace("\"", "")
@@ -34,7 +38,13 @@ android {
         jvmTarget = "17"
     }
     buildTypes {
+        getByName("debug") {
+            manifestPlaceholders["ADMOB_APP_ID"] = demoAppId
+            buildConfigField("String", "ADMOB_BANNER_UNIT_ID", "\"$demoBannerId\"")
+        }
         release {
+            manifestPlaceholders["ADMOB_APP_ID"] = admobAppId.ifBlank { demoAppId }
+            buildConfigField("String", "ADMOB_BANNER_UNIT_ID", "\"$admobBannerId\"")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -48,4 +58,19 @@ dependencies {
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("com.android.billingclient:billing-ktx:9.1.0")
     implementation("com.google.android.gms:play-services-auth:21.4.0")
+    implementation("com.google.android.gms:play-services-ads:25.5.0")
+    implementation("com.google.android.ump:user-messaging-platform:4.0.0")
+    testImplementation("junit:junit:4.13.2")
+}
+
+// Deshabilita compilaciones publicables sin identificadores AdMob reales.
+tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }.configureEach {
+    doFirst {
+        check(admobAppId.matches(Regex("ca-app-pub-[0-9]{16}~[0-9]{10}")) &&
+              admobAppId != demoAppId &&
+              admobBannerId.matches(Regex("ca-app-pub-[0-9]{16}/[0-9]{10}")) &&
+              admobBannerId != demoBannerId) {
+            "Faltan ADMOB_APP_ID y ADMOB_BANNER_UNIT_ID reales; release bloqueada."
+        }
+    }
 }
