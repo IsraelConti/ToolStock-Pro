@@ -42,8 +42,8 @@ assert.ok(html.includes('id="openPro"') && app.includes('$("#openPro").onclick='
 assert.ok(app.includes('equipment.length<15') && app.includes('if(!canCreateEquipment())return showUpgrade()'), "Los usuarios gratuitos deben poder trabajar con 15 equipos");
 assert.ok(native.includes('trial_start_millis') && native.includes('7L * 24L'), "Falta prueba local de siete días");
 assert.ok(native.includes('offer.offerId == null') && native.includes('basePlanId == "mensual-499"'), "El plan de pago no debe activar prueba de Google Play con cobro automático");
-assert.ok(native.includes('!paidEntitlement && adSdkReady') && native.includes('consentInformation.canRequestAds()'), "Anuncios requieren suscripción no pagada y consentimiento");
+assert.ok(native.includes('trialStateReady && !trialAccessActive && !paidEntitlement && adSdkReady') && native.includes('consentInformation.canRequestAds()'), "Anuncios requieren suscripción no pagada y consentimiento");
 assert.ok(gradle.includes("play-services-ads:25.5.0") && gradle.includes("user-messaging-platform:4.0.0"), "Faltan las dependencias de anuncios y consentimiento");
-assert.ok(subscription.includes("no se cobra automáticamente") && subscription.includes("15 equipos nuevos"), "Documentación comercial no coincide con el acuerdo");
+assert.ok(subscription.includes("no se cobra automáticamente") && subscription.includes("15 equipos nuevos") && subscription.includes("sin anuncios"), "Documentación comercial no coincide con el acuerdo");
 
 console.log(`MaintenPro review smoke OK: ${ids.length} IDs, ${screens.size} pantallas y ${bridgeMethods.length} métodos Android.`);
