@@ -71,13 +71,11 @@ jobs:
         working-directory: android
         run: gradle --no-daemon clean testDebugUnitTest assembleDebug
 
-      - name: Compile release only with real AdMob identifiers
-        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
+      - name: Compile release with registered public AdMob identifiers
         working-directory: android
         run: gradle --no-daemon assembleRelease bundleRelease
 
       - name: Sign MaintenPro Play bundle and Uptodown APK
-        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
         env:
           KEYSTORE_B64: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_B64 }}
           STORE_PASSWORD: ${{ secrets.MAINTENPROTOOLS_KEYSTORE_PASSWORD }}
@@ -149,7 +147,6 @@ jobs:
           if-no-files-found: error
 
       - name: Upload signed Uptodown APK
-        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: MaintenPro-Uptodown-APK-signed
@@ -157,7 +154,6 @@ jobs:
           if-no-files-found: error
 
       - name: Upload unsigned release APK fallback
-        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: MaintenPro-Uptodown-APK-unsigned-fallback
@@ -165,7 +161,6 @@ jobs:
           if-no-files-found: error
 
       - name: Upload signed Play Store bundle
-        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: MaintenPro-AAB-signed
@@ -173,7 +168,6 @@ jobs:
           if-no-files-found: error
 
       - name: Upload MaintenPro upload certificate
-        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: MaintenPro-upload-certificate-PEM
@@ -181,7 +175,6 @@ jobs:
           if-no-files-found: error
 
       - name: Upload unsigned fallback bundle
-        if: ${{ env.ADMOB_APP_ID != '' && env.ADMOB_BANNER_UNIT_ID != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: MaintenPro-AAB-unsigned-fallback
