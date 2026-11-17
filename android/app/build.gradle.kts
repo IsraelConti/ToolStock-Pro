@@ -4,8 +4,8 @@ plugins {
 }
 
 val releaseConfig = groovy.json.JsonSlurper().parse(rootProject.file("../config/release.json")) as Map<*, *>
-val admobAppId = providers.gradleProperty("ADMOB_APP_ID").orNull ?: System.getenv("ADMOB_APP_ID").orEmpty()
-val admobBannerId = providers.gradleProperty("ADMOB_BANNER_UNIT_ID").orNull ?: System.getenv("ADMOB_BANNER_UNIT_ID").orEmpty()
+val admobAppId = (providers.gradleProperty("ADMOB_APP_ID").orNull ?: System.getenv("ADMOB_APP_ID").orEmpty()).ifBlank { "ca-app-pub-2591134184963379~6094043049" }
+val admobBannerId = (providers.gradleProperty("ADMOB_BANNER_UNIT_ID").orNull ?: System.getenv("ADMOB_BANNER_UNIT_ID").orEmpty()).ifBlank { "ca-app-pub-2591134184963379/6612917799" }
 val demoAppId = "ca-app-pub-3940256099942544~3347511713"
 val demoBannerId = "ca-app-pub-3940256099942544/6300978111"
 
