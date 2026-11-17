@@ -1,0 +1,62 @@
+name: MaintenPro v14 - instalacion y arranque emulador real
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/maintenpro-v13-freemium-7d
+    paths:
+      - .github/workflows/maintenpro-emulator-qa.yml
+      - qa/android-emulator-smoke.sh
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  qa-android-35:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Obtener scripts QA de la rama de desarrollo
+        uses: actions/checkout@v4
+
+      - name: Descargar APK firmado REAL de GitHub run 44178118807
+        uses: actions/download-artifact@v4
+        with:
+          name: MaintenPro-Uptodown-APK-signed
+          run-id: 44178118807
+          repository: IsraelConti/ToolStock-Pro
+          github-token: ${{ github.token }}
+          path: qa-apk
+
+      - name: Comprobar APK descargado
+        run: |
+          test -s qa-apk/MaintenPro-Uptodown-signed.apk
+          sha256sum qa-apk/MaintenPro-Uptodown-signed.apk
+          echo "Se instalará el APK firmado generado con el AAB versionCode 14, sin recompilar."
+
+      - name: Permitir aceleracion KVM del emulador
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+
+      - name: Instalar y probar v14 en Android 15 API 35
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          cores: 2
+          ram-size: 2048M
+          heap-size: 512M
+          disk-size: 4096M
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot-save
+          script: bash qa/android-emulator-smoke.sh
+
+      - name: Conservar capturas, registros, evidencias
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaintenPro-v14-emulator-qa-evidence
+          path: emulator-report
+          if-no-files-found: warn
