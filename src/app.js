@@ -32,7 +32,7 @@ const showUpgrade=()=>{$("#paywall").classList.remove("hidden");toast("Has alcan
 function updateAccessUI(){
   const el=$("#freeTierStatus");
   if(el)el.textContent=premiumAccess?"Pro activa: equipos ilimitados y sin anuncios":trialActive
-    ?`Prueba gratuita: ${trialDaysRemaining} día(s) restante(s), equipos ilimitados y anuncios`
+    ?`Prueba gratuita: ${trialDaysRemaining} día(s) restante(s), equipos ilimitados y sin anuncios`
     :`Gratis permanente: ${equipment.length}/15 equipos, con anuncios`;
   const notice=$("#trialNotice");
   if(notice){notice.textContent=premiumAccess?"Pro activa · Sin anuncios":trialActive
@@ -40,7 +40,7 @@ function updateAccessUI(){
       :`Versión gratuita con anuncios: hasta 15 equipos nuevos. Tus equipos y mantenimientos existentes se conservan.`;}
   const status=$("#subscriptionStatus");
   if(status)status.textContent=premiumAccess?"Pro mensual activa · Sin anuncios · Equipos ilimitados":trialActive
-      ?`Prueba de uso de 7 días · ${trialDaysRemaining} día(s) restantes · Con anuncios`
+      ?`Prueba de uso de 7 días · ${trialDaysRemaining} día(s) restantes · Sin anuncios`
       :`Gratis permanente · 15 equipos · Con anuncios`;
 }
 window.onMaintenProTrialState=(active,daysRemaining)=>{
@@ -59,7 +59,7 @@ window.onMaintenProTrialState=(active,daysRemaining)=>{
   if(wasActive&&!trialActive)toast("Terminó la prueba. Sigues gratis con anuncios y 15 equipos.");
 };
 window.onMaintenProSubscription=(active,price,message)=>{premiumAccess=!!active;if(price)$("#subscriptionPrice").textContent=price;$("#paywall").classList.add("hidden");updateAccessUI();if(active&&!settings.ownerEmail&&!hasReviewerAccess())$("#onboarding").classList.remove("hidden");};
-window.onMaintenProOffer=(price,hasTrial=false)=>{const value=String(price||"").trim();$("#planHeadline").textContent="Pro de pago: sin anuncios y sin límite de equipos";$("#subscriptionPrice").textContent=value||"El precio y la moneda se mostrarán en Google Play";$("#subscriptionTerms").textContent="Los primeros 7 días de uso de la app son gratis y con anuncios, sin obligación de pago. Pro es una suscripción mensual opcional que se renueva hasta que se cancele en Google Play. Consulta las condiciones antes de confirmar.";$("#subscribeBtn").textContent=value?`Contratar Pro por ${value}/mes`:"Contratar Pro en Google Play";};
+window.onMaintenProOffer=(price,hasTrial=false)=>{const value=String(price||"").trim();$("#planHeadline").textContent="Pro de pago: sin anuncios y sin límite de equipos";$("#subscriptionPrice").textContent=value||"El precio y la moneda se mostrarán en Google Play";$("#subscriptionTerms").textContent="Los primeros 7 días de uso de la app son gratis, sin anuncios y sin obligación de pago. Pro es una suscripción mensual opcional que se renueva hasta que se cancele en Google Play. Consulta las condiciones antes de confirmar.";$("#subscribeBtn").textContent=value?`Contratar Pro por ${value}/mes`:"Contratar Pro en Google Play";};
 window.onMaintenProPurchaseError=message=>toast(message||"No se pudo completar la compra");
 window.onMaintenProFileSaved=name=>toast(`Archivo guardado: ${name}`);
 window.onMaintenProFileSaveError=message=>toast(message||"No se pudo guardar el archivo");
