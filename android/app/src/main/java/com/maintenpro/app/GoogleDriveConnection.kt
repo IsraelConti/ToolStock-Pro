@@ -38,6 +38,7 @@ class GoogleDriveConnection(
     @Volatile private var accountId = ""
     @Volatile private var email = ""
     @Volatile private var entitled = false
+    @Volatile private var entitlementExpiresAt = 0L
     @Volatile private var checkedAt = 0L
     @Volatile private var authorizedAt = 0L
     @Volatile private var renewing = false
@@ -106,6 +107,7 @@ class GoogleDriveConnection(
     }
     private fun refreshEntitlement() {
         entitled = false
+        entitlementExpiresAt = 0L
         if (!configured || accessToken.isBlank()) return
         try {
             // El servidor valida la identidad de Google y concede, si corresponde,
@@ -116,21 +118,23 @@ class GoogleDriveConnection(
             val reply = http(BuildConfig.SYNC_API_BASE.trimEnd('/') + "/v1/session", "POST", accessToken, body.toString())
             val entitlement = reply.optJSONObject("entitlement")
             val expiry = entitlement?.optString("expiresAt").orEmpty()
-            val unexpired = runCatching { java.time.Instant.parse(expiry).toEpochMilli() > System.currentTimeMillis() }.getOrDefault(false)
+            val serverExpiry = runCatching { java.time.Instant.parse(expiry).toEpochMilli() }.getOrDefault(0L)
+            val unexpired = serverExpiry > System.currentTimeMillis()
             val validType = entitlement?.optString("accessType") in listOf("trial", "premium")
             entitled = unexpired && validType && entitlement?.optBoolean("serverValidated") == true &&
                 entitlement.optBoolean("active") && entitlement.optString("productId") == "maintenpro_premium_monthly"
+            entitlementExpiresAt = if (entitled) serverExpiry else 0L
             checkedAt = if (entitled) System.currentTimeMillis() else 0L
-        } catch (_: Exception) { entitled = false; checkedAt = 0L }
+        } catch (_: Exception) { entitled = false; checkedAt = 0L; entitlementExpiresAt = 0L }
     }
     fun status(): JSONObject = JSONObject()
         .put("configured", configured).put("connected", accessToken.isNotBlank() && System.currentTimeMillis() - authorizedAt < 3_300_000)
-        .put("accountId", accountId).put("email", email).put("entitled", entitled && System.currentTimeMillis() - checkedAt < 300_000)
+        .put("accountId", accountId).put("email", email).put("entitled", entitled && System.currentTimeMillis() < entitlementExpiresAt && System.currentTimeMillis() - checkedAt < 300_000)
 
     fun disconnect() {
         ++epoch; resolutionEpoch = -1L; authorizing = false; renewing = false
         val oldEmail = email
-        accessToken = ""; accountId = ""; email = ""; entitled = false
+        accessToken = ""; accountId = ""; email = ""; entitled = false; entitlementExpiresAt = 0L
         prefs.edit().remove("email").apply()
         if (oldEmail.isNotBlank()) {
             val request = RevokeAccessRequest.builder().setAccount(Account(oldEmail, "com.google")).setScopes(scopes).build()
@@ -139,7 +143,7 @@ class GoogleDriveConnection(
     }
 
     fun close() {
-        closed = true; ++epoch; authorizing = false; accessToken = ""; entitled = false
+        closed = true; ++epoch; authorizing = false; accessToken = ""; entitled = false; entitlementExpiresAt = 0L
         executor.shutdownNow()
     }
 
@@ -151,8 +155,8 @@ class GoogleDriveConnection(
         }
         if (!configured) error("configuration-missing")
         if (accessToken.isBlank() || System.currentTimeMillis() - authorizedAt >= 3_300_000) error("authorization-required")
-        if (System.currentTimeMillis() - checkedAt >= 300_000) refreshEntitlement()
-        if (!entitled) error("purchase-required")
+        if (System.currentTimeMillis() - checkedAt >= 300_000 || System.currentTimeMillis() >= entitlementExpiresAt) refreshEntitlement()
+        if (!entitled || System.currentTimeMillis() >= entitlementExpiresAt) error("purchase-required")
         val base = "https://www.googleapis.com/drive/v3/files"
         fun enc(value: String) = URLEncoder.encode(value, "UTF-8")
         fun fileId(): String = payload.optString("fileId").also { if (!it.matches(Regex("[A-Za-z0-9_-]{1,200}"))) error("invalid-file") }
