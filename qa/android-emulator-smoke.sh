@@ -2,15 +2,15 @@
 set -euo pipefail
 mkdir -p emulator-report
 APK="qa-apk/MaintenPro-Uptodown-signed.apk"
-test -s "$APK" || { echo "::error::Falta APK firmado exactamente de run 44178118807"; exit 1; }
+test -s "$APK" || { echo "::error::Falta APK firmado exactamente de run 44244101280"; exit 1; }
 echo "==== ANDROID EMULATOR ===="
 adb shell getprop ro.build.version.release | tee emulator-report/android-version.txt
 adb shell getprop ro.product.model | tee emulator-report/emulator-model.txt
-echo "==== INSTALACION DE VERSION 14 (MISMO RELEASE FIRMADO) ===="
+echo "==== INSTALACION DE VERSION 16 (MISMO RELEASE FIRMADO) ===="
 adb install -r "$APK" | tee emulator-report/installation.txt
 adb shell dumpsys package com.icapps.maintenpro > emulator-report/package.txt
-grep -E "versionCode=14\b" emulator-report/package.txt || { echo "::error::Paquete instalado NO es versionCode 14"; exit 1; }
-grep -E "versionName=1.2.9.2" emulator-report/package.txt || { echo "::error::Version inesperada"; exit 1; }
+grep -E "versionCode=16\b" emulator-report/package.txt || { echo "::error::Paquete instalado NO es versionCode 16"; exit 1; }
+grep -E "versionName=1.2.9.4" emulator-report/package.txt || { echo "::error::Version inesperada"; exit 1; }
 echo "==== PERMISO AD_ID EN INSTALACION RELEASE ===="
 if grep -q "com.google.android.gms.permission.AD_ID" emulator-report/package.txt; then
   echo "AD_ID: aparece en el manifiesto del paquete instalado" | tee emulator-report/adid-result.txt
@@ -43,5 +43,5 @@ if grep -A18 'FATAL EXCEPTION' emulator-report/logcat-second.txt | grep -q 'Proc
   echo "::error::FATAL EXCEPTION en segundo arranque"; exit 1
 fi
 echo "==== RESULTADO ===="
-echo "PASS: release APK firmado code 14 instalado, arrancado 2 veces y proceso vivo." | tee emulator-report/summary.txt
+echo "PASS: release APK firmado code 16 instalado, arrancado 2 veces y proceso vivo." | tee emulator-report/summary.txt
 echo "IMPORTANT: esto NO acredita compras de Google Play, consentimientos reales, sync Drive, el dia 8 ni 15/16 equipos." | tee -a emulator-report/summary.txt
