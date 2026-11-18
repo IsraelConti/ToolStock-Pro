@@ -106,14 +106,22 @@ class GoogleDriveConnection(
     }
     private fun refreshEntitlement() {
         entitled = false
-        if (!configured || accessToken.isBlank() || purchaseToken().isNullOrBlank()) return
+        if (!configured || accessToken.isBlank()) return
         try {
-            val body = JSONObject().put("idToken", accessToken).put("purchaseToken", purchaseToken())
+            // El servidor valida la identidad de Google y concede, si corresponde,
+            // 7 días de prueba registrados por cuenta, o una compra de Play auténtica.
+            // La app no decide si el usuario puede acceder a Drive basándose en su reloj.
+            val body = JSONObject().put("idToken", accessToken)
+            purchaseToken()?.takeIf { it.isNotBlank() }?.let { body.put("purchaseToken", it) }
             val reply = http(BuildConfig.SYNC_API_BASE.trimEnd('/') + "/v1/session", "POST", accessToken, body.toString())
             val entitlement = reply.optJSONObject("entitlement")
-            entitled = entitlement?.optBoolean("serverValidated") == true && entitlement.optBoolean("active") && entitlement.optString("productId") == "maintenpro_premium_monthly"
-            checkedAt = System.currentTimeMillis()
-        } catch (_: Exception) { entitled = false }
+            val expiry = entitlement?.optString("expiresAt").orEmpty()
+            val unexpired = runCatching { java.time.Instant.parse(expiry).toEpochMilli() > System.currentTimeMillis() }.getOrDefault(false)
+            val validType = entitlement?.optString("accessType") in listOf("trial", "premium")
+            entitled = unexpired && validType && entitlement?.optBoolean("serverValidated") == true &&
+                entitlement.optBoolean("active") && entitlement.optString("productId") == "maintenpro_premium_monthly"
+            checkedAt = if (entitled) System.currentTimeMillis() else 0L
+        } catch (_: Exception) { entitled = false; checkedAt = 0L }
     }
     fun status(): JSONObject = JSONObject()
         .put("configured", configured).put("connected", accessToken.isNotBlank() && System.currentTimeMillis() - authorizedAt < 3_300_000)
