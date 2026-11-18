@@ -1,4 +1,4 @@
-name: MaintenPro v14 - instalacion y arranque emulador real
+name: MaintenPro v16 - instalacion y arranque emulador real
 
 on:
   workflow_dispatch:
@@ -23,11 +23,11 @@ jobs:
       - name: Obtener scripts QA de la rama de desarrollo
         uses: actions/checkout@v4
 
-      - name: Descargar APK firmado REAL de GitHub run 44178118807
+      - name: Descargar APK firmado REAL de GitHub run 44244101280
         uses: actions/download-artifact@v4
         with:
           name: MaintenPro-Uptodown-APK-signed
-          run-id: 44178118807
+          run-id: 44244101280
           repository: IsraelConti/ToolStock-Pro
           github-token: ${{ github.token }}
           path: qa-apk
@@ -36,13 +36,13 @@ jobs:
         run: |
           test -s qa-apk/MaintenPro-Uptodown-signed.apk
           sha256sum qa-apk/MaintenPro-Uptodown-signed.apk
-          echo "Se instalará el APK firmado generado con el AAB versionCode 14, sin recompilar."
+          echo "Se instalará el APK firmado generado con el AAB versionCode 16, sin recompilar."
 
       - name: Permitir aceleracion KVM del emulador
         run: |
           if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
 
-      - name: Instalar y probar v14 en Android 15 API 35
+      - name: Instalar y probar v16 en Android 15 API 35
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -59,7 +59,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MaintenPro-v14-emulator-qa-evidence
+          name: MaintenPro-v16-emulator-qa-evidence
           path: emulator-report
           if-no-files-found: warn
 
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Checkout MaintenPro v14
+      - name: Checkout MaintenPro v16
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -144,6 +144,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MaintenPro-v14-functional-evidence
+          name: MaintenPro-v16-functional-evidence
           path: qa-functional
           if-no-files-found: warn
