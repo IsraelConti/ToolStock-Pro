@@ -8,6 +8,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { authorizationUrl, createPkce, exchangeAuthorizationCode } from "./pkce.mjs";
 import { createTokenVault } from "./token-vault.mjs";
 import { createGoogleDriveRpc, DRIVE_SCOPE } from "../src/google-drive-rpc.js";
+import { parseServerEntitlement } from "./license-entitlement.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const defaultRoot = existsSync(join(here, "index.html")) ? here : join(here, "dist");
@@ -36,7 +37,7 @@ export async function startDesktopSession({ config = {}, clientId, apiBase, port
   const configured = Boolean(desktopClientId && remote);
   const cookie = secret(), csrf = secret(), bootstrap = secret();
   const bootstrapUntil = Date.now() + 120000;
-  let bootstrapUsed = false, pending = null, session = null, checkedAt = 0, active = false, refreshing = null;
+  let bootstrapUsed = false, pending = null, session = null, checkedAt = 0, entitlementExpiresAt = 0, active = false, refreshing = null;
   const saved = vault ? await vault.load() : null;
   if (saved?.refreshToken) session = { ...saved, accessToken: "", expiresAt: 0 };
   async function token() {
@@ -47,7 +48,7 @@ export async function startDesktopSession({ config = {}, clientId, apiBase, port
       const form = { client_id: desktopClientId, refresh_token: session.refreshToken, grant_type: "refresh_token" };
       if (clientSecret) form.client_secret = clientSecret;
       const reply = await fetchImpl("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(form), signal: AbortSignal.timeout(30000) });
-      if (!reply.ok) { session = null; active = false; await vault?.clear(); return ""; }
+      if (!reply.ok) { session = null; active = false; entitlementExpiresAt = 0; checkedAt = 0; await vault?.clear(); return ""; }
       const result = await reply.json();
       if (!result.access_token) return "";
       session = { ...session, accessToken: result.access_token, idToken: result.id_token || "", expiresAt: Date.now() + (Number(result.expires_in) || 3600) * 1000 };
@@ -57,17 +58,19 @@ export async function startDesktopSession({ config = {}, clientId, apiBase, port
   }
   async function entitlement() {
     if (!configured || !session) return false;
-    if (checkedAt > Date.now() - 300000) return active;
-    active = false;
+    if (active && checkedAt > Date.now() - 300000 && entitlementExpiresAt > Date.now()) return true;
+    active = false; entitlementExpiresAt = 0; checkedAt = 0;
     const access = await token();
     if (!access) return false;
     try {
       const reply = await fetchImpl(`${remote}/v1/entitlement`, { headers: { authorization: `Bearer ${session.idToken || access}`, accept: "application/json" }, signal: AbortSignal.timeout(25000) });
       const result = reply.ok ? await reply.json() : null;
-      active = result?.entitlement?.active === true && result.entitlement.serverValidated === true && result.entitlement.productId === "maintenpro_premium_monthly";
-      checkedAt = Date.now();
-    } catch { active = false; }
-    return active;
+      const validation = parseServerEntitlement(result);
+      active = validation.active;
+      entitlementExpiresAt = validation.expiresAt;
+      checkedAt = active ? Date.now() : 0;
+    } catch { active = false; entitlementExpiresAt = 0; checkedAt = 0; }
+    return active && entitlementExpiresAt > Date.now();
   }
   async function status() {
     const access = configured ? await token().catch(() => "") : "";
@@ -99,7 +102,7 @@ export async function startDesktopSession({ config = {}, clientId, apiBase, port
         const profile = profileReply.ok ? await profileReply.json() : null;
         if (!profile?.sub || profile.email_verified !== true) return send(401, { error: "identity-unverified" });
         session = { accessToken: result.accessToken, idToken: result.idToken, refreshToken: result.refreshToken, expiresAt: Date.now() + result.expiresIn * 1000, accountId: profile.sub, email: profile.email || "" };
-        active = false; checkedAt = 0;
+        active = false; checkedAt = 0; entitlementExpiresAt = 0;
         if (vault && result.refreshToken) await vault.save({ refreshToken: result.refreshToken, accountId: profile.sub, email: profile.email || "" });
         return send(302, "", { location: "/", "set-cookie": setCookie() });
       }
@@ -113,7 +116,7 @@ export async function startDesktopSession({ config = {}, clientId, apiBase, port
         return send(302, "", { location: authorizationUrl({ clientId: desktopClientId, redirectUri: `${local}/callback`, challenge: pending.challenge, state: pending.state }) });
       }
       if (url.pathname === "/session/disconnect" && request.method === "POST") {
-        const old = session; session = null; active = false; checkedAt = 0; pending = null;
+        const old = session; session = null; active = false; checkedAt = 0; entitlementExpiresAt = 0; pending = null;
         await vault?.clear();
         if (old?.refreshToken || old?.accessToken) await fetchImpl("https://oauth2.googleapis.com/revoke", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token: old.refreshToken || old.accessToken }), signal: AbortSignal.timeout(15000) }).catch(() => {});
         return send(200, { ok: true });
