@@ -20,8 +20,8 @@ android {
         applicationId = "com.icapps.maintenpro"
         minSdk = 24
         targetSdk = 36
-        versionCode = 15
-        versionName = "1.2.9.3"
+        versionCode = 16
+        versionName = "1.2.9.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         val webClientId = ((project.findProperty("GOOGLE_WEB_CLIENT_ID") as String?) ?: releaseConfig["googleWebClientId"]?.toString() ?: "").replace("\\", "").replace("\"", "")
         val syncApiBase = ((project.findProperty("SYNC_API_BASE") as String?) ?: releaseConfig["entitlementBase"]?.toString() ?: "").replace("\\", "").replace("\"", "")
