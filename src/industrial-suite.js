@@ -1,6 +1,6 @@
 import { storage, demoMode } from "./storage.js";
 export function initIndustrialSuite(ctx) {
-  const { getProducts, getMovements, getSettings, go, toast, esc } = ctx;
+  const { getProducts, getMovements, getSettings, go, toast, esc, onAccessChanged } = ctx;
   const main = document.querySelector("#app");
   if (!main || document.querySelector('[data-screen="assistant"]')) return;
   const OWNER_KEY = "toolstock.owner.v1";
@@ -10,8 +10,8 @@ export function initIndustrialSuite(ctx) {
   let billingChecked = false;
   const freeLimit = 15;
   const trialActive = () => Date.now() < trialEnd;
-  const canGrowInventory = (current, next) =>
-    !android || premiumActive || trialActive() || next <= Math.max(current, freeLimit);
+  const inventoryLimit = () => !android || premiumActive || trialActive() ? Infinity : freeLimit;
+  const canGrowInventory = (current, next) => next <= Math.max(current, inventoryLimit());
 
   main.insertAdjacentHTML("afterbegin", '<div id="toolStockAccessNotice" class="card hidden"><p id="toolStockAccessText"></p><button id="toolStockAccessHelp" class="btn">Ver Premium y restaurar compra</button></div>');
   document.querySelector("#toolStockAccessHelp").addEventListener("click", () => go("help"));
@@ -20,9 +20,10 @@ export function initIndustrialSuite(ctx) {
     const notice = document.querySelector("#toolStockAccessNotice");
     notice.classList.toggle("hidden", !android || premiumActive);
     document.querySelector("#toolStockAccessText").textContent = trial
-      ? "Prueba de 7 días sin cobro ni anuncios. Después puedes seguir gratis con hasta 15 repuestos y anuncios."
-      : "Plan gratuito: hasta 15 repuestos con anuncios. Conservas los repuestos que ya tienes.";
-    android?.setFreeAds?.(billingChecked && !premiumActive && !trial);
+      ? "Primeros 7 días gratis con anuncios e inventario ilimitado. Después podrás usar gratis tus 15 primeros repuestos."
+      : "Plan gratuito con anuncios: puedes usar tus 15 primeros repuestos. Los demás se conservan y se desbloquean con Premium.";
+    android?.setFreeAds?.(billingChecked && !premiumActive);
+    onAccessChanged();
   }
   if (android) {
     updateAccess();
@@ -114,7 +115,7 @@ export function initIndustrialSuite(ctx) {
         <details><summary>QR y códigos de barras</summary><p>Genera etiquetas QR por repuesto. En Android, el escáner local permite buscar referencias QR, EAN, UPC y códigos internos sin almacenar imágenes.</p></details>
         <details><summary>Drive y copias</summary><p>Exporta una copia JSON completa y guárdala en Google Drive o en el destino elegido. Para transferir datos a otra instalación, restaura la copia. Elegir una carpeta no sincroniza automáticamente los datos.</p></details>
         <details><summary>Usuarios</summary><p>Puedes guardar tres contactos y preparar un mensaje de invitación. Sus funciones son informativas: no hay cuentas compartidas ni autenticación o permisos por empleado.</p></details>
-        <details><summary>Privacidad</summary><p>El inventario y los movimientos permanecen localmente salvo las exportaciones o carpetas que el usuario elija. Google Play procesa la suscripción. La app no vende datos ni incluye publicidad o analítica.</p></details>
+        <details><summary>Privacidad</summary><p>El inventario y los movimientos permanecen localmente salvo las exportaciones o carpetas que el usuario elija. Google Play procesa la suscripción. El plan gratuito de Android incluye Google AdMob. Los datos del inventario no se envían a AdMob.</p></details>
         <details><summary>Limitaciones</summary><p>ToolStock Pro ayuda a controlar repuestos, pero no sustituye inspecciones técnicas, evaluación de riesgos, LOTO, normativa, homologación del fabricante ni decisiones de seguridad.</p></details>
       </div>
       <div class="card owner-identity-card"><h3>Propietario de esta instalación</h3><p id="ownerEmailDisplay">${esc(owner && owner.email ? owner.email : "Sin registrar")}</p><button id="changeOwnerEmail" class="btn">Cambiar correo del propietario</button></div>\n      <div class="card subscription-card"><h3>ToolStock Pro Premium</h3><p>Inventario ilimitado y sin anuncios con Premium.</p><p id="toolStockSubscriptionStatus">Comprobando Google Play…</p><p id="toolStockOfferConditions">Consulta el precio y las condiciones de tu cuenta en Google Play. La suscripción se renueva automáticamente; puedes cancelarla en Google Play.</p><div class="subscription-actions"><button id="toolStockSubscribe" class="btn primary">Suscribirme</button><button id="toolStockRestore" class="btn">Restaurar compra</button><button id="toolStockManage" class="btn">Gestionar</button></div></div>
@@ -278,5 +279,5 @@ export function initIndustrialSuite(ctx) {
     window.onToolStockSubscription(true, "", "Demostración");
   } else if (window.ToolStockAndroid?.checkSubscription) window.ToolStockAndroid.checkSubscription();
   else window.onToolStockSubscription(true, "", "Versión web de prueba");
-  return canGrowInventory;
+  return { canGrowInventory, inventoryLimit };
 }

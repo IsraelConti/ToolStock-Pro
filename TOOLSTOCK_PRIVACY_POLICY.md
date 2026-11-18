@@ -41,7 +41,7 @@ Google Play y Google Drive pueden procesar datos para prestar los servicios corr
 
 ## Publicidad en Android
 
-La prueba inicial de 7 días y Premium funcionan sin anuncios. En el plan gratuito, el SDK de Google AdMob puede tratar la dirección IP, identificadores del dispositivo o de publicidad, interacciones con anuncios y datos de diagnóstico para servir y medir anuncios, detectar fraude y mejorar la seguridad. Los datos de inventario, archivos y contactos introducidos en ToolStock Pro no se envían a AdMob.
+Premium funciona sin anuncios. En el plan gratuito, incluidos los primeros 7 días, el SDK de Google AdMob puede tratar la dirección IP, identificadores del dispositivo o de publicidad, interacciones con anuncios y datos de diagnóstico para servir y medir anuncios, detectar fraude y mejorar la seguridad. Los datos de inventario, archivos y contactos introducidos en ToolStock Pro no se envían a AdMob.
 
 Cuando corresponda, Google muestra un formulario de consentimiento. Puedes revisar tus opciones desde **Información y ayuda → Privacidad de anuncios**. Más información sobre el tratamiento de datos en [Cómo utiliza Google la información de aplicaciones que usan sus servicios](https://policies.google.com/technologies/partner-sites?hl=es).
 

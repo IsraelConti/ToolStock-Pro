@@ -23,6 +23,31 @@ let movements = storage.readJSON(STORE_MOVEMENTS, [], v=>Array.isArray(v) && v.e
 let editingProductId = null;
 let history = ["home"];
 let pendingImport = [];
+let inventoryAccess;
+
+function accessibleProducts() {
+  const limit = inventoryAccess?.inventoryLimit() ?? Infinity;
+  if (products.length <= limit) return products;
+  const creationTime = product => Date.parse(product.createdAt) || 0;
+  return [...products].sort((a, b) => creationTime(a) - creationTime(b)).slice(0, limit);
+}
+
+function accessibleMovements() {
+  const active = accessibleProducts();
+  if (active === products) return movements;
+  const activeIds = new Set(active.map(product => product.id));
+  const lockedIds = new Set(products.filter(product => !activeIds.has(product.id)).map(product => product.id));
+  return movements.filter(movement => !lockedIds.has(movement.productId));
+}
+
+function refreshInventoryAccess() {
+  if (!inventoryAccess) return;
+  renderMetrics();
+  const screen = history.at(-1);
+  if (screen === "products") renderProducts($("#searchProducts").value);
+  if (screen === "movements") renderMovements($("#searchMovements").value);
+  if (screen === "qr") renderQrChoices();
+}
 
 const $ = (s, root=document) => root.querySelector(s);
 const $$ = (s, root=document) => [...root.querySelectorAll(s)];
@@ -65,19 +90,20 @@ function saveProducts() {
 }
 function money(value) { return new Intl.NumberFormat(settings.language,{style:"currency",currency:settings.currency}).format(Number(value)||0); }
 function renderMetrics() {
-  $("#metricProducts").textContent=products.length;
-  $("#metricLow").textContent=products.filter(p=>Number(p.stock)<=Number(p.minimumStock)).length;
-  $("#metricValue").textContent=money(products.reduce((s,p)=>s+Number(p.stock||0)*Number(p.unitPrice||0),0));
+  const visible = accessibleProducts();
+  $("#metricProducts").textContent=visible.length;
+  $("#metricLow").textContent=visible.filter(p=>Number(p.stock)<=Number(p.minimumStock)).length;
+  $("#metricValue").textContent=money(visible.reduce((s,p)=>s+Number(p.stock||0)*Number(p.unitPrice||0),0));
 }
 function renderProducts(filter="") {
   const q=filter.toLowerCase().trim();
-  const rows=products.filter(p=>[p.name,p.reference,p.barcode,p.category,p.warehouse,p.equipment,p.location].join(" ").toLowerCase().includes(q));
+  const rows=accessibleProducts().filter(p=>[p.name,p.reference,p.barcode,p.category,p.warehouse,p.equipment,p.location].join(" ").toLowerCase().includes(q));
   $("#productList").innerHTML=rows.length ? rows.map(p=>`<article class="list-item"><div><b>${esc(p.name)}</b><small>${esc(p.reference)} · ${esc(p.location||"Sin ubicación")} · ${Number(p.stock)} ${esc(p.unit||"unidades")}</small></div><span class="badge ${Number(p.stock)<=Number(p.minimumStock)?"low":""}">${Number(p.stock)<=Number(p.minimumStock)?"Stock bajo":"Disponible"}</span><div class="product-actions"><button class="mini-btn" type="button" data-edit-product="${esc(p.id)}">Editar</button><button class="mini-btn danger" type="button" data-delete-product="${esc(p.id)}">Eliminar</button></div></article>`).join("") : `<div class="empty"><span>▤</span><h3>Sin productos</h3><p>Añade uno manualmente o importa un archivo Excel.</p></div>`;
 }
 $("#productList").addEventListener("click",event=>{
   const edit=event.target.closest("[data-edit-product]");
   const remove=event.target.closest("[data-delete-product]");
-  const product=products.find(p=>p.id===(edit?.dataset.editProduct||remove?.dataset.deleteProduct));
+  const product=accessibleProducts().find(p=>p.id===(edit?.dataset.editProduct||remove?.dataset.deleteProduct));
   if(!product)return;
   if(edit){
     editingProductId=product.id; go("productForm");
@@ -92,12 +118,13 @@ function movementSign(type){return ["entry","return"].includes(type)?1:-1;}
 function populateMovementProducts(){
   const select=$("#movementProduct");
   const selected=select.value;
-  select.innerHTML=`<option value="">Seleccionar producto</option>${products.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.reference)} · Stock: ${Number(p.stock)} ${esc(p.unit||"unidades")}</option>`).join("")}`;
-  if(products.some(p=>p.id===selected))select.value=selected;
+  const visible = accessibleProducts();
+  select.innerHTML=`<option value="">Seleccionar producto</option>${visible.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.reference)} · Stock: ${Number(p.stock)} ${esc(p.unit||"unidades")}</option>`).join("")}`;
+  if(visible.some(p=>p.id===selected))select.value=selected;
   updateMovementStockInfo();
 }
 function updateMovementStockInfo(){
-  const product=products.find(p=>p.id===$("#movementProduct").value);
+  const product=accessibleProducts().find(p=>p.id===$("#movementProduct").value);
   const info=$("#movementStockInfo");
   if(!product){info.classList.add("hidden");return;}
   info.classList.remove("hidden");
@@ -112,7 +139,7 @@ $("#movementForm").elements.type.addEventListener("change", e => {
 $("#movementForm").addEventListener("submit",e=>{
   e.preventDefault();
   const data=Object.fromEntries(new FormData(e.currentTarget));
-  const product=products.find(p=>p.id===data.productId);
+  const product=accessibleProducts().find(p=>p.id===data.productId);
   const quantity=Number(data.quantity);
   if(!product)return toast("Selecciona un producto");
   if(!Number.isFinite(quantity)||(data.type==="adjustment"?quantity<0:quantity<=0))return toast("Indica una cantidad válida");
@@ -135,8 +162,9 @@ $("#movementForm").addEventListener("submit",e=>{
 function renderMovements(filter=""){
   populateMovementProducts();
   const q=filter.toLowerCase().trim();
-  const rows=movements.filter(m=>[m.productName,m.reference,m.responsible,m.destination,m.equipment,m.destinationArea].join(" ").toLowerCase().includes(q));
-  $("#movementCount").textContent=`${movements.length} ${movements.length===1?"registro":"registros"}`;
+  const visible = accessibleMovements();
+  const rows=visible.filter(m=>[m.productName,m.reference,m.responsible,m.destination,m.equipment,m.destinationArea].join(" ").toLowerCase().includes(q));
+  $("#movementCount").textContent=`${visible.length} ${visible.length===1?"registro":"registros"}`;
   $("#movementList").innerHTML=rows.length?rows.map(m=>{
     const incoming=m.delta>0;
     const when=new Intl.DateTimeFormat(settings.language,{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(m.createdAt));
@@ -151,8 +179,9 @@ function renderMovements(filter=""){
 }
 $("#searchMovements").addEventListener("input",e=>renderMovements(e.target.value));
 $("#exportMovements").addEventListener("click",()=>{
-  if(!movements.length)return toast("No hay movimientos para exportar");
-  const rows=movements.map(m=>({
+  const visible = accessibleMovements();
+  if(!visible.length)return toast("No hay movimientos para exportar");
+  const rows=visible.map(m=>({
     "Fecha":new Date(m.createdAt).toLocaleString(settings.language),
     "Tipo":movementTypeNames[m.type]||m.type,
     "Referencia":m.reference,"Producto":m.productName,"Cantidad":m.quantity,
@@ -170,9 +199,10 @@ $("#productForm").addEventListener("submit", e => {
   if(!data.name||!data.reference)return toast("Nombre y referencia son obligatorios");
   if(products.some(p=>p.id!==editingProductId&&p.reference.toLowerCase()===data.reference.toLowerCase())) return toast("Ya existe un producto con esa referencia");
   for(const key of ["stock","minimumStock","unitPrice","leadTimeDays"]){data[key]=Number(data[key]||0);if(!Number.isFinite(data[key])||data[key]<0)return toast("Revisa las cantidades y los importes");}
+  if(editingProductId && !accessibleProducts().some(p => p.id === editingProductId)) return toast("Este repuesto está disponible con Premium.");
   if(editingProductId){const i=products.findIndex(p=>p.id===editingProductId);if(i<0)return toast("El producto ya no existe");products[i]={...products[i],...data,stock:products[i].stock,updatedAt:new Date().toISOString()};}
   else {
-    if (!canGrowInventory(products.length, products.length + 1)) return toast("El plan gratuito admite hasta 15 repuestos. Consulta Premium en Información.");
+    if (!inventoryAccess.canGrowInventory(products.length, products.length + 1)) return toast("El plan gratuito admite hasta 15 repuestos. Consulta Premium en Información.");
     products.unshift({...data,id:crypto.randomUUID(),createdAt:new Date().toISOString()});
   }
   if(!saveProducts())return;editingProductId=null;e.currentTarget.reset();toast("Producto guardado correctamente");go("products");
@@ -230,9 +260,11 @@ $("#importFile").addEventListener("change", async e => {
 });
 $("#confirmImport").addEventListener("click",()=>{
   if(!pendingImport.length)return toast("Selecciona un archivo con filas válidas");
+  const visible = new Set(accessibleProducts().map(p => p.reference.toLowerCase()));
   const existing = new Set(products.map(p => p.reference.toLowerCase()));
+  if (pendingImport.some(p => existing.has(p.reference.toLowerCase()) && !visible.has(p.reference.toLowerCase()))) return toast("La importación contiene repuestos bloqueados. Activa Premium para actualizarlos.");
   const newRefs = new Set(pendingImport.map(p => p.reference.toLowerCase()).filter(ref => !existing.has(ref)));
-  if (!canGrowInventory(products.length, products.length + newRefs.size)) return toast("La importación supera los 15 repuestos del plan gratuito.");
+  if (!inventoryAccess.canGrowInventory(products.length, products.length + newRefs.size)) return toast("La importación supera los 15 repuestos del plan gratuito.");
   let added=0,updated=0;
   pendingImport.forEach(p=>{const i=products.findIndex(x=>x.reference.toLowerCase()===p.reference.toLowerCase());if(i>=0){products[i]={...products[i],...Object.fromEntries(p._fields.map(field=>[field,p[field]]))};updated++;}else{const {_fields,...data}=p;products.push({...data,id:crypto.randomUUID(),createdAt:new Date().toISOString()});added++;}});
   if(!saveProducts())return;pendingImport=[];$("#importPreview").classList.add("hidden");toast(`${added} añadidos · ${updated} actualizados`);go("products");
@@ -251,11 +283,11 @@ function exportBook(rows,file,sheet){
     window.ToolStockAndroid.saveBase64File(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", XLSX.write(wb, { bookType: "xlsx", type: "base64" }));
   } else XLSX.writeFile(wb,file);
 }
-$("#exportInventory").addEventListener("click",()=>{if(!products.length)return toast("No hay productos para exportar");exportBook(reportRows(products),"Inventario_ToolStock.xlsx","Inventario");if (!window.ToolStockAndroid) toast("Informe Excel generado");});
-$("#exportLow").addEventListener("click",()=>{const low=products.filter(p=>Number(p.stock)<=Number(p.minimumStock));if(!low.length)return toast("No hay productos bajo mínimo");exportBook(reportRows(low),"Stock_bajo_ToolStock.xlsx","Reposición");});
-function renderQrChoices(){$("#qrProductList").innerHTML=products.length?products.map(p=>`<label class="check-item"><input type="checkbox" value="${esc(p.id)}"><div><b>${esc(p.name)}</b><small>${esc(p.reference)} · ${esc(p.location||"Sin ubicación")}</small></div></label>`).join(""):`<div class="empty"><p>Añade productos para generar etiquetas.</p></div>`;}
+$("#exportInventory").addEventListener("click",()=>{const visible=accessibleProducts();if(!visible.length)return toast("No hay productos para exportar");exportBook(reportRows(visible),"Inventario_ToolStock.xlsx","Inventario");if (!window.ToolStockAndroid) toast("Informe Excel generado");});
+$("#exportLow").addEventListener("click",()=>{const low=accessibleProducts().filter(p=>Number(p.stock)<=Number(p.minimumStock));if(!low.length)return toast("No hay productos bajo mínimo");exportBook(reportRows(low),"Stock_bajo_ToolStock.xlsx","Reposición");});
+function renderQrChoices(){const visible=accessibleProducts();$("#qrProductList").innerHTML=visible.length?visible.map(p=>`<label class="check-item"><input type="checkbox" value="${esc(p.id)}"><div><b>${esc(p.name)}</b><small>${esc(p.reference)} · ${esc(p.location||"Sin ubicación")}</small></div></label>`).join(""):`<div class="empty"><p>Añade productos para generar etiquetas.</p></div>`;}
 $("#printQr").addEventListener("click",async()=>{
-  const ids=$$("#qrProductList input:checked").map(i=>i.value);const selected=products.filter(p=>ids.includes(p.id));if(!selected.length)return toast("Selecciona al menos un producto");
+  const ids=$$("#qrProductList input:checked").map(i=>i.value);const selected=accessibleProducts().filter(p=>ids.includes(p.id));if(!selected.length)return toast("Selecciona al menos un producto");
   const labels=await Promise.all(selected.map(async p=>({p,img:await QRCode.toDataURL(JSON.stringify({type:"toolstock-product",id:p.id,reference:p.reference}),{width:320,margin:1})})));
   const printWindow = window.ToolStockAndroid?.printHtml ? null : open("","_blank");
   if (!window.ToolStockAndroid?.printHtml && !printWindow) return toast("Permite las ventanas emergentes para imprimir etiquetas.");
@@ -348,7 +380,7 @@ $("#restoreBackup").addEventListener("change",async event=>{
     const ps=JSON.parse(next[STORE_PRODUCTS]||"[]"), ms=JSON.parse(next[STORE_MOVEMENTS]||"[]"), es=JSON.parse(next[STORE_EMPLOYEES]||"[]"), ss=JSON.parse(next[STORE_SETTINGS]||"{}");
     if(!validProducts(ps)||!Array.isArray(ms)||ms.some(m=>!m||typeof m.id!=="string"||!Number.isFinite(Number(m.delta))||!Number.isFinite(Date.parse(m.createdAt)))||!Array.isArray(es)||es.length>3||es.some(e=>!e||typeof e.name!=="string"||typeof e.email!=="string"||typeof e.id!=="string")||!ss||typeof ss!=="object"||Array.isArray(ss))throw new Error("La copia contiene registros dañados");
     if(new Set(ps.map(p=>p.reference.trim().toLowerCase())).size!==ps.length||new Set(ps.map(p=>p.id)).size!==ps.length)throw new Error("La copia contiene productos duplicados");
-    if (!canGrowInventory(products.length, ps.length)) throw new Error("La copia supera los 15 repuestos del plan gratuito.");
+    if (!inventoryAccess.canGrowInventory(products.length, ps.length)) throw new Error("La copia supera los 15 repuestos del plan gratuito.");
     if(!confirm(`Restaurar ${ps.length} productos y ${ms.length} movimientos. Sustituirá los datos de esta instalación; se conservará una copia local anterior. ¿Continuar?`))return;
     const previous=JSON.stringify(backupValues());
     const values=Object.fromEntries(backupKeys.map(key=>[key,next[key]??(key===STORE_SETTINGS?"{}":key==="toolstock.owner.v1"?"null":"[]")]));
@@ -362,11 +394,11 @@ if(storageProblems.length){
   $("#exportRecovery").addEventListener("click",()=>saveDownload("ToolStock_recuperacion.json","application/json",new TextEncoder().encode(JSON.stringify({type:"toolstock-recovery",raw:backupValues()},null,2))));
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
-const canGrowInventory = initIndustrialSuite({
-  getProducts:()=>products,
-  getMovements:()=>movements,
+inventoryAccess = initIndustrialSuite({
+  getProducts:accessibleProducts,
+  getMovements:accessibleMovements,
   getSettings:()=>settings,
-  go,toast,esc
+  go,toast,esc,onAccessChanged:refreshInventoryAccess
 });
 const setDriveAccountStatus = (label, linked = Boolean(label)) => {
   const element = document.querySelector("#driveAccountStatus");
@@ -384,7 +416,7 @@ const driveSync = createDriveSync({
     if (!data || !Array.isArray(data.products) || !Array.isArray(data.movements) || !Array.isArray(data.employees) || !data.settings || typeof data.settings !== "object") {
       throw new Error("La copia de Drive no tiene el formato de ToolStock");
     }
-    if (!canGrowInventory(products.length, data.products.length)) throw new Error("La copia de Drive supera los 15 repuestos del plan gratuito.");
+    if (!inventoryAccess.canGrowInventory(products.length, data.products.length)) throw new Error("La copia de Drive supera los 15 repuestos del plan gratuito.");
     products = data.products;
     movements = data.movements;
     employees = data.employees.slice(0, 3);

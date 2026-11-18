@@ -437,7 +437,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     private fun updateAds() {
-        if (!adsRequested || System.currentTimeMillis() < trialEnd || isFinishing || isDestroyed || !consentReady || !consent.canRequestAds()) {
+        if (!adsRequested || isFinishing || isDestroyed || !consentReady || !consent.canRequestAds()) {
             banner?.let { content.removeView(it); it.destroy() }
             banner = null
             return
