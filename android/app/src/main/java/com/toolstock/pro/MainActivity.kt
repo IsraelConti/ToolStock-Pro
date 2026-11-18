@@ -8,6 +8,15 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.util.Base64
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -45,6 +54,7 @@ import com.google.android.gms.common.api.Scope
 
 class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     companion object {
+        private const val TRIAL_MILLIS = 7L * 24 * 60 * 60 * 1000
         private const val PRODUCT_MONTHLY = "toolstock_pro_premium_monthly"
         private const val DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
         private const val REQUEST_DRIVE_SIGN_IN = 4601
@@ -52,6 +62,15 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     }
 
     private lateinit var webView: WebView
+    private lateinit var content: LinearLayout
+    private val consent by lazy { UserMessagingPlatform.getConsentInformation(this) }
+    private var trialEnd = 0L
+    private var adsRequested = false
+    private var consentStarted = false
+    private var consentReady = false
+    private var adsInitializing = false
+    private var adsInitialized = false
+    private var banner: AdView? = null
     private lateinit var billingClient: BillingClient
     private var monthlyProduct: ProductDetails? = null
     private var connecting = false
@@ -109,6 +128,12 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val preferences = getSharedPreferences("toolstock", MODE_PRIVATE)
+        trialEnd = preferences.getLong("free_trial_end_ms", 0L)
+        if (trialEnd == 0L) {
+            trialEnd = System.currentTimeMillis() + TRIAL_MILLIS
+            preferences.edit().putLong("free_trial_end_ms", trialEnd).apply()
+        }
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         webView = WebView(this).apply {
@@ -167,13 +192,17 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
             addJavascriptInterface(AndroidBridge(), "ToolStockAndroid")
             loadUrl("file:///android_asset/index.html")
         }
-        ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
+        content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(webView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
-        setContentView(webView)
-        ViewCompat.requestApplyInsets(webView)
+        setContentView(content)
+        ViewCompat.requestApplyInsets(content)
 
         billingClient = BillingClient.newBuilder(this)
             .setListener(this)
@@ -324,9 +353,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
                 it.billingPeriod == "P1M" && it.recurrenceMode == ProductDetails.RecurrenceMode.INFINITE_RECURRING
             } == true
         }
-        return offers.firstOrNull(::hasTrial)
-            ?: offers.firstOrNull { o -> o.pricingPhases.pricingPhaseList.none { it.priceAmountMicros == 0L } }
-            ?: offers.firstOrNull()
+        return offers.firstOrNull { it.offerId == null }
     }
 
     private fun scanCode() {
@@ -409,7 +436,71 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
         }
     }
 
+    private fun updateAds() {
+        if (!adsRequested || System.currentTimeMillis() < trialEnd || isFinishing || isDestroyed || !consentReady || !consent.canRequestAds()) {
+            banner?.let { content.removeView(it); it.destroy() }
+            banner = null
+            return
+        }
+        if (!adsInitialized) {
+            if (adsInitializing) return
+            adsInitializing = true
+            MobileAds.initialize(this) {
+                runOnUiThread {
+                    adsInitialized = true
+                    adsInitializing = false
+                    updateAds()
+                }
+            }
+            return
+        }
+        if (banner != null) return
+        val ad = AdView(this).apply {
+            adUnitId = BuildConfig.ADMOB_BANNER_UNIT_ID
+            setAdSize(AdSize.BANNER)
+        }
+        banner = ad
+        content.addView(ad, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+        })
+        ad.loadAd(AdRequest.Builder().build())
+    }
+
+    private fun publishPrivacyOption() {
+        val required = consent.privacyOptionsRequirementStatus ==
+            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+        js("window.onToolStockAdsPrivacy && window.onToolStockAdsPrivacy($required)")
+    }
+
+    private fun setAdsForFreeTier(enabled: Boolean) {
+        adsRequested = enabled
+        if (enabled && !consentStarted) {
+            consentStarted = true
+            consent.requestConsentInfoUpdate(this, ConsentRequestParameters.Builder().build(), {
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) {
+                    consentReady = true
+                    publishPrivacyOption()
+                    updateAds()
+                }
+            }, {
+                consentReady = true
+                publishPrivacyOption()
+                updateAds()
+            })
+        } else if (consentReady) publishPrivacyOption()
+        updateAds()
+    }
+
     inner class AndroidBridge {
+        @JavascriptInterface fun trialEndMillis(): Long = trialEnd
+        @JavascriptInterface fun setFreeAds(enabled: Boolean) = runOnUiThread { setAdsForFreeTier(enabled) }
+        @JavascriptInterface fun showAdsPrivacy() = runOnUiThread {
+            UserMessagingPlatform.showPrivacyOptionsForm(this@MainActivity) {
+                publishPrivacyOption()
+                updateAds()
+            }
+        }
+
         @JavascriptInterface
         fun driveRequest(requestId: String, url: String, method: String, token: String, contentType: String, body: String) {
             if (!requestId.matches(Regex("[A-Za-z0-9-]{1,100}"))) return
@@ -501,10 +592,18 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener {
 
     override fun onResume() {
         super.onResume()
+        banner?.resume()
         if (::billingClient.isInitialized && !BuildConfig.DEBUG) connectBilling()
     }
 
+    override fun onPause() {
+        banner?.pause()
+        super.onPause()
+    }
+
     override fun onDestroy() {
+        adsRequested = false
+        updateAds()
         driveRequests.shutdownNow()
         if (::billingClient.isInitialized) billingClient.endConnection()
         webView.removeJavascriptInterface("ToolStockAndroid")

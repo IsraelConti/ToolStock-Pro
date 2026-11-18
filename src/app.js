@@ -171,7 +171,10 @@ $("#productForm").addEventListener("submit", e => {
   if(products.some(p=>p.id!==editingProductId&&p.reference.toLowerCase()===data.reference.toLowerCase())) return toast("Ya existe un producto con esa referencia");
   for(const key of ["stock","minimumStock","unitPrice","leadTimeDays"]){data[key]=Number(data[key]||0);if(!Number.isFinite(data[key])||data[key]<0)return toast("Revisa las cantidades y los importes");}
   if(editingProductId){const i=products.findIndex(p=>p.id===editingProductId);if(i<0)return toast("El producto ya no existe");products[i]={...products[i],...data,stock:products[i].stock,updatedAt:new Date().toISOString()};}
-  else products.unshift({...data,id:crypto.randomUUID(),createdAt:new Date().toISOString()});
+  else {
+    if (!canGrowInventory(products.length, products.length + 1)) return toast("El plan gratuito admite hasta 15 repuestos. Consulta Premium en Información.");
+    products.unshift({...data,id:crypto.randomUUID(),createdAt:new Date().toISOString()});
+  }
   if(!saveProducts())return;editingProductId=null;e.currentTarget.reset();toast("Producto guardado correctamente");go("products");
 });
 
@@ -227,6 +230,9 @@ $("#importFile").addEventListener("change", async e => {
 });
 $("#confirmImport").addEventListener("click",()=>{
   if(!pendingImport.length)return toast("Selecciona un archivo con filas válidas");
+  const existing = new Set(products.map(p => p.reference.toLowerCase()));
+  const newRefs = new Set(pendingImport.map(p => p.reference.toLowerCase()).filter(ref => !existing.has(ref)));
+  if (!canGrowInventory(products.length, products.length + newRefs.size)) return toast("La importación supera los 15 repuestos del plan gratuito.");
   let added=0,updated=0;
   pendingImport.forEach(p=>{const i=products.findIndex(x=>x.reference.toLowerCase()===p.reference.toLowerCase());if(i>=0){products[i]={...products[i],...Object.fromEntries(p._fields.map(field=>[field,p[field]]))};updated++;}else{const {_fields,...data}=p;products.push({...data,id:crypto.randomUUID(),createdAt:new Date().toISOString()});added++;}});
   if(!saveProducts())return;pendingImport=[];$("#importPreview").classList.add("hidden");toast(`${added} añadidos · ${updated} actualizados`);go("products");
@@ -342,6 +348,7 @@ $("#restoreBackup").addEventListener("change",async event=>{
     const ps=JSON.parse(next[STORE_PRODUCTS]||"[]"), ms=JSON.parse(next[STORE_MOVEMENTS]||"[]"), es=JSON.parse(next[STORE_EMPLOYEES]||"[]"), ss=JSON.parse(next[STORE_SETTINGS]||"{}");
     if(!validProducts(ps)||!Array.isArray(ms)||ms.some(m=>!m||typeof m.id!=="string"||!Number.isFinite(Number(m.delta))||!Number.isFinite(Date.parse(m.createdAt)))||!Array.isArray(es)||es.length>3||es.some(e=>!e||typeof e.name!=="string"||typeof e.email!=="string"||typeof e.id!=="string")||!ss||typeof ss!=="object"||Array.isArray(ss))throw new Error("La copia contiene registros dañados");
     if(new Set(ps.map(p=>p.reference.trim().toLowerCase())).size!==ps.length||new Set(ps.map(p=>p.id)).size!==ps.length)throw new Error("La copia contiene productos duplicados");
+    if (!canGrowInventory(products.length, ps.length)) throw new Error("La copia supera los 15 repuestos del plan gratuito.");
     if(!confirm(`Restaurar ${ps.length} productos y ${ms.length} movimientos. Sustituirá los datos de esta instalación; se conservará una copia local anterior. ¿Continuar?`))return;
     const previous=JSON.stringify(backupValues());
     const values=Object.fromEntries(backupKeys.map(key=>[key,next[key]??(key===STORE_SETTINGS?"{}":key==="toolstock.owner.v1"?"null":"[]")]));
@@ -355,7 +362,7 @@ if(storageProblems.length){
   $("#exportRecovery").addEventListener("click",()=>saveDownload("ToolStock_recuperacion.json","application/json",new TextEncoder().encode(JSON.stringify({type:"toolstock-recovery",raw:backupValues()},null,2))));
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
-initIndustrialSuite({
+const canGrowInventory = initIndustrialSuite({
   getProducts:()=>products,
   getMovements:()=>movements,
   getSettings:()=>settings,
@@ -377,6 +384,7 @@ const driveSync = createDriveSync({
     if (!data || !Array.isArray(data.products) || !Array.isArray(data.movements) || !Array.isArray(data.employees) || !data.settings || typeof data.settings !== "object") {
       throw new Error("La copia de Drive no tiene el formato de ToolStock");
     }
+    if (!canGrowInventory(products.length, data.products.length)) throw new Error("La copia de Drive supera los 15 repuestos del plan gratuito.");
     products = data.products;
     movements = data.movements;
     employees = data.employees.slice(0, 3);

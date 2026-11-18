@@ -1,6 +1,6 @@
 # Política de Privacidad de ToolStock Pro
 
-**Última actualización: 12 de octubre de 2026**
+**Última actualización: 18 de noviembre de 2026**
 
 ToolStock Pro es una aplicación profesional para gestionar almacenes, estanterías, inventario, materiales, movimientos, copias e informes y códigos QR. Esta política explica qué datos utiliza la aplicación y cómo se protegen.
 
@@ -17,7 +17,7 @@ Según las funciones que decida utilizar el usuario, ToolStock Pro puede tratar:
 - Datos de inventario introducidos por el usuario, como almacenes, estanterías, productos, cantidades, códigos, ubicaciones, entradas, salidas y observaciones.
 - Datos técnicos mínimos necesarios para el funcionamiento y diagnóstico de la aplicación.
 
-La aplicación no vende datos personales ni los utiliza con fines publicitarios.
+ToolStock Pro no vende los datos del inventario ni los utiliza para personalizar anuncios.
 
 ## Finalidades
 
@@ -37,7 +37,13 @@ Las compras o suscripciones, cuando estén disponibles, son procesadas por Googl
 
 ## Compartición de datos
 
-ToolStock Pro no comparte datos personales con terceros para publicidad o venta. Los datos pueden ser procesados por proveedores necesarios para prestar el servicio, como Google Play o Google Drive, conforme a sus propias políticas y únicamente para las funciones solicitadas.
+Google Play y Google Drive pueden procesar datos para prestar los servicios correspondientes.
+
+## Publicidad en Android
+
+La prueba inicial de 7 días y Premium funcionan sin anuncios. En el plan gratuito, el SDK de Google AdMob puede tratar la dirección IP, identificadores del dispositivo o de publicidad, interacciones con anuncios y datos de diagnóstico para servir y medir anuncios, detectar fraude y mejorar la seguridad. Los datos de inventario, archivos y contactos introducidos en ToolStock Pro no se envían a AdMob.
+
+Cuando corresponda, Google muestra un formulario de consentimiento. Puedes revisar tus opciones desde **Información y ayuda → Privacidad de anuncios**. Más información sobre el tratamiento de datos en [Cómo utiliza Google la información de aplicaciones que usan sus servicios](https://policies.google.com/technologies/partner-sites?hl=es).
 
 ## Conservación y eliminación
 

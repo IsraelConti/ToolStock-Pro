@@ -4,23 +4,31 @@ export function initIndustrialSuite(ctx) {
   const main = document.querySelector("#app");
   if (!main || document.querySelector('[data-screen="assistant"]')) return;
   const OWNER_KEY = "toolstock.owner.v1";
-  let subscriptionActive = demoMode;
-  main.insertAdjacentHTML("afterbegin", '<div id="toolStockAccessNotice" class="card hidden"><p>Vista de consulta: activa la suscripción para guardar cambios. Tus datos se conservan.</p><button id="toolStockAccessHelp" class="btn">Ver suscripción y restaurar compra</button></div>');
+  const android = demoMode ? null : window.ToolStockAndroid;
+  const trialEnd = Number(android?.trialEndMillis?.() || 0);
+  let premiumActive = false;
+  let billingChecked = false;
+  const freeLimit = 15;
+  const trialActive = () => Date.now() < trialEnd;
+  const canGrowInventory = (current, next) =>
+    !android || premiumActive || trialActive() || next <= Math.max(current, freeLimit);
+
+  main.insertAdjacentHTML("afterbegin", '<div id="toolStockAccessNotice" class="card hidden"><p id="toolStockAccessText"></p><button id="toolStockAccessHelp" class="btn">Ver Premium y restaurar compra</button></div>');
   document.querySelector("#toolStockAccessHelp").addEventListener("click", () => go("help"));
-  document.addEventListener("click", event => {
-    if (window.ToolStockAndroid && !subscriptionActive &&
-        event.target.closest("#confirmImport, [data-remove-employee], [data-delete-product]")) {
-      event.preventDefault(); event.stopImmediatePropagation();
-      toast("Activa tu suscripción en Información para guardar cambios.");
-    }
-  }, true);
-  document.addEventListener("submit", event => {
-    if (window.ToolStockAndroid && !subscriptionActive &&
-        ["productForm", "movementForm", "employeeForm", "settingsForm"].includes(event.target.id)) {
-      event.preventDefault(); event.stopImmediatePropagation();
-      toast("Activa tu suscripción en Información para guardar cambios.");
-    }
-  }, true);
+  function updateAccess() {
+    const trial = trialActive();
+    const notice = document.querySelector("#toolStockAccessNotice");
+    notice.classList.toggle("hidden", !android || premiumActive);
+    document.querySelector("#toolStockAccessText").textContent = trial
+      ? "Prueba de 7 días sin cobro ni anuncios. Después puedes seguir gratis con hasta 15 repuestos y anuncios."
+      : "Plan gratuito: hasta 15 repuestos con anuncios. Conservas los repuestos que ya tienes.";
+    android?.setFreeAds?.(billingChecked && !premiumActive && !trial);
+  }
+  if (android) {
+    updateAccess();
+    if (trialActive()) setTimeout(updateAccess, trialEnd - Date.now() + 100);
+    document.addEventListener("visibilitychange", updateAccess);
+  }
 
   const readOwner = () => { try { return JSON.parse(storage.getItem(OWNER_KEY) || "null"); } catch { return null; } };
   let owner = readOwner();
@@ -109,7 +117,7 @@ export function initIndustrialSuite(ctx) {
         <details><summary>Privacidad</summary><p>El inventario y los movimientos permanecen localmente salvo las exportaciones o carpetas que el usuario elija. Google Play procesa la suscripción. La app no vende datos ni incluye publicidad o analítica.</p></details>
         <details><summary>Limitaciones</summary><p>ToolStock Pro ayuda a controlar repuestos, pero no sustituye inspecciones técnicas, evaluación de riesgos, LOTO, normativa, homologación del fabricante ni decisiones de seguridad.</p></details>
       </div>
-      <div class="card owner-identity-card"><h3>Propietario de esta instalación</h3><p id="ownerEmailDisplay">${esc(owner && owner.email ? owner.email : "Sin registrar")}</p><button id="changeOwnerEmail" class="btn">Cambiar correo del propietario</button></div>\n      <div class="card subscription-card"><h3>ToolStock Pro Premium</h3><p id="toolStockSubscriptionStatus">Comprobando Google Play…</p><p id="toolStockOfferConditions">Consulta el precio y las condiciones de tu cuenta en Google Play. La suscripción se renueva automáticamente; puedes cancelarla en Google Play.</p><div class="subscription-actions"><button id="toolStockSubscribe" class="btn primary">Suscribirme</button><button id="toolStockRestore" class="btn">Restaurar compra</button><button id="toolStockManage" class="btn">Gestionar</button></div></div>
+      <div class="card owner-identity-card"><h3>Propietario de esta instalación</h3><p id="ownerEmailDisplay">${esc(owner && owner.email ? owner.email : "Sin registrar")}</p><button id="changeOwnerEmail" class="btn">Cambiar correo del propietario</button></div>\n      <div class="card subscription-card"><h3>ToolStock Pro Premium</h3><p>Inventario ilimitado y sin anuncios con Premium.</p><p id="toolStockSubscriptionStatus">Comprobando Google Play…</p><p id="toolStockOfferConditions">Consulta el precio y las condiciones de tu cuenta en Google Play. La suscripción se renueva automáticamente; puedes cancelarla en Google Play.</p><div class="subscription-actions"><button id="toolStockSubscribe" class="btn primary">Suscribirme</button><button id="toolStockRestore" class="btn">Restaurar compra</button><button id="toolStockManage" class="btn">Gestionar</button></div></div>
       <button class="btn wide" data-industrial-back>← Volver</button>
     </section>
   `);
@@ -226,12 +234,12 @@ export function initIndustrialSuite(ctx) {
   });
 
   window.onToolStockSubscription = (active, price, message) => {
-    const unlocked = demoMode || Boolean(active);
-    subscriptionActive = unlocked;
-    document.querySelector("#toolStockAccessNotice")?.classList.toggle("hidden", unlocked || !window.ToolStockAndroid);
+    premiumActive = Boolean(active);
+    billingChecked = true;
+    updateAccess();
     const status = document.querySelector("#toolStockSubscriptionStatus");
     if (status) status.textContent = (demoMode ? "Demostración completa · datos separados" : active ? (message || "Suscripción activa") : (message || (price ? price + " al mes" : "Consulta el precio y las condiciones en Google Play")));
-    document.body.classList.toggle("subscription-locked", !unlocked);
+
   };
   window.onToolStockOffer = (price, hasTrial, conditions) => {
     if (demoMode) return;
@@ -250,6 +258,15 @@ export function initIndustrialSuite(ctx) {
   document.querySelector("#toolStockRestore")?.addEventListener("click", () => window.ToolStockAndroid?.restorePurchases?.());
   document.querySelector("#toolStockManage")?.addEventListener("click", () => window.ToolStockAndroid?.manageSubscription?.());
 
+  const privacy = document.createElement("button");
+  privacy.type = "button";
+  privacy.className = "btn";
+  privacy.textContent = "Privacidad de anuncios";
+  privacy.hidden = true;
+  privacy.addEventListener("click", () => android?.showAdsPrivacy?.());
+  document.querySelector(".subscription-actions").append(privacy);
+  window.onToolStockAdsPrivacy = required => { privacy.hidden = !required; };
+
   health();
   answer("audit");
   if (demoMode) {
@@ -261,4 +278,5 @@ export function initIndustrialSuite(ctx) {
     window.onToolStockSubscription(true, "", "Demostración");
   } else if (window.ToolStockAndroid?.checkSubscription) window.ToolStockAndroid.checkSubscription();
   else window.onToolStockSubscription(true, "", "Versión web de prueba");
+  return canGrowInventory;
 }

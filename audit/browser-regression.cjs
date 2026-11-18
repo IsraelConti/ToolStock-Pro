@@ -2,7 +2,7 @@ const {chromium}=require('playwright');const fs=require('fs'),assert=require('no
 (async()=>{
 const browser=await chromium.launch({executablePath:process.env.TOOLSTOCK_CHROME||undefined,args:process.env.TOOLSTOCK_CHROME?['--no-sandbox','--single-process','--no-zygote']:['--no-sandbox']});
 const context=await browser.newContext({viewport:{width:390,height:844}});
-async function page(mode='demo',initial={}){const p=await context.newPage();p.errors=[];p.on('pageerror',e=>p.errors.push(e.message));p.on('dialog',d=>d.accept());await p.addInitScript(({initial})=>{for(const[k,v]of Object.entries(initial))localStorage.setItem(k,v);window.calls=[];window.ToolStockAndroid={checkSubscription(){},saveBase64File(...a){window.calls.push(['save',...a])},printHtml(html){window.calls.push(['print',html])},scanCode(){window.calls.push(['scan'])},subscribeMonthly(){window.calls.push(['buy'])},restorePurchases(){window.calls.push(['restore'])},manageSubscription(){window.calls.push(['manage'])},chooseDriveFolder(){window.calls.push(['folder'])}};navigator.share=async()=>{};},{initial});await p.route('https://toolstock.test/**',r=>{let file=new URL(r.request().url()).pathname.slice(1)||'index.html';r.fulfill({body:fs.readFileSync(root+'/dist/'+file),contentType:file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':file.endsWith('.png')?'image/png':'text/html'})});await p.goto('https://toolstock.test/'+(mode==='demo'?'?demo=1':''));return p;}
+async function page(mode='demo',initial={},trialEnd=0){const p=await context.newPage();p.errors=[];p.on('pageerror',e=>p.errors.push(e.message));p.on('dialog',d=>d.accept());await p.addInitScript(({initial,trialEnd})=>{for(const[k,v]of Object.entries(initial))localStorage.setItem(k,v);window.calls=[];window.ToolStockAndroid={trialEndMillis(){return trialEnd},setFreeAds(value){window.calls.push(['ads',value])},checkSubscription(){},saveBase64File(...a){window.calls.push(['save',...a])},printHtml(html){window.calls.push(['print',html])},scanCode(){window.calls.push(['scan'])},subscribeMonthly(){window.calls.push(['buy'])},restorePurchases(){window.calls.push(['restore'])},manageSubscription(){window.calls.push(['manage'])},chooseDriveFolder(){window.calls.push(['folder'])}};navigator.share=async()=>{};},{initial,trialEnd});await p.route('https://toolstock.test/**',r=>{let file=new URL(r.request().url()).pathname.slice(1)||'index.html';r.fulfill({body:fs.readFileSync(root+'/dist/'+file),contentType:file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':file.endsWith('.png')?'image/png':'text/html'})});await p.goto('https://toolstock.test/'+(mode==='demo'?'?demo=1':''));return p;}
 const p=await page();const navigate=async screen=>{await p.evaluate(s=>(document.querySelector('[data-go="'+s+'"]')||document.querySelector('[data-industrial-go="'+s+'"]')).click(),screen);assert.equal(await p.locator('.screen.active').getAttribute('data-screen'),screen);};
 for(const screen of ['home','products','import','movements','reports','qr','settings','employees','assistant','help'])await navigate(screen);results.push('PASS 10 screens including assistant/help');
 await p.evaluate(()=>onToolStockSubscription(false,'','Sin suscripción'));assert.equal(await p.locator('body').evaluate(e=>e.classList.contains('subscription-locked')),false);results.push('PASS demo remains unlocked under inactive billing callback');
@@ -21,7 +21,48 @@ await navigate('employees');for(let i=0;i<3;i++){await p.locator('#employeeForm 
 await navigate('qr');await p.locator('#qrProductList input').first().check();await p.locator('#printQr').click();await p.waitForTimeout(100);const printCall=(await p.evaluate(()=>window.calls)).find(c=>c[0]==='print');assert(printCall&&printCall[1].includes('data:image/png')&&printCall[1].includes('@media print')&&printCall[1].includes('QR ToolStock'));results.push('PASS generated QR is a printable document delivered to native print bridge');
 await navigate('help');for(const id of ['toolStockSubscribe','toolStockRestore','toolStockManage'])await p.locator('#'+id).click();assert(!(await p.evaluate(()=>window.calls)).some(c=>['buy','restore','manage'].includes(c[0])));results.push('PASS demo never opens real purchases');
 for(const width of [320,390,800]){await p.setViewportSize({width,height:844});await navigate('products');await p.waitForTimeout(220);assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`overflow at ${width}`);}await p.setViewportSize({width:390,height:844});await p.screenshot({path:root+'/audit/demo-final.png',fullPage:true});assert.deepEqual(p.errors,[]);results.push('PASS 320/390/800 layouts; no JS exceptions');
-const normal=await page('live',{'toolstock.products.v1':JSON.stringify([{id:'live-one',name:'Real',reference:'LIVE',stock:10}]),'toolstock.owner.v1':JSON.stringify({email:'owner@example.com'})});await normal.locator('.bottom-nav [data-go=products]').click();await normal.locator('[data-delete-product]').click();assert.equal(await normal.evaluate(()=>JSON.parse(localStorage.getItem('toolstock.products.v1')).length),1);results.push('PASS inactive real subscription blocks product deletion');assert.deepEqual(normal.errors,[]);
+const starter = Array.from({length: 15}, (_, i) => ({id: 'item-'+i, name: 'Repuesto '+i, reference: 'BASE-'+i, stock: 10}));
+const owner = {'toolstock.owner.v1': JSON.stringify({email: 'owner@example.com'})};
+const seed = {'toolstock.products.v1': JSON.stringify(starter), ...owner};
+const count = page => page.evaluate(() => JSON.parse(localStorage.getItem('toolstock.products.v1')).length);
+const adEnabled = page => page.evaluate(() => window.calls.filter(([type]) => type === 'ads').at(-1)?.[1]);
+async function addItem(page, reference) {
+  await page.evaluate(() => document.querySelector('[data-go="productForm"]').click());
+  await page.locator('#productForm [name=name]').fill('Repuesto nuevo');
+  await page.locator('#productForm [name=reference]').fill(reference);
+  await page.locator('#productForm button[type=submit]').click();
+}
+
+const trial = await page('live', seed, Date.now() + 86400000);
+await trial.evaluate(() => onToolStockSubscription(false, '', 'Sin suscripción'));
+await addItem(trial, 'TRIAL');
+assert.equal(await count(trial), 16);
+assert.equal(await adEnabled(trial), false);
+assert.deepEqual(trial.errors, []);
+await trial.close();
+results.push('PASS trial permits item 16 and does not request ads');
+
+const normal = await page('live', seed);
+await normal.evaluate(() => onToolStockSubscription(false, '', 'Sin suscripción'));
+assert.equal(await adEnabled(normal), true);
+await addItem(normal, 'FREE');
+assert.equal(await count(normal), 15);
+assert.match(await normal.locator('#toast').innerText(), /15 repuestos/);
+await normal.evaluate(() => document.querySelector('[data-go="import"]').click());
+await normal.locator('#importFile').setInputFiles({name: 'free.csv', mimeType: 'text/csv', buffer: Buffer.from(csv)});
+await normal.locator('#confirmImport').click();
+assert.equal(await count(normal), 15);
+await normal.locator('.bottom-nav [data-go=products]').click();
+await normal.locator('[data-delete-product]').first().click();
+assert.equal(await count(normal), 14);
+await addItem(normal, 'FREE');
+assert.equal(await count(normal), 15);
+await normal.evaluate(() => onToolStockSubscription(true, '', 'Suscripción activa'));
+assert.equal(await adEnabled(normal), false);
+await addItem(normal, 'PREMIUM');
+assert.equal(await count(normal), 16);
+assert.deepEqual(normal.errors, []);
+results.push('PASS free cap for creation/import, existing inventory usable, Premium unlimited and ad-free');
 const corrupt=await page('live',{'toolstock.products.v1':'broken json','toolstock.owner.v1':JSON.stringify({email:'owner@example.com'})});assert.equal(await corrupt.locator('#exportRecovery').isVisible(),true);assert.equal(await corrupt.evaluate(()=>localStorage.getItem('toolstock.products.v1')),'broken json');assert.deepEqual(corrupt.errors,[]);results.push('PASS corrupt data preserved and recovery offered');
 fs.writeFileSync(root+'/audit/browser-results.log',results.join('\n')+'\n');console.log(results.join('\n'));await browser.close();
 })().catch(e=>{console.error(e.stack);process.exit(1)});
