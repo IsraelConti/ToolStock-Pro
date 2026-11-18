@@ -118,7 +118,14 @@ class GoogleDriveConnection(
             val reply = http(BuildConfig.SYNC_API_BASE.trimEnd('/') + "/v1/session", "POST", accessToken, body.toString())
             val entitlement = reply.optJSONObject("entitlement")
             val expiry = entitlement?.optString("expiresAt").orEmpty()
-            val serverExpiry = runCatching { java.time.Instant.parse(expiry).toEpochMilli() }.getOrDefault(0L)
+            // java.text funciona desde minSdk 24 sin desugaring adicional.
+            // Backend /v1/session devuelve un ISO 8601 con milisegundos y Z.
+            val serverExpiry = runCatching {
+                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
+                dateFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                dateFormat.isLenient = false
+                dateFormat.parse(expiry)?.time ?: 0L
+            }.getOrDefault(0L)
             val unexpired = serverExpiry > System.currentTimeMillis()
             val validType = entitlement?.optString("accessType") in listOf("trial", "premium")
             entitled = unexpired && validType && entitlement?.optBoolean("serverValidated") == true &&
