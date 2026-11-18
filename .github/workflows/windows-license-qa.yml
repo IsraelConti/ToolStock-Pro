@@ -1,0 +1,30 @@
+name: MaintenPro Windows licencia real vs trial - pruebas de validacion
+
+on:
+  push:
+    branches: [feature/maintenpro-v13-freemium-7d]
+    paths:
+      - 'windows/license-entitlement.mjs'
+      - 'windows/license-entitlement.test.mjs'
+      - 'windows/desktop-session.mjs'
+      - '.github/workflows/windows-license-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-license-check:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validar trial, Premium y caducidad en Windows
+        run: node --test windows/license-entitlement.test.mjs
+      - name: Comprobar sintaxis de sesion y licencia
+        run: |
+          node --check windows/desktop-session.mjs
+          node --check windows/license-entitlement.mjs
